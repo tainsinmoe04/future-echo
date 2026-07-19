@@ -1,0 +1,2 @@
+import Link from "next/link"; import { Brand } from "./brand";
+export function SiteHeader(){return <header className="shell flex h-20 items-center justify-between"><Brand/><nav className="hidden gap-7 text-sm text-muted md:flex"><a href="#difference" className="hover:text-ink">Why it is different</a><a href="#memory" className="hover:text-ink">Selective memory</a></nav><div className="flex gap-2"><Link href="/login" className="button-secondary hidden sm:inline-flex">Log in</Link><Link href="/signup" className="button-primary">Begin quietly</Link></div></header>}

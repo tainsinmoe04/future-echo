@@ -1,0 +1,11 @@
+import type { SVGProps } from "react";
+type P=SVGProps<SVGSVGElement>; const b={width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:1.7,strokeLinecap:"round" as const,strokeLinejoin:"round" as const};
+export const Arrow=(p:P)=><svg {...b} {...p}><path d="M5 12h14m-5-5 5 5-5 5"/></svg>;
+export const Check=(p:P)=><svg {...b} {...p}><path d="m5 12 4 4L19 6"/></svg>;
+export const Lock=(p:P)=><svg {...b} {...p}><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>;
+export const Mail=(p:P)=><svg {...b} {...p}><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>;
+export const Eye=(p:P)=><svg {...b} {...p}><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>;
+export const Menu=(p:P)=><svg {...b} {...p}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
+export const Close=(p:P)=><svg {...b} {...p}><path d="m6 6 12 12M18 6 6 18"/></svg>;
+export const Bookmark=(p:P)=><svg {...b} {...p}><path d="M6 4h12v17l-6-4-6 4V4Z"/></svg>;
+export const Trash=(p:P)=><svg {...b} {...p}><path d="M4 7h16m-10-3h4m-8 3 1 14h10l1-14M10 11v6m4-6v6"/></svg>;

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "outDir": ".test-dist",
+    "rootDir": "."
+  },
+  "include": [
+    "src/lib/domain.ts",
+    "src/lib/mock-data.ts",
+    "src/server/ai-context-builder.ts",
+    "tests/**/*.ts"
+  ]
+}
