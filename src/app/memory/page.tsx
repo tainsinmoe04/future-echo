@@ -1,62 +1,271 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { useMockProductState } from "@/components/mock-product-state";
 import { Trash } from "@/components/icons";
-import type { SavedMoment } from "@/lib/domain";
-import { identityById, savedMoments } from "@/lib/mock-data";
+import { identityById } from "@/lib/mock-data";
+import { MAX_NOTE_LENGTH } from "@/lib/redaction";
 
-const fmt = (date: string) => new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+const formatTime = (date: string) =>
+  new Date(date).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
 
 export default function Memory() {
-  const [moments, setMoments] = useState<readonly SavedMoment[]>(savedMoments);
-  const [selected, setSelected] = useState<string | undefined>(savedMoments[0]?.id);
-  const [notes, setNotes] = useState<Record<string, string>>(() => Object.fromEntries(savedMoments.map((moment) => [moment.id, moment.myNote ?? ""])));
-  const active = moments.find((moment) => moment.id === selected) ?? moments[0];
-  const grouped = useMemo(() => {
-    const map = new Map<string, SavedMoment[]>();
-    for (const moment of moments) {
-      const key = new Date(moment.occurredAt).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
-      map.set(key, [...(map.get(key) || []), moment]);
-    }
-    return [...map];
-  }, [moments]);
-  const removeInterpretation = () => active && setMoments((items) => items.map((moment) => moment.id === active.id ? { ...moment, aiInterpretation: undefined } : moment));
-  const del = () => {
-    if (!active) return;
-    const next = moments.find((moment) => moment.id !== active.id);
-    setMoments((items) => items.filter((moment) => moment.id !== active.id));
-    setSelected(next?.id);
+  const { journeyMoment, saveJourneyMoment, deleteJourneyMoment } = useMockProductState();
+  const [reflection, setReflection] = useState("");
+  const [keptReflection, setKeptReflection] = useState("");
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState(journeyMoment?.myNote ?? "");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  if (!journeyMoment) {
+    return (
+      <AppShell>
+        <main className="journey-shell py-14 sm:py-24">
+          <p className="eyebrow text-peach">Memory</p>
+          <h1 className="display mt-4 text-4xl sm:text-5xl">This moment is no longer here.</h1>
+          <p className="mt-5 max-w-xl text-sm leading-6 text-muted">
+            Deleting removed the structured record. Nothing is kept as long-term memory unless you
+            choose to save it again.
+          </p>
+          <Link href="/now" className="button-primary mt-8">
+            Return to Now
+          </Link>
+        </main>
+      </AppShell>
+    );
+  }
+
+  const identity = identityById.get(journeyMoment.identityVersionId);
+
+  const updateNote = () => {
+    const note = noteDraft.trim();
+    saveJourneyMoment({ ...journeyMoment, myNote: note || undefined });
+    setEditingNote(false);
   };
-  const identity = active ? identityById.get(active.identityVersionId) : undefined;
 
-  const contents = <>
-    <div className="flex items-baseline justify-between"><h2 className="font-display text-3xl font-bold">2026</h2><span className="text-xs text-muted">{moments.length} saved moments</span></div>
-    <div className="mt-7 space-y-8">{grouped.map(([month, items]) => <section key={month}>
-      <h3 className="eyebrow">{month}</h3>
-      <div className="mt-3 space-y-1">{items.map((moment) => <button key={moment.id} onClick={() => setSelected(moment.id)} className={`w-full border-l px-4 py-3 text-left ${selected === moment.id ? "border-sun bg-sun/8" : "border-transparent hover:border-line"}`}>
-        <span className="block text-sm font-semibold">{moment.title}</span>
-        <span className="mt-1 block text-xs text-muted">{fmt(moment.occurredAt)} · Future Self v{identityById.get(moment.identityVersionId)?.version}</span>
-      </button>)}</div>
-    </section>)}</div>
-    <p className="mt-9 text-xs leading-5 text-muted">Months without saved moments stay quietly folded away.</p>
-  </>;
+  const removeInterpretation = () => {
+    saveJourneyMoment({ ...journeyMoment, aiInterpretation: undefined });
+  };
 
-  return <AppShell><main className="shell py-9 sm:py-16">
-    <header className="mx-auto max-w-4xl text-center"><p className="eyebrow">Memory · through July 16, 2026</p><h1 className="display mt-4 text-4xl sm:text-6xl">The moments you chose to keep.</h1><p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-muted">Conversation history can expire. Saved Moments remain until you delete them and keep the Future Self version under which they were saved.</p></header>
-    <details className="mx-auto mt-10 max-w-3xl border-y border-line py-4 lg:hidden"><summary className="cursor-pointer list-none text-sm font-semibold">2026 · {moments.length} saved moments</summary><div className="pt-6">{contents}</div></details>
-    <div className="mx-auto mt-10 grid max-w-6xl items-start lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-px lg:overflow-hidden lg:rounded-2xl lg:border lg:border-line lg:bg-line lg:shadow-[var(--shadow)]">
-      <aside className="hidden min-h-[680px] bg-canvas-soft p-8 lg:block">{contents}</aside>
-      {active ? <article className="min-w-0 bg-surface px-6 py-9 sm:px-10 sm:py-12 lg:min-h-[680px] lg:px-14">
-        <header className="border-b border-line pb-8"><p className="eyebrow text-sun">Original excerpt · {fmt(active.occurredAt)}</p><h2 className="display mt-3 text-3xl sm:text-4xl">{active.title}</h2><p className="mt-3 text-xs leading-5 text-muted">Saved under Future Self v{identity?.version} · Horizon {identity?.horizon.label}<br />“{identity?.definition}”</p></header>
-        <blockquote className="mt-10 border-l border-peach pl-5 font-display text-2xl leading-9 sm:pl-7 sm:text-3xl sm:leading-10">“{active.originalExcerpt}”</blockquote>
-        {active.relatedAiReply ? <div className="mt-10 border-l border-sun pl-5 sm:ml-12 sm:pl-7"><p className="eyebrow text-sun">Related AI reply</p><p className="mt-3 text-sm leading-6 text-muted">{active.relatedAiReply}</p></div> : null}
-        <div className="soft-rule my-10" />
-        {active.aiInterpretation ? <details><summary className="cursor-pointer list-none text-sm font-semibold">AI interpretation · frozen</summary><div className="mt-4 border-l border-line pl-5"><p className="text-sm leading-6 text-muted">{active.aiInterpretation}</p><button onClick={removeInterpretation} className="quiet-link mt-4 text-xs">Remove AI interpretation</button></div></details> : <p className="text-xs text-muted">AI interpretation removed. Your original excerpt remains unchanged.</p>}
-        <label className="mt-10 block border-t border-line pt-8 text-sm"><span className="mb-2 block font-semibold">My Note</span><textarea className="field min-h-28 resize-y" value={notes[active.id] || ""} onChange={(event) => setNotes((items) => ({ ...items, [active.id]: event.target.value }))} placeholder="Add what this moment means to you now." /></label>
-        <details className="mt-7 border-t border-line pt-6"><summary className="cursor-pointer list-none text-sm font-semibold">AI memory context: {active.consent.useInAiContext ? "Allowed" : "Off"}</summary><p className="mt-3 text-xs leading-5 text-muted">Consent recorded {fmt(active.consent.recordedAt)}. My Note context is {active.consent.includeMyNoteInAiContext ? "allowed" : "off"}.</p></details>
-        <div className="mt-10 border-t border-line pt-6"><button onClick={del} className="inline-flex items-center gap-2 text-xs text-danger hover:underline"><Trash className="size-4" />Delete saved moment</button></div>
-      </article> : <div className="bg-surface p-9 lg:min-h-[680px]"><p className="eyebrow text-peach">Memory is empty</p><h2 className="display mt-4 text-3xl">Nothing has been carried forward yet.</h2><p className="mt-4 text-sm leading-6 text-muted">Saved Moments appear only after you select real conversation text and confirm it.</p></div>}
-    </div>
-  </main></AppShell>;
+  return (
+    <AppShell>
+      <main className="journey-shell py-10 sm:py-16">
+        <header className="max-w-2xl">
+          <p className="eyebrow">Six months later · {formatDate(journeyMoment.revisitAt)}</p>
+          <h1 className="display mt-4 text-4xl leading-tight sm:text-5xl">
+            You chose to keep this moment.
+          </h1>
+          <p className="mt-5 max-w-xl text-sm leading-6 text-muted">
+            Revisit it without asking whether the past was right or wrong. The record remains as you
+            chose to preserve it.
+          </p>
+        </header>
+
+        <div className="journey-rule mt-10 sm:mt-14" />
+
+        <article className="py-10 sm:py-14" aria-labelledby="then-heading">
+          <header>
+            <p className="eyebrow text-peach">
+              Then · {formatDate(journeyMoment.occurredAt)} · {formatTime(journeyMoment.occurredAt)}
+            </p>
+            <h2 id="then-heading" className="sr-only">
+              The saved moment
+            </h2>
+            <p className="mt-3 text-xs leading-5 text-muted">
+              Future Self v{identity?.version} · Horizon {identity?.horizon.label}
+            </p>
+          </header>
+
+          <section className="mt-10" aria-labelledby="original-message">
+            <p id="original-message" className="eyebrow text-peach">
+              Your words
+            </p>
+            <blockquote className="journey-user-words mt-5">
+              “{journeyMoment.originalExcerpt}”
+            </blockquote>
+          </section>
+
+          <section className="journey-reply mt-12 border-l border-sun pl-5 sm:ml-12 sm:pl-7" aria-labelledby="saved-reply">
+            <p id="saved-reply" className="eyebrow text-sun">
+              Possible-future perspective
+            </p>
+            <p className="mt-4 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
+              {journeyMoment.relatedAiReply}
+            </p>
+          </section>
+
+          <section className="mt-12 border-t border-line pt-8" aria-labelledby="my-note">
+            <div className="flex items-baseline justify-between gap-4">
+              <p id="my-note" className="eyebrow">
+                My Note
+              </p>
+              {!editingNote ? (
+                <button className="quiet-link text-xs" onClick={() => setEditingNote(true)}>
+                  Edit note
+                </button>
+              ) : null}
+            </div>
+            {editingNote ? (
+              <div className="mt-4">
+                <textarea
+                  className="field min-h-24 resize-y"
+                  value={noteDraft}
+                  maxLength={MAX_NOTE_LENGTH}
+                  onChange={(event) => setNoteDraft(event.target.value)}
+                  aria-label="My Note"
+                />
+                <div className="mt-3 flex justify-end gap-3">
+                  <button
+                    className="button-secondary"
+                    onClick={() => {
+                      setNoteDraft(journeyMoment.myNote ?? "");
+                      setEditingNote(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button className="button-primary" onClick={updateNote}>
+                    Update note
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 font-display text-xl leading-8">
+                {journeyMoment.myNote || "No note was added."}
+              </p>
+            )}
+          </section>
+
+          <details className="mt-10 border-t border-line pt-6">
+            <summary className="focus-ring cursor-pointer rounded-sm text-sm font-semibold">
+              Record details and controls
+            </summary>
+            <div className="mt-6 space-y-7">
+              {journeyMoment.aiInterpretation ? (
+                <section className="border-l border-line pl-5">
+                  <p className="eyebrow">AI interpretation · frozen</p>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+                    {journeyMoment.aiInterpretation}
+                  </p>
+                  <button className="quiet-link mt-4 text-xs" onClick={removeInterpretation}>
+                    Remove AI interpretation
+                  </button>
+                </section>
+              ) : (
+                <p className="text-sm leading-6 text-muted">
+                  AI interpretation removed. Your words and note remain unchanged.
+                </p>
+              )}
+
+              <section className="border-t border-line pt-6">
+                <p className="text-sm font-semibold">
+                  Future AI context: {journeyMoment.consent.useInAiContext ? "Allowed" : "Off"}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  My Note context is{" "}
+                  {journeyMoment.consent.includeMyNoteInAiContext ? "allowed" : "off"}. Saved
+                  conversation text and long-term AI memory are separate.
+                </p>
+              </section>
+
+              <section className="border-t border-line pt-6">
+                {!confirmDelete ? (
+                  <button
+                    className="inline-flex items-center gap-2 text-xs text-danger hover:underline"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash className="size-4" />
+                    Delete saved moment
+                  </button>
+                ) : (
+                  <div>
+                    <p className="text-sm font-semibold">Delete this saved moment?</p>
+                    <p className="mt-2 text-xs leading-5 text-muted">
+                      This removes the structured record. It cannot be recovered in this mock.
+                    </p>
+                    <div className="mt-4 flex gap-3">
+                      <button className="button-secondary" onClick={() => setConfirmDelete(false)}>
+                        Keep it
+                      </button>
+                      <button
+                        className="inline-flex min-h-11 items-center rounded-xl border border-danger px-4 text-xs font-bold text-danger"
+                        onClick={deleteJourneyMoment}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+          </details>
+        </article>
+
+        <section className="border-t border-line py-10 sm:py-14" aria-labelledby="now-heading">
+          <p className="eyebrow text-sun">Now · {formatDate(journeyMoment.revisitAt)}</p>
+          <h2 id="now-heading" className="display mt-4 text-3xl sm:text-4xl">
+            What feels clearer now than it did then?
+          </h2>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
+            You do not need to prove that you changed, arrived, or made the right choice.
+          </p>
+
+          {keptReflection ? (
+            <div className="journey-resolution mt-8 border-l border-peach pl-5" role="status">
+              <p className="eyebrow text-peach">Your reflection</p>
+              <p className="mt-3 font-display text-xl leading-8">{keptReflection}</p>
+              <button
+                className="quiet-link mt-5 text-xs"
+                onClick={() => {
+                  setReflection(keptReflection);
+                  setKeptReflection("");
+                }}
+              >
+                Edit reflection
+              </button>
+            </div>
+          ) : (
+            <div className="mt-8">
+              <label htmlFor="reflection" className="sr-only">
+                Reflection
+              </label>
+              <textarea
+                id="reflection"
+                className="journey-textarea min-h-32"
+                value={reflection}
+                onChange={(event) => setReflection(event.target.value)}
+                placeholder="A sentence is enough. You can also leave this blank."
+              />
+              <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <Link href="/now" className="button-secondary">
+                  Leave it here
+                </Link>
+                <button
+                  className="button-primary"
+                  disabled={!reflection.trim()}
+                  onClick={() => setKeptReflection(reflection.trim())}
+                >
+                  Keep this reflection
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    </AppShell>
+  );
 }

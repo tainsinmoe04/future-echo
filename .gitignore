@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .test-dist/
+
+# local agent tooling
+.agents/
+.codex/
+OpenCode.md
+skills-lock.json

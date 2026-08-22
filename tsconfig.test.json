@@ -11,6 +11,8 @@
   "include": [
     "src/lib/domain.ts",
     "src/lib/mock-data.ts",
+    "src/lib/redaction.ts",
+    "src/lib/moment-lifecycle.ts",
     "src/server/ai-context-builder.ts",
     "tests/**/*.ts"
   ]

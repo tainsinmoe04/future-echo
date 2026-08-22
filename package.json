@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsc -p tsconfig.test.json && node .test-dist/tests/ai-context-builder.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test \".test-dist/tests/*.test.js\""
   },
   "dependencies": {
     "next": "16.2.10",

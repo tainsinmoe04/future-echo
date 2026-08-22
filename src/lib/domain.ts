@@ -25,7 +25,7 @@ export interface SavedMomentConsent {
 
 export interface SavedMoment {
   id: string;
-  title: string;
+  title?: string;
   identityVersionId: string;
   occurredAt: ISODateTime;
   originalExcerpt: string;
@@ -34,6 +34,15 @@ export interface SavedMoment {
   aiInterpretation?: string;
   consent: SavedMomentConsent;
   deletedAt?: ISODateTime;
+}
+
+/**
+ * A Saved Moment as used by the journey flow: the user's selected words are
+ * the original excerpt, and the paired possible-future reply is the related
+ * AI reply. revisitAt marks when the moment is meant to be revisited.
+ */
+export interface JourneyMoment extends SavedMoment {
+  revisitAt: ISODateTime;
 }
 
 export interface ConversationMessage {

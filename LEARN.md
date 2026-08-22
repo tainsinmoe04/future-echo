@@ -134,6 +134,16 @@ The following is the current mock constraint, not a final approved visual system
 - Sparse fixtures are more honest than filling every month for visual effect.
 - Documentation must be updated when product rules or rejected approaches change.
 
+### Shared helper modules (2026-08-22)
+
+- `src/lib/redaction.ts` owns `isVerbatimRedaction` and all input length limits (`MAX_MESSAGE_LENGTH`, `MAX_EXCERPT_LENGTH`, `MAX_NOTE_LENGTH`, `MAX_IDENTITY_LENGTH`). Redaction is verbatim-only: whole whitespace-delimited tokens from the original message, in original order. Never duplicate this helper in components.
+- `src/lib/moment-lifecycle.ts` holds pure moment lifecycle logic: `buildSavedMomentConsent` enforces that My Note context consent requires both moment-level consent and a non-empty note; `createJourneyMoment` validates lengths, trims text, and normalizes empty optional fields to `undefined`; horizon helpers (`horizonFromMonths`, `horizonMonthsAhead`, `formatHorizonLabel`) enforce the six-month minimum and derive labels from `MOCK_TODAY`. Keep these pure so `node --test` can exercise them without React.
+- `JourneyMoment extends SavedMoment`, adding only `revisitAt`. The journey flow stores the user's words in `originalExcerpt` and the paired possible-future reply in `relatedAiReply`, so journey moments remain compatible with the consent-gated AI context pipeline. Do not reintroduce parallel shapes like `originalMessage`/`possibleFutureReply`.
+- `SavedMoment.title` is optional; SPEC's three-layer model (original excerpt, AI interpretation, My Note) never required one.
+- Mock identity state keeps a version list in the provider: onboarding activation and Future-Self definition edits supersede the active version and create v(n+1); archived versions keep their records readable. Save timestamps derive from the save time with `revisitAt` six months later via tested `addMonths` date math — avoid hard-coded narrative timestamps in `/now`.
+- The test script compiles with `tsconfig.test.json` and runs every compiled file via `node --test ".test-dist/tests/*.test.js"`; new lib files must be added to its include list to be testable.
+- Editor encoding round-trips corrupted typographic characters into literal `?` and added a UTF-8 BOM to `now/page.tsx`. Verify non-ASCII text and file encodings after external edits.
+
 ## 9. Current information architecture
 
 Approved UI routes:
@@ -178,3 +188,4 @@ The following is inherited command-result provenance from the pre-existing LEARN
 - `npm run build`: passed on 2026-07-14 with Next.js 16.2.10.
 - All approved UI routes prerendered successfully; `/api/ai` remained dynamic and inactive.
 - Existing dependency audit reported two moderate findings. No forced breaking upgrade was applied.
+- `npm run lint`, `npm test` (30 tests), and `npm run build` passed on 2026-08-22 after the encoding/BOM repairs, helper extraction, domain type alignment, state wiring, and new unit tests. All routes prerendered; `/api/ai` remained dynamic and inactive.
