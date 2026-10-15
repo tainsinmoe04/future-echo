@@ -1,8 +1,16 @@
 # Future Echo
 
-Future Echo is a dark, quiet reflective product for speaking with one possible future perspective a user is deliberately working toward. It is not prediction, therapy, or a productivity tracker. This phase is a fully interactive mock: authentication, storage, Supabase, and AI providers are intentionally not connected.
+Future Echo is a dark, quiet reflective product for speaking with one possible future perspective a user is deliberately working toward. It is not prediction, therapy, or a productivity tracker. The default remains a local preview. The owner-authorized Supabase + Gemini backend is implemented behind configuration and explicit user connection, but no project or API key is connected. See [BACKEND_SETUP.md](./BACKEND_SETUP.md) for setup, tests, data boundaries and unfinished production gates.
 
 Read [SPEC.md](./SPEC.md) and [LEARN.md](./LEARN.md) before changing product behavior or visual direction. They record locked requirements, durable decisions, and rejected approaches.
+
+### Current preview
+
+`/future-self` now shares Your Space's dark/lilac/butter layout rather than the public-site shell. It supports inline versioned direction editing, past-version reading links, a non-AI Horizon Day preview and archive confirmation; existing moments retain their provenance.
+
+`/now` opens the single messenger conversation. **Your Space → Settings** offers reading size, reduced motion, a default note font and validated backup download/import with recovery controls. In a memory book, **Photo, sticker & note → Arrange** supports direct mouse/touch movement, resize handles, pinch/twist and keyboard alternatives. The editor has 30-step content/layout Undo/Redo, custom raster stickers, 19 built-in stickers/tapes/clips, four note fonts, paper styles and optional user-chosen music links. **Customize [year] book** offers six cover themes, title/font/photo/decoration editing and page reading order. Choose **Done**, then wait for **Saved on this device**. Reading can hide decorations or layout without deleting them.
+
+Confirmed moments, photos, layouts, identity versions, covers and preferences persist in IndexedDB. Unfinished page and cover drafts also save locally, separately from confirmed moments; resume them from Your Space/Customize. Drafts never add stars or grant AI memory consent. Storage failures and stale-tab conflicts are shown. Settings imports a validated unencrypted JSON backup only after preview/confirmation, atomically preserving the current journal as one recovery copy. Recovery can be downloaded, previewed/restored or explicitly deleted. Normal page deletion does not erase an older recovery copy. Exported backups exclude drafts and conversations. Browser cleanup, private mode and eviction can lose local data; there is no cloud backup. **Conversations still reset on refresh.** Replies are deterministic examples. Retention windows below are requirements, not functioning expiry jobs. Music opens an external destination only when clicked; it is not embedded, autoplayed or recommended by a connected service.
 
 ## Locked privacy boundaries
 

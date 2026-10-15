@@ -1,6 +1,20 @@
 # Future Echo — Project Learnings
 
+## 23. Owner-selected Supabase + Gemini backend — 2026-10-15
+
+- Explicit owner authorization supersedes the earlier no-provider implementation pause only for Supabase accounts/backend and Gemini replies/saveable song recommendations. No real credentials, project connection, remote migration, deployment or push occurred. Default `/api/ai` remains 501; setup requires server environment variables and an explicit user Connect action.
+- Never trust browser-supplied owner/history/memory at generation time. Verify Auth user over the network; load owned active identity, ten recent eligible messages and up to three consented excerpts server-side. Context upload is a narrow text-only projection and not a full journal sync. Separate note consent stays intact. Photos, drafts, interpretations, decorative data and playlists are excluded from memory context.
+- Use HttpOnly cookies and same-origin mutation checks. Privileged database functions have empty search_path and service-only execution; RLS denies direct client writes and cross-owner reads. A server service key bypasses RLS, so every server query must also filter the verified owner. Never expose keys in browser bundles, logs or chat.
+- Reply reservation/finalization locks enforce server-owned quotas, rate limits and request replay. Pending leases expire; completed request records retain only a message ID, not duplicate reply text after history expiry. Direction changes invalidate late UI replies and attempt remote archiving. Cloud synchronization failures are disclosed, not labeled successfully deleted.
+- Music suggestions contain titles/artists, not lyrics or fabricated catalog IDs. User-clicked fixed-domain search links only; no automatic playback or external account integration. Saving is explicit and separate from memory consent/stars. Saved playlists are account records with device-local backup copies; local journal originals remain local.
+- Current Gemini Generate Content REST schema was checked against official docs, which now label that API legacy. The model is explicitly configured, not hard-coded; live access, compatibility, cost and data handling still need review. No OpenAI provider/key is used.
+- Verification is layered: unit/service tests, isolated PGlite migration/RLS/limits tests, lint/build and Chrome desktop/mobile UI with intercepted backend responses. These are not live Supabase/Gemini verification, multi-connection race tests or a completed bilingual safety evaluation. Keep the enable flag false for public use until BACKEND_SETUP gates pass. Full journal cloud backup, account deletion, password recovery, OAuth and provider/backups retention remain incomplete.
+
+Latest implementation checkpoint (2026-10-15): Section 20 supersedes older session-only, draft, restore and decoration-library limitations. Historical entries below retain their original verification provenance.
+
 This file preserves durable decisions and lessons so future sessions do not repeat rejected product, UX, design, or technical approaches. Requirements and acceptance criteria live in [SPEC.md](./SPEC.md).
+
+**Current scoped override (2026-10-14):** the owner subsequently approved the black/lilac messenger and tactile memory-book direction, then requested settings, movable stickers, and selectable fonts. See SPEC Section 11 and Section 14 below. Earlier visual rejections remain history, not a prohibition against this explicitly approved scrapbook scope. Product safeguards and production-service pauses remain unchanged.
 
 Decision provenance: the pricing, access, context, Save Moment, identity lifecycle, Horizon Day, safety, and beta-testing decisions below were locked by the project owner on **2026-07-16**. The date is the documentation decision date, not a launch date. Older retained decisions and verification records are identified separately.
 
@@ -189,3 +203,79 @@ The following is inherited command-result provenance from the pre-existing LEARN
 - All approved UI routes prerendered successfully; `/api/ai` remained dynamic and inactive.
 - Existing dependency audit reported two moderate findings. No forced breaking upgrade was applied.
 - `npm run lint`, `npm test` (30 tests), and `npm run build` passed on 2026-08-22 after the encoding/BOM repairs, helper extraction, domain type alignment, state wiring, and new unit tests. All routes prerendered; `/api/ai` remained dynamic and inactive.
+
+## 14. Scoped personalization implementation — 2026-10-14
+
+- The owner requested settings, arbitrary sticker placement, and beautiful fonts, building on the explicitly approved messenger/scrapbook UI. No production-service connection was authorized.
+- `MomentPaper` is shared by the saved page and decoration preview so placement geometry and authorship stay aligned. Coordinates are page percentages, size is relative to page width, and rotated bounds are clamped. Pointer capture preserves the grab offset; a second touch is ignored; cancellation restores the original position. Keyboard arrows and select-then-tap are alternatives to dragging. Decoration movement has no momentum or settling animation because precise placement is the intent.
+- Decorations are intentionally allowed over content, but reading mode can hide them without mutating saved placement. Keep this escape hatch so decoration cannot make the original words inaccessible.
+- `JourneyMoment` now also holds photos, legacy sticker names, positioned sticker instances, note font, and a separate revisit reflection. Its inherited SavedMoment fields remain the evidence model. These additions supersede the older note that it adds only `revisitAt`.
+- Four Latin note styles are offered for notes and captions, not original messages or generated replies. Next's font pipeline serves them locally; Noto Sans Myanmar, Padauk, and Noto Serif Myanmar provide corresponding Burmese styles. Caveat handwriting applies only to Latin text. The app has no runtime third-party font request.
+- Space preferences live in the mock provider and reset on refresh along with the rest of the prototype. The default font affects new pages; saved pages keep their own choice. No implicit memory consent, permanent-storage claim, or fake account/payment settings.
+- Decoration edits preserve original excerpt, related reply, identity, occurrence date, revisit date, deletion state, and consent. Notes remain editable, interpretations frozen/removable, and server context projection unchanged.
+- Automated coverage adds page-relative movement, rotated bounds, invalid-value handling, legacy migration, evidence integrity, context exclusion, and note-consent regression checks.
+- Verification: `npm test` (38 tests), `npm run lint`, and the default Turbopack production `npm run build` pass. Build still reports an existing multiple-lockfile root warning; unrelated parent lockfiles were not changed. Rendered Chrome/Playwright checks at 1440×1000, 390×844, and 320×740 cover settings, new-moment creation, default-font non-retroactivity, font previews, mouse/touch-emulated drag, tap placement, keyboard movement, Escape cancellation, Undo, saved-page reopening, hiding/restoring stickers, chat navigation, and reduced motion. Screenshot evidence is kept outside the repository. Physical-device and Safari testing remain outstanding.
+
+## 15. Journal storage foundation — 2026-10-14
+
+- The expanded journal roadmap is now authorized in SPEC Section 12. JOURNAL_PROGRESS.md records staged completion and remaining work; it was absent at the start of this continuation and was created from the repository's actual state.
+- `journal-storage.ts` provides a versioned IndexedDB document with an atomic revision check. An old tab must fail with a conflict rather than overwrite newer work. Resolve writes only on transaction completion, not request success. Abort preserves the previous record.
+- Require a caller-provided snapshot validator for reads and writes. Unsupported existing envelopes or payloads are not treated as an empty database. Never recover by automatically seeding mock fixtures or clearing storage.
+- The adapter is deliberately not wired to the app yet: hydration, full schema validation, autosave status/recovery, and export/import must be implemented together before claiming persistence. Existing reset-on-refresh disclosures remain correct.
+- Verification: 43 tests, lint, production build, and isolated-browser IndexedDB checks passed. The latter verifies reload, stale-tab conflict, aborted-write rollback, and invalid-data preservation. No UI redesign or production connection was made.
+
+### Saved-record snapshot validation continuation
+
+- `journal-snapshot.ts` validates a bounded exact-field schema without repairing consent or mutating original evidence. Validate identity ownership and version uniqueness across the whole snapshot, not only individual records. Drafts and chat state are excluded from this v1 saved-record shape, not silently promoted to memory.
+- Raster data URL validation checks encoding, declared type/signature and size; it does not prove image decodability. Browser decoding/dimension limits and a pre-parse backup file limit remain mandatory before import is exposed. Do not describe this validator as finished backup/restore.
+- Verification: 49 tests, lint and build pass. No app integration or UI changes; reset-on-refresh disclosures remain true.
+
+## 16. Direct journal manipulation — 2026-10-14
+
+- The owner explicitly requested direct touch/mouse resize and rotation rather than bars. Prioritized this bounded editor change as requested; local autosave/restore remain incomplete and disclosures remain unchanged.
+- `PageObject` handles translation, pinch/twist and resize/rotation handles across photos, text and stickers. No gesture easing or momentum; direct pointer tracking follows Apple Design/Emil guidance for precise editing. This deliberately supersedes the earlier ignore-second-touch behavior for the new object layer. Ending either finger commits the gesture; pointer cancellation/Escape restores the previous layout.
+- Presentation-only page-relative `pageTransforms` leave evidence text unchanged and outside AI context. Layout Undo/Redo stores one entry per completed gesture; content edits are not part of this history. A reset restores the default composition. Reading can temporarily remove layout and decorations without mutating stored state.
+- Validation: 54 tests, lint, production build passed. Chrome/Playwright at 1440×1000 and 390×844 with reduced motion verified mouse drag/resize/rotation, emulated two-finger pinch/twist, text/sticker keyboard manipulation, Undo/Redo, Escape cancellation, Done/reopening and original-text preservation. No runtime errors or document overflow in tested states. Browser plugin skill absent; used existing bundled Playwright/Chrome with no dependency installation. Physical touch devices and Safari remain untested. Known parent-lockfile warning remains.
+
+## 17. Backup codec foundation — 2026-10-14
+
+- Validate file byte size before reading text, and UTF-8 byte size before parsing. `journal-backup.ts` accepts an exact versioned envelope, validates the snapshot without altering consent, and does not write storage. Do not trust filename extensions or MIME labels as validation.
+- The codec is unencrypted and does not authenticate provenance. User confirmation, atomic pre-restore recovery, raster decoding/dimension checks and UI integration are still required. No persistence completion claim is warranted.
+- 58 tests, lint and production build pass. No runtime UI changes in this increment; prior rendered checks remain the latest UI evidence.
+
+## 18. Atomic pre-restore recovery — 2026-10-15
+
+- The storage adapter now supports validated recovery reads and revision-checked restore. Write the old record under `before-last-restore` and the replacement journal in the same transaction; never perform two independent transactions or report success at request completion.
+- Normal saves preserve that recovery copy. A later confirmed restore replaces it. Unknown recovery records block restore rather than being silently discarded. Restore requires an existing saved journal, preventing imports from bypassing hydration/initialization.
+- The adapter is still not connected to the UI. Before integration, expose confirmation and truthful recovery-retention/deletion behavior; do not mistake the one retained recovery copy for encrypted or cloud backup.
+- 59 tests, lint, build and isolated real-browser IndexedDB restore/rollback/recovery checks pass. Local dev server restarted on port 3000; existing parent-lockfile warning remains. No UI changes or production integrations.
+
+## 19. User-facing local persistence — 2026-10-15
+
+- `journal-session.ts` is the provider's external store: hydrate once, block interaction on failed reads, seed only after a confirmed empty read, and serialize/coalesce writes. Publish saved status only after IndexedDB completion. Preserve unsaved state on conflict; retry uses the old expected revision rather than silently overwriting another tab.
+- React Best Practices informed the stable external-store subscription and queue ownership. Frontend testing guidance required rendered desktop/mobile reload and error-path verification, not only structural tests.
+- Confirmed moments, uploaded photos/layouts, identity versions and preferences now persist; chat history and unfinished drafts do not. Settings offers unencrypted JSON export with scope/privacy wording. Restore/import/recovery controls and draft persistence are not yet wired. This supersedes earlier session-only claims for confirmed records only.
+- 64 tests, lint, build and real Chrome desktop/mobile autosave/export/error/conflict/deletion checks passed. Browser plugin absent; used bundled Playwright. Known parent-lockfile warning remains. No production-service connection or chat redesign.
+
+## 20. Requested local journal completion and Settings alignment — 2026-10-15
+
+- The owner explicitly requested the remaining local journal features and Settings visual alignment. The delivered scope includes page/cover drafts, backup import/recovery UI, custom raster stickers, built-in tapes/clips/stickers, cover customization, within-year reading order, optional music links and content/layout Undo/Redo. No new production-service authority was inferred.
+- Extend the existing validated local schema with optional fields to read earlier documents without reseeding. Drafts have forced-false context consent and remain separate from confirmed moments and stars. Backup serialization omits drafts and chat; local recovery may include drafts. Disclose and separately delete recovery copies because ordinary deletion cannot erase a previously retained copy.
+- Import validates exact fields, ownership, safe music hosts and media before a replacement confirmation. Header checks precede browser decoding; animation and dimensional limits bound raster input. Sequential decoding avoids parallel allocation spikes. Count reused media once in the 32 MiB unique budget and retain a 96 MiB duplication ceiling, so editing a saved page does not fail just because its draft references the same photos.
+- Journal-authored original words may change; conversation evidence remains immutable through keepMoment. Original dates, paired replies, identity and consent remain protected. Undo/Redo includes writing, media, fonts, music and layout; it is local to an editor session and capped at 30 steps. Drafts persist, undo stacks do not.
+- Music is a validated external link opened deliberately with noreferrer/noopener; no embed, autoplay, remote metadata request or recommendation integration. Covers preserve year chronology and original occurrence dates while allowing a custom reading sequence inside a year.
+- Emil guidance informed restrained Settings hierarchy and immediate editing feedback. React guidance informed stable local-store actions and serialized writes. Frontend testing used existing Playwright/Chrome because the Browser plugin is absent. Desktop/mobile rendered workflows and 71 tests pass; lint/build pass. Physical-device/Safari, actual quota exhaustion and production readiness remain unverified.
+
+## 21. Future Self management visual alignment — 2026-10-15
+
+- The owner explicitly flagged the whole `/future-self` page as the obsolete design. This extends the scoped visual authorization to that route only. Remove the public AppShell and oversized editorial headline in favor of the shared Echo shell, Your direction header, current-identity surface, actual destination year, personal anchors and quiet past-version disclosures.
+- Inline edit/cancel/save uses the existing versioning action; moments and their provenance remain unchanged. Archive uses the existing native dialog with scoped keyboard wrapping, Escape dismissal and focus return. Empty state points to onboarding; the old fixture-reactivation shortcut is not presented as a product action.
+- Horizon Day is a non-AI reflection preview using the selected stored identity, not an unrelated imported fixture. Choices do not silently edit identity or move memories. Future-dated horizons explicitly say preview. Past conversations remain read-only and their session-only limitation stays clear.
+- Chrome/Playwright rendered checks pass at 1440×1000, the owner's marked 703×884 viewport, 390×844 and 320×740 with reduced motion. Checks cover edit cancellation, version creation/reload, unchanged moment evidence, past details, Horizon Day choices, Escape/focus wrap, archive/no automatic activation and reload. No page/console errors or horizontal document overflow in these flows. Browser plugin absent; existing bundled Playwright used. Physical hardware/Safari remain untested.
+
+## 22. Cover-photo behavior and tape picker fixes — 2026-10-15
+
+- The owner clarified that a cover photo must be able to become the actual cover, rather than only an inset photo. New uploads default to optional `photoMode: full`; the image fills cover bounds with object-fit cover and a contrast shade behind text. A visible full/inset choice preserves both uses. Existing records without photoMode keep their previous inset appearance until the user chooses Fill the cover. The mode persists through drafts, save/reload and backup/restore.
+- Tape picker previews previously used a percentage height inside an auto-height cell, collapsing the strip. A fixed preview frame and explicit 21px tape height now make all four patterns visible. Upload has a dedicated wrapper with a 20px gap, shared by page and cover decoration pickers.
+- The Tapes category also accepts a user-uploaded raster as `custom-tape`, clipped to a tape strip. It uses the existing media validation, immutable-evidence boundary and direct manipulation; repeats remain independent placements. No raster source is permitted for built-in designs, and custom tape requires a validated local data source.
+- 72 tests, lint and production build pass. Focused rendered checks at 1440×1000, 390×844 and 320×740 pass full-cover bounds, full/inset switching, visible swatches, upload spacing, repeated/custom tapes, keyboard transforms and save/reload on both books and pages. Existing full journal desktop/mobile flows were rerun. Screenshots/scripts stay outside the repository. Physical-device/Safari remain untested; existing parent-lockfile build warning remains.

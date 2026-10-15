@@ -1,17 +1,51 @@
 "use client";
-import { useState } from "react"; import { useRouter } from "next/navigation"; import { Brand } from "@/components/brand"; import { Check } from "@/components/icons";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMockProductState } from "@/components/mock-product-state";
+import { BackIcon, OrbitIcon } from "@/components/echo/icons";
 import { MAX_IDENTITY_LENGTH } from "@/lib/redaction";
-import { MOCK_TODAY } from "@/lib/mock-data";
-import { formatHorizonLabel, horizonFromMonths, horizonMonthsAhead } from "@/lib/moment-lifecycle";
+import { addMonths, formatHorizonLabel, horizonFromMonths, horizonMonthsAhead } from "@/lib/moment-lifecycle";
 
-const presets=[6,12,36,60]; const dimensions=["Creative life","Health","Relationships","Way of working"];
-export default function Onboarding(){const router=useRouter();const{createIdentityVersion}=useMockProductState();const[step,setStep]=useState(0);const[identity,setIdentity]=useState("Someone who makes thoughtful creative work without abandoning the rest of her life");const[selected,setSelected]=useState<string[]>(["Creative life","Way of working"]);const[months,setMonths]=useState(36);const[custom,setCustom]=useState("");const toggle=(d:string)=>setSelected(s=>s.includes(d)?s.filter(x=>x!==d):s.length<4?[...s,d]:s);
-const customMonthsAhead=custom?horizonMonthsAhead(custom,MOCK_TODAY):null;
-const horizon=custom
-  ?customMonthsAhead!==null&&customMonthsAhead>=6?{targetMonth:custom,label:formatHorizonLabel(custom)}:null
-  :horizonFromMonths(months,MOCK_TODAY);
-const directionReady=Boolean(identity.trim());
-const horizonReady=Boolean(horizon);
-const activate=()=>{if(!directionReady||!horizon)return;createIdentityVersion({definition:identity.trim(),horizon});router.push("/now");};
-return <main className="shell min-h-screen py-7"><header className="flex items-center justify-between"><Brand/><span className="eyebrow">One active perspective</span></header><div className="mx-auto mt-12 max-w-4xl"><ol className="grid grid-cols-3 gap-2" aria-label="Onboarding progress">{["Direction","Horizon","Review"].map((l,i)=><li key={l} className={`border-t pt-3 text-xs ${i<=step?"border-sun text-ink":"border-line text-muted"}`}>{i+1}. {l}</li>)}</ol><section className="mt-10 grid gap-10 lg:grid-cols-[.7fr_1.3fr]"><div><p className="eyebrow">Stage {step+1} of 3</p><h1 className="display mt-4 text-5xl">{step===0?"Name the way you want to live.":step===1?"Choose enough distance to see differently.":"Meet the perspective you chose."}</h1><p className="mt-5 text-sm leading-6 text-muted">{step===0?"Describe a direction, not a guaranteed outcome or a perfect version of you.":step===1?"The minimum horizon is six months. A month and year are enough—no artificial day precision.":"This possible future does not know what will happen. It offers one calm point of view shaped by your direction."}</p></div><div className="panel p-6 sm:p-9">{step===0?<><label className="text-sm"><span className="mb-3 block">One possible version of me is…</span><textarea className="field min-h-36 resize-y" value={identity} maxLength={MAX_IDENTITY_LENGTH} onChange={e=>setIdentity(e.target.value)}/></label><fieldset className="mt-7"><legend className="text-sm">Optional dimensions</legend><p className="mt-1 text-xs text-muted">Choose the parts of life this perspective should hold together.</p><div className="mt-4 grid gap-2 sm:grid-cols-2">{dimensions.map(d=><button key={d} onClick={()=>toggle(d)} className={`flex items-center justify-between rounded-xl border p-3 text-left text-sm ${selected.includes(d)?"border-sun bg-sun/8":"border-line"}`}>{d}{selected.includes(d)?<Check className="size-4 text-sun"/>:null}</button>)}</div></fieldset></>:null}{step===1?<><div className="grid grid-cols-2 gap-3">{presets.map(m=><button key={m} onClick={()=>{setMonths(m);setCustom("");}} aria-pressed={!custom&&months===m} className={`rounded-xl border p-5 text-left ${!custom&&months===m?"border-sun bg-sun/8":"border-line"}`}><strong className="font-display text-2xl">{m<12?m:m/12}</strong><span className="ml-2 text-sm text-muted">{m<12?"months":m===12?"year":"years"}</span></button>)}</div><label className="mt-6 block text-sm"><span className="mb-2 block">Or choose a month and year</span><input type="month" min="2027-01" className="field" value={custom} onChange={e=>setCustom(e.target.value)} aria-invalid={Boolean(custom)&&!horizonReady}/></label>{custom&&!horizonReady?<p className="mt-2 text-xs leading-5 text-danger">The minimum horizon is six months. Choose a later month.</p>:null}</>:null}{step===2?<><p className="eyebrow text-sun">Possible future perspective</p><h2 className="display mt-4 text-3xl leading-tight">{identity}</h2><dl className="mt-8 grid gap-5 text-sm sm:grid-cols-2"><div><dt className="text-muted">Horizon</dt><dd className="mt-1">{horizon?.label}</dd></div><div><dt className="text-muted">Voice</dt><dd className="mt-1">Warm, honest, calm</dd></div><div className="sm:col-span-2"><dt className="text-muted">Dimensions</dt><dd className="mt-1">{selected.join(" · ")||"No dimensions selected"}</dd></div></dl><div className="mt-7 rounded-xl border border-line bg-canvas-soft p-4 text-sm leading-6 text-muted">One active perspective at a time. Archive it before activating another; its saved memories remain readable and are not inherited automatically.</div></>:null}<div className="mt-9 flex justify-between"><button className="button-secondary disabled:invisible" disabled={step===0} onClick={()=>setStep(s=>s-1)}>Back</button><button className="button-primary" disabled={(step===0&&!directionReady)||(step===1&&!horizonReady)} onClick={()=>step<2?setStep(s=>s+1):activate()}>{step<2?"Continue":"Activate perspective"}</button></div></div></section></div></main>}
+const presets = [6, 12, 36, 60];
+export default function Onboarding() {
+  const router = useRouter();
+  const { activeIdentity, createIdentityVersion } = useMockProductState();
+  const [today] = useState(() => new Date().toISOString().slice(0, 10));
+  const [step, setStep] = useState(0);
+  const [definition, setDefinition] = useState("");
+  const [reason, setReason] = useState("");
+  const [anchor, setAnchor] = useState("");
+  const [months, setMonths] = useState(36);
+  const [custom, setCustom] = useState("");
+  const [adult, setAdult] = useState(false);
+  const [replace, setReplace] = useState(false);
+  const horizon = custom ? horizonMonthsAhead(custom, today) >= 6
+    ? { targetMonth: custom, label: formatHorizonLabel(custom) } : null : horizonFromMonths(months, today);
+  const canContinue = step === 0 ? Boolean(definition.trim()) : step === 1 ? Boolean(horizon) : adult && (!activeIdentity || replace);
+
+  return <main className="echo-ui echo-stage"><section className="echo-onboarding">
+    <header className="echo-space-header"><Link href="/now" className="echo-icon-button" aria-label="Back to conversation"><BackIcon /></Link><span>Future Echo</span><OrbitIcon /></header>
+    <ol className="echo-onboarding-steps" aria-label="Setup progress">{["Direction", "Distance", "Meet yourself"].map((name, index) => <li key={name} aria-current={step === index ? "step" : undefined}>{name}</li>)}</ol>
+    <form onSubmit={(event) => {
+      event.preventDefault();
+      if (!canContinue) return;
+      if (step < 2) { setStep(step + 1); return; }
+      if (!horizon) return;
+      createIdentityVersion({ definition, horizon, reason, anchor, principles: anchor.trim() ? [anchor.trim()] : [] });
+      router.push("/now");
+    }}>
+      <h1>{step === 0 ? "Who are you becoming?" : step === 1 ? "A little farther along." : "One possible future. Yours."}</h1>
+      <p className="onboarding-intro">{step === 0 ? "Start with a direction that feels like yours. It can change as you do." : step === 1 ? "Choose where this imagined perspective is speaking from. At least six months gives you a little distance." : "A voice shaped by what matters to you, with room for doubt and changing your mind."}</p>
+      {step === 0 && <div className="echo-onboarding-fields">
+        <label>One possible version of me is…<textarea rows={3} maxLength={MAX_IDENTITY_LENGTH} value={definition} onChange={(event) => setDefinition(event.target.value)} placeholder="Someone who makes things without losing the rest of their life" required /></label>
+        <label>Why does this direction matter to you? <span>Optional</span><textarea rows={2} maxLength={MAX_IDENTITY_LENGTH} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="What made you want to begin?" /></label>
+        <label>What do you want to hold on to? <span>Optional</span><textarea rows={2} maxLength={MAX_IDENTITY_LENGTH} value={anchor} onChange={(event) => setAnchor(event.target.value)} placeholder="My curiosity. Time with the people I love…" /></label>
+      </div>}
+      {step === 1 && <div className="echo-onboarding-fields"><div className="echo-horizon-options">{presets.map((value) => <button type="button" key={value} aria-pressed={!custom && months === value} onClick={() => { setMonths(value); setCustom(""); }}><strong>{value < 12 ? value : value / 12}</strong><span>{value < 12 ? "months" : value === 12 ? "year" : "years"}</span></button>)}</div><label>Or choose a month and year<input type="month" value={custom} min={addMonths(today, 6).slice(0, 7)} onChange={(event) => setCustom(event.target.value)} aria-invalid={Boolean(custom && !horizon)} /></label>{custom && !horizon && <p className="echo-error">Choose a horizon at least six months from now.</p>}</div>}
+      {step === 2 && <div className="echo-onboarding-review"><div className="onboarding-future"><OrbitIcon /><div><span>{horizon?.targetMonth.slice(0, 4)} · Your Future Self</span><p>{definition}</p></div></div>{reason && <p><strong>Why I began</strong>{reason}</p>}{anchor && <p><strong>What I’m holding on to</strong>{anchor}</p>}<p>An imagined possible future, not a prediction. Warm, honest, calm. It cannot know what will happen or decide your path for you.</p><label className="echo-check-label"><input type="checkbox" checked={adult} onChange={(event) => setAdult(event.target.checked)} />I am 18 or older.</label>{activeIdentity && <label className="echo-check-label"><input type="checkbox" checked={replace} onChange={(event) => setReplace(event.target.checked)} />Close my current version and begin this one. My earlier conversations and moments stay readable and do not transfer into the new chat.</label>}</div>}
+      <div className="echo-form-actions">{step > 0 && <button type="button" className="echo-button outline" onClick={() => setStep(step - 1)}>Back</button>}<button type="submit" className="echo-button lilac" disabled={!canContinue}>{step === 2 ? "Meet your Future Self" : "Continue"}</button></div>
+      <p className="echo-preview-note">Local preview · no account or AI connection</p>
+    </form>
+  </section></main>;
+}

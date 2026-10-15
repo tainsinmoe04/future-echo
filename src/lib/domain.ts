@@ -13,6 +13,8 @@ export interface FutureSelfIdentityVersion {
     label: string;
   };
   principles: readonly string[];
+  reason?: string;
+  anchor?: string;
   createdAt: ISODateTime;
   supersededAt?: ISODateTime;
 }
@@ -42,10 +44,49 @@ export interface SavedMoment {
  * AI reply. revisitAt marks when the moment is meant to be revisited.
  */
 export interface JourneyMoment extends SavedMoment {
+  music?: { title: string; url: string };
+  paper?: "plain" | "ruled" | "grid" | "blush";
+  pageTransforms?: Readonly<Record<string, PageTransform>>;
   revisitAt: ISODateTime;
+  kind?: "conversation" | "personal";
+  photos?: readonly MomentPhoto[];
+  stickers?: readonly StickerName[];
+  stickerPlacements?: readonly StickerPlacement[];
+  noteFont?: NoteFont;
+  reflection?: string;
+}
+
+export interface PageTransform {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+}
+
+export type StickerName = "flower" | "shoes" | "hearts" | "star" | "daisy" | "moon" | "sparkle" | "leaf" | "cherry" | "bow" | "stamp" | "ticket" | "tape-butter" | "tape-lilac" | "tape-grid" | "tape-rose" | "clip-silver" | "clip-gold" | "clip-heart" | "custom" | "custom-tape";
+
+export type NoteFont = "clean" | "soft" | "handwritten" | "book";
+
+/** Coordinates are percentages of the page; size is a percentage of its width. */
+export interface StickerPlacement {
+  src?: string;
+  id: string;
+  name: StickerName;
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+}
+
+export interface MomentPhoto {
+  id: string;
+  src: string;
+  caption: string;
 }
 
 export interface ConversationMessage {
+  playlist?: import("./playlist").PlaylistSuggestion;
+  safety?: "normal" | "support";
   id: string;
   role: "user" | "assistant";
   content: string;

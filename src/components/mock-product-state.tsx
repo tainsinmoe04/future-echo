@@ -1,155 +1,268 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
-import type { FutureSelfIdentityVersion, JourneyMoment } from "@/lib/domain";
-import { activeIdentityVersion, MOCK_TODAY, pastIdentityVersion } from "@/lib/mock-data";
-
-const initialIdentityVersions: readonly FutureSelfIdentityVersion[] = [
-  pastIdentityVersion,
-  activeIdentityVersion,
-];
-
-const exampleJourneyMoment: JourneyMoment = {
-  id: "journey-difficult-day",
-  identityVersionId: activeIdentityVersion.id,
-  occurredAt: "2026-01-16T23:40:00Z",
-  revisitAt: "2026-07-16T23:40:00Z",
-  originalExcerpt:
-    "I feel like I am falling behind everyone. I cannot tell whether I am making the wrong choices or whether I am simply too tired to see them clearly.",
-  relatedAiReply:
-    "This day may be making everything feel more final than it is. The part of you wondering whether these choices still fit has not disappeared. It may simply be difficult to reach beneath the exhaustion. You do not have to settle your whole life tonight.",
-  myNote: "I may be exhausted, not lost.",
-  aiInterpretation:
-    "One possible reading is that exhaustion was narrowing the choices you could see, without deciding what those choices should be.",
-  consent: {
-    useInAiContext: false,
-    includeMyNoteInAiContext: false,
-    recordedAt: "2026-01-16T23:44:00Z",
-  },
-};
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { ConversationMessage, FutureSelfIdentityVersion, JourneyMoment } from "@/lib/domain";
+import { backendRequest, BackendRequestError } from "@/lib/backend-client";
+import { contextSyncPayload } from "@/server/context-sync";
+import type { SavedPlaylist } from "@/lib/playlist";
+import { activeIdentityVersion, pastIdentityVersion } from "@/lib/mock-data";
+import { firstMessage, initialThreads, previewReply, sampleMoments, type MessengerThread } from "@/lib/mock-messenger";
+import { keepMoment } from "@/lib/personal-space";
+import { DEFAULT_PREFERENCES, type SpacePreferences } from "@/lib/scrapbook";
+import { MAX_IDENTITY_LENGTH, MAX_MESSAGE_LENGTH } from "@/lib/redaction";
+import { createJournalSession } from "@/lib/journal-session";
+import { serializeJournalBackup } from "@/lib/journal-backup";
+import type { JournalSnapshot } from "@/lib/journal-snapshot";
 
 export interface CreateIdentityInput {
   definition: string;
-  horizon: {
-    targetMonth: string;
-    label: string;
-  };
+  horizon: { targetMonth: string; label: string };
+  reason?: string;
+  anchor?: string;
+  principles?: readonly string[];
 }
 
 interface MockProductStateValue {
+  connectedAI: boolean;
+  connectionError: string;
+  connectAI: () => Promise<void>;
+  disconnectAI: () => Promise<void>;
+  loadPastConversation: (id: string) => Promise<void>;
+  journalSnapshot: JournalSnapshot;
+  updateJournal: (change: (current: JournalSnapshot) => JournalSnapshot) => void;
+  restoreJournal: (snapshot: JournalSnapshot) => Promise<void>;
+  readRecovery: () => Promise<JournalSnapshot | null>;
+  deleteRecovery: () => Promise<void>;
+  storageStatus: "loading" | "saving" | "saved" | "error";
+  storageError: string;
+  retryStorage: () => void;
+  exportJournal: () => string;
+  preferences: SpacePreferences;
+  updatePreferences: (patch: Partial<SpacePreferences>) => void;
   identityVersions: readonly FutureSelfIdentityVersion[];
   activeIdentity: FutureSelfIdentityVersion | null;
-  journeyMoment: JourneyMoment | null;
+  moments: readonly JourneyMoment[];
+  threads: Record<string, MessengerThread>;
   createIdentityVersion: (input: CreateIdentityInput) => void;
   editActiveIdentityDefinition: (definition: string) => void;
   archiveActiveIdentity: () => void;
   activateMockIdentity: () => void;
   saveJourneyMoment: (moment: JourneyMoment) => void;
-  deleteJourneyMoment: () => void;
+  deleteMoment: (id: string) => void;
+  setThreadDraft: (identityId: string, draft: string) => void;
+  sendMessage: (identityId: string, content: string) => void;
+  ensureGreeting: (identityId: string) => void;
 }
 
 const MockProductState = createContext<MockProductStateValue | null>(null);
-
-function findActiveIdentity(versions: readonly FutureSelfIdentityVersion[]) {
-  return versions.find((version) => version.status === "active") ?? null;
-}
+const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
+const initialJournal: JournalSnapshot = { version: 1, preferences: DEFAULT_PREFERENCES,
+  identityVersions: [pastIdentityVersion, activeIdentityVersion], moments: sampleMoments };
 
 export function MockProductStateProvider({ children }: { children: React.ReactNode }) {
-  const [identityVersions, setIdentityVersions] = useState(initialIdentityVersions);
-  const [journeyMoment, setJourneyMoment] = useState<JourneyMoment | null>(exampleJourneyMoment);
+  const [journal] = useState(() => createJournalSession(initialJournal));
+  const local = useSyncExternalStore(journal.subscribe, journal.getSnapshot, journal.getSnapshot);
+  const { preferences, identityVersions, moments } = local.snapshot;
+  const setIdentityVersions = useCallback((change: (items: readonly FutureSelfIdentityVersion[]) => readonly FutureSelfIdentityVersion[]) => journal.update((current) => ({ ...current, identityVersions: change(current.identityVersions) })), [journal]);
+  const setMoments = useCallback((change: (items: readonly JourneyMoment[]) => readonly JourneyMoment[]) => journal.update((current) => ({ ...current, moments: change(current.moments) })), [journal]);
+  const updatePreferences = useCallback((patch: Partial<SpacePreferences>) => journal.update((current) => ({ ...current, preferences: { ...current.preferences, ...patch } })), [journal]);
+  const exportJournal = useCallback(() => serializeJournalBackup(journal.getSnapshot().snapshot), [journal]);
+  useEffect(() => { void journal.load(); }, [journal]);
+  useEffect(() => {
+    if (local.status !== "saving" && !(local.ready && local.status === "error")) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [local.ready, local.status]);
+  const [threads, setThreads] = useState(initialThreads);
+  const [connectedAI, setConnectedAI] = useState(false);
+  const [connectionError, setConnectionError] = useState("");
+  const connectionEpoch = useRef(0);
+  const requests = useRef(new Set<string>());
+  const attempts = useRef(new Map<string, { content: string; requestId: string }>());
+  const contextQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const updateAccountContext = useCallback((body: unknown, method = "PUT") => {
+    const pending = contextQueue.current.catch(() => {}).then(() => backendRequest("/api/context", body, method));
+    contextQueue.current = pending;
+    return pending;
+  }, []);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const activeIdentity = identityVersions.find((identity) => identity.status === "active") ?? null;
 
-  const value = useMemo(
-    () => ({
-      identityVersions,
-      journeyMoment,
-      activeIdentity: findActiveIdentity(identityVersions),
-      createIdentityVersion: ({ definition, horizon }: CreateIdentityInput) =>
-        setIdentityVersions((current) => {
-          const trimmed = definition.trim();
-          if (!trimmed) return current;
+  useEffect(() => {
+    const pending = timers.current;
+    return () => { pending.forEach(clearTimeout); pending.clear(); };
+  }, []);
 
-          const previous = findActiveIdentity(current);
-          const journeyId = previous?.journeyId ?? "new-journey";
-          const version = previous
-            ? Math.max(...current.filter((item) => item.journeyId === journeyId).map((item) => item.version)) + 1
-            : 1;
+  const cancelReplies = useCallback(() => {
+    connectionEpoch.current += 1;
+    requests.current.clear();
+    timers.current.forEach(clearTimeout);
+    timers.current.clear();
+    setThreads((current) => Object.fromEntries(Object.entries(current).map(([id, thread]) => [id, { ...thread, typing: false }])));
+  }, []);
 
-          const supersededCurrent = previous
-            ? current.map((item) =>
-                item.id === previous.id
-                  ? { ...item, status: "past" as const, supersededAt: `${MOCK_TODAY}T00:00:00Z` }
-                  : item,
-              )
-            : current;
+  const connectAI = useCallback(async () => {
+    if (!activeIdentity) throw new Error("Choose a direction first.");
+    cancelReplies();
+    const epoch = connectionEpoch.current;
+    await updateAccountContext(contextSyncPayload(activeIdentity, moments));
+    const [history, saved] = await Promise.all([
+      backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(activeIdentity.id)}`),
+      backendRequest<{ playlists: SavedPlaylist[] }>("/api/playlists"),
+    ]);
+    if (epoch !== connectionEpoch.current) {
+      await updateAccountContext({ archiveIdentityId: activeIdentity.id }, "POST");
+      throw new Error("Your direction changed. Connect it again when ready.");
+    }
+    setThreads((current) => ({ ...current, [activeIdentity.id]: { draft: current[activeIdentity.id]?.draft ?? "", typing: false, messages: history.messages } }));
+    journal.update((current) => ({ ...current, playlists: [...(current.playlists ?? []).filter((p) => !saved.playlists.some((s) => s.id === p.id)), ...saved.playlists.filter((p) => current.identityVersions.some((i) => i.id === p.identityVersionId))] }));
+    attempts.current.delete(activeIdentity.id);
+    setConnectionError(""); setConnectedAI(true);
+  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext]);
+  const disconnectAI = useCallback(async () => {
+    cancelReplies(); setConnectedAI(false);
+    await updateAccountContext({}, "DELETE");
+    attempts.current.clear();
+    setConnectionError("");
+    setThreads(initialThreads);
+  }, [cancelReplies, updateAccountContext]);
+  const loadPastConversation = useCallback(async (id: string) => {
+    if (!connectedAI || !identityVersions.some((identity) => identity.id === id && identity.status === "past")) return;
+    const epoch = connectionEpoch.current;
+    try { const history = await backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(id)}`);
+      if (epoch === connectionEpoch.current) setThreads((current) => ({ ...current, [id]: { draft: "", typing: false, messages: history.messages } }));
+    } catch (error) { if (epoch === connectionEpoch.current) setConnectionError(error instanceof Error ? error.message : "Earlier conversation could not be loaded."); }
+  }, [connectedAI, identityVersions]);
+  const restoreConnectedJournal = useCallback(async (snapshot: JournalSnapshot) => {
+    cancelReplies();
+    if (connectedAI) await disconnectAI();
+    await journal.restore(snapshot);
+  }, [cancelReplies, connectedAI, disconnectAI, journal]);
 
-          return [
-            ...supersededCurrent,
-            {
-              id: `${journeyId}-v${version}`,
-              journeyId,
-              version,
-              status: "active" as const,
-              definition: trimmed,
-              horizon,
-              principles: [],
-              createdAt: `${MOCK_TODAY}T00:00:00Z`,
-            },
-          ];
-        }),
-      editActiveIdentityDefinition: (definition: string) =>
-        setIdentityVersions((current) => {
-          const trimmed = definition.trim();
-          const active = findActiveIdentity(current);
-          if (!trimmed || !active || trimmed === active.definition) return current;
+  useEffect(() => {
+    if (!connectedAI || !activeIdentity) return;
+    let current = true;
+    void updateAccountContext(contextSyncPayload(activeIdentity, moments)).catch(() => {
+      if (current) { cancelReplies(); setConnectedAI(false); setConnectionError("Memory permissions could not be synchronized. AI is paused. Reconnect or use Settings to clear shared memory text before continuing."); }
+    });
+    return () => { current = false; };
+  }, [connectedAI, activeIdentity, moments, cancelReplies, updateAccountContext]);
 
-          // Editing the definition creates a new version; existing records
-          // keep the version under which they were created.
-          const version = Math.max(...current.map((item) => item.version)) + 1;
-          return [
-            ...current.map((item) =>
-              item.id === active.id
-                ? { ...item, status: "past" as const, supersededAt: `${MOCK_TODAY}T00:00:00Z` }
-                : item,
-            ),
-            {
-              ...active,
-              id: `${active.journeyId}-v${version}`,
-              version,
-              status: "active" as const,
-              definition: trimmed,
-              createdAt: `${MOCK_TODAY}T00:00:00Z`,
-              supersededAt: undefined,
-            },
-          ];
-        }),
-      archiveActiveIdentity: () =>
-        setIdentityVersions((current) =>
-          current.map((item) =>
-            item.status === "active"
-              ? { ...item, status: "past" as const, supersededAt: `${MOCK_TODAY}T00:00:00Z` }
-              : item,
-          ),
-        ),
-      activateMockIdentity: () =>
-        setIdentityVersions((current) => {
-          if (findActiveIdentity(current)) return current;
-          return current.map((item) =>
-            item.id === activeIdentityVersion.id
-              ? { ...item, status: "active" as const, supersededAt: undefined }
-              : item,
-          );
-        }),
-      saveJourneyMoment: setJourneyMoment,
-      deleteJourneyMoment: () => setJourneyMoment(null),
-    }),
-    [identityVersions, journeyMoment],
-  );
+  const createIdentityVersion = useCallback((input: CreateIdentityInput) => {
+    const definition = input.definition.trim();
+    if (!definition || definition.length > MAX_IDENTITY_LENGTH) return;
+    if (connectedAI && activeIdentity) void updateAccountContext({ archiveIdentityId: activeIdentity.id }, "POST").catch(() => setConnectionError("Your local direction changed, but account archiving could not be confirmed. Reconnect your current direction before using AI."));
+    cancelReplies();
+    setConnectedAI(false);
+    const stamp = new Date().toISOString();
+    const newJourneyId = `journey-${crypto.randomUUID()}`;
+    setIdentityVersions((current) => {
+      const previous = current.find((identity) => identity.status === "active");
+      const journeyId = previous?.journeyId ?? newJourneyId;
+      const version = Math.max(0, ...current.filter((identity) => identity.journeyId === journeyId).map((identity) => identity.version)) + 1;
+      return [
+        ...current.map((identity) => identity.status === "active" ? { ...identity, status: "past" as const, supersededAt: stamp } : identity),
+        { id: `${journeyId}-v${version}`, journeyId, version, status: "active", definition,
+          horizon: input.horizon, reason: input.reason?.trim() || undefined,
+          anchor: input.anchor?.trim() || undefined, principles: input.principles ?? [], createdAt: stamp },
+      ];
+    });
+  }, [cancelReplies, setIdentityVersions, connectedAI, activeIdentity, updateAccountContext]);
 
-  return <MockProductState.Provider value={value}>{children}</MockProductState.Provider>;
+  const editActiveIdentityDefinition = useCallback((definition: string) => {
+    if (!activeIdentity || definition.trim() === activeIdentity.definition) return;
+    createIdentityVersion({ ...activeIdentity, definition });
+  }, [activeIdentity, createIdentityVersion]);
+
+  const archiveActiveIdentity = useCallback(() => {
+    if (connectedAI && activeIdentity) void updateAccountContext({ archiveIdentityId: activeIdentity.id }, "POST").catch(() => setConnectionError("Archived on this device. Account archiving could not be confirmed; reconnect and check before using AI."));
+    cancelReplies();
+    setConnectedAI(false);
+    setIdentityVersions((current) => current.map((identity) => identity.status === "active"
+      ? { ...identity, status: "past", supersededAt: new Date().toISOString() } : identity));
+  }, [cancelReplies, setIdentityVersions, connectedAI, activeIdentity, updateAccountContext]);
+
+  const activateMockIdentity = useCallback(() => {
+    setIdentityVersions((current) => current.some((identity) => identity.status === "active") ? current
+      : current.map((identity) => identity.id === activeIdentityVersion.id ? { ...identity, status: "active", supersededAt: undefined } : identity));
+  }, [setIdentityVersions]);
+
+  const saveJourneyMoment = useCallback((moment: JourneyMoment) => {
+    setMoments((current) => keepMoment(current, moment));
+  }, [setMoments]);
+  const deleteMoment = useCallback((id: string) => journal.update((current) => ({ ...current,
+    moments: current.moments.filter((m) => m.id !== id), drafts: current.drafts?.filter((d) => d.id !== id),
+    books: current.books && Object.fromEntries(Object.entries(current.books).map(([year, book]) => [year, { ...book, order: book.order.filter((key) => key !== id) }])),
+    bookDrafts: current.bookDrafts && Object.fromEntries(Object.entries(current.bookDrafts).map(([year, book]) => [year, { ...book, order: book.order.filter((key) => key !== id) }])),
+  })), [journal]);
+  const setThreadDraft = useCallback((id: string, draft: string) => setThreads((current) => ({
+    ...current, [id]: { ...(current[id] ?? emptyThread), draft: draft.slice(0, MAX_MESSAGE_LENGTH) },
+  })), []);
+
+  const queueReply = useCallback((id: string, content: string, delay: number) => {
+    timers.current.set(id, setTimeout(() => {
+      timers.current.delete(id);
+      setThreads((current) => {
+        const thread = current[id] ?? emptyThread;
+        return { ...current, [id]: { ...thread, typing: false, messages: [...thread.messages,
+          { id: crypto.randomUUID(), role: "assistant", content, createdAt: new Date().toISOString() }] } };
+      });
+    }, delay));
+  }, []);
+
+  const ensureGreeting = useCallback((id: string) => {
+    if (connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
+    setThreads((current) => ({ ...current, [id]: { ...(current[id] ?? emptyThread), typing: true } }));
+    queueReply(id, firstMessage(activeIdentity), 900);
+  }, [activeIdentity, threads, queueReply, connectedAI]);
+
+  const sendMessage = useCallback((id: string, raw: string) => {
+    const content = raw.trim();
+    if (activeIdentity?.id !== id || !content || content.length > MAX_MESSAGE_LENGTH || timers.current.has(id) || requests.current.has(id)) return;
+    const previousAttempt = connectedAI ? attempts.current.get(id) : undefined;
+    const retrying = previousAttempt?.content === content;
+    setThreads((current) => {
+      const thread = current[id] ?? emptyThread;
+      return { ...current, [id]: { draft: "", typing: true, messages: retrying ? thread.messages : [...thread.messages,
+        { id: crypto.randomUUID(), role: "user", content, createdAt: new Date().toISOString() }] } };
+    });
+    if (!connectedAI) { queueReply(id, previewReply(content), 1100); return; }
+    requests.current.add(id); setConnectionError("");
+    const requestId = retrying ? previousAttempt.requestId : crypto.randomUUID();
+    attempts.current.set(id, { content, requestId });
+    const epoch = connectionEpoch.current;
+    void (async () => {
+      try {
+        await updateAccountContext(contextSyncPayload(activeIdentity, moments));
+        if (epoch !== connectionEpoch.current) return;
+        const result = await backendRequest<{ message: ConversationMessage }>("/api/ai", { identityId: id, message: content, requestId });
+        if (epoch !== connectionEpoch.current) return;
+        attempts.current.delete(id);
+        setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, messages: [...current[id].messages, result.message] } }));
+      } catch (error) {
+        if (epoch !== connectionEpoch.current) return;
+        if (error instanceof BackendRequestError && error.code !== "pending_request") attempts.current.delete(id);
+        setConnectionError(error instanceof Error ? error.message : "Your reply could not arrive.");
+        setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, draft: current[id].draft || content } }));
+      } finally { if (epoch === connectionEpoch.current) requests.current.delete(id); }
+    })();
+  }, [activeIdentity, queueReply, connectedAI, moments, updateAccountContext]);
+
+  const value = useMemo(() => ({ connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
+    journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal, readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
+    storageStatus: local.status, storageError: local.error, retryStorage: journal.retry, exportJournal,
+    createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
+    saveJourneyMoment, deleteMoment, setThreadDraft, sendMessage, ensureGreeting,
+  }), [connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
+    archiveActiveIdentity, activateMockIdentity, saveJourneyMoment, deleteMoment, setThreadDraft, sendMessage, ensureGreeting, local.snapshot, local.status, local.error, journal, exportJournal, restoreConnectedJournal]);
+
+  if (!local.ready) return <main style={{ minHeight: "100dvh", background: "#0b0b10", color: "#eeeaf5", padding: "12vh 24px" }}><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;
+  return <MockProductState.Provider value={value}><div data-echo-reading={preferences.readingSize} data-echo-motion={preferences.motion}>{children}</div></MockProductState.Provider>;
 }
 
 export function useMockProductState() {
-  const value = useContext(MockProductState);
-  if (!value) throw new Error("useMockProductState must be used inside MockProductStateProvider");
-  return value;
+  const context = useContext(MockProductState);
+  if (!context) throw new Error("useMockProductState must be used inside MockProductStateProvider");
+  return context;
 }

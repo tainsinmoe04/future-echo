@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
-import { Manrope, Nunito_Sans } from "next/font/google";
+import { Caveat, Lora, Manrope, Noto_Sans_Myanmar, Noto_Serif_Myanmar, Nunito_Sans, Padauk } from "next/font/google";
 import { MockProductStateProvider } from "@/components/mock-product-state";
 import "./globals.css";
+import "./echo.css";
 
 const body = Manrope({ variable:"--font-body", subsets:["latin"] });
 const display = Nunito_Sans({ variable:"--font-display", subsets:["latin"] });
+const handwritten = Caveat({ variable: "--font-handwritten", subsets: ["latin"], display: "swap", preload: false });
+const book = Lora({ variable: "--font-book", subsets: ["latin"], display: "swap", preload: false });
+const myanmar = Noto_Sans_Myanmar({ variable: "--font-myanmar", subsets: ["myanmar"], weight: ["400", "600"], display: "swap", preload: false });
+const myanmarSoft = Padauk({ variable: "--font-myanmar-soft", subsets: ["myanmar"], weight: "400", display: "swap", preload: false });
+const myanmarBook = Noto_Serif_Myanmar({ variable: "--font-myanmar-book", subsets: ["myanmar"], weight: "400", display: "swap", preload: false });
 export const metadata: Metadata = { title:{ default:"Future Echo", template:"%s — Future Echo" }, description:"A quiet conversation with one possible future perspective." };
-export default function RootLayout({ children }:{ children:React.ReactNode }) { return <html lang="en"><body className={`${body.variable} ${display.variable}`}><MockProductStateProvider>{children}</MockProductStateProvider></body></html>; }
+export default function RootLayout({ children }:{ children:React.ReactNode }) { return <html lang="en"><body className={`${body.variable} ${display.variable} ${handwritten.variable} ${book.variable} ${myanmar.variable} ${myanmarSoft.variable} ${myanmarBook.variable}`}><MockProductStateProvider>{children}</MockProductStateProvider></body></html>; }

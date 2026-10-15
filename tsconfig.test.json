@@ -13,6 +13,17 @@
     "src/lib/mock-data.ts",
     "src/lib/redaction.ts",
     "src/lib/moment-lifecycle.ts",
+    "src/lib/personal-space.ts",
+    "src/lib/scrapbook.ts",
+    "src/lib/journal-storage.ts",
+    "src/lib/journal-snapshot.ts",
+    "src/lib/journal-backup.ts",
+    "src/lib/journal-session.ts",
+    "src/lib/journal-features.ts",
+    "src/lib/playlist.ts",
+    "src/lib/journal-media.ts",
+    "src/lib/page-transform.ts",
+    "src/lib/mock-messenger.ts",
     "src/server/ai-context-builder.ts",
     "tests/**/*.ts"
   ]

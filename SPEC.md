@@ -1,9 +1,15 @@
 # Future Echo — Product and Implementation Specification
 
-Status: **Product decisions locked; mock lifecycle UI authorized**  
+Status: **Product safeguards locked; scoped messenger/scrapbook and gated Supabase + Gemini implementation authorized**
 Decision record: locked by the project owner on **2026-07-16** in the product-specification request that produced this revision. Earlier decisions retained here come from the pre-existing project specification and learnings. This date records documentation provenance, not an implementation or release date.
 
-Authorization granted on **2026-07-16** now includes mock UI for verbatim Save Moment selection and consent, versioned Current/Past Horizons, read-only past conversations, Horizon Day choices, and no-active-Future-Self states. Visual redesign, active AI, Supabase, auth, payments, and provider integration remain paused.
+Authorization granted on **2026-07-16** includes mock UI for verbatim Save Moment selection and consent, versioned Current/Past Horizons, read-only past conversations, Horizon Day choices, and no-active-Future-Self states. Subsequent approvals authorize the scoped messenger/scrapbook work. On **2026-10-15**, the owner explicitly requested backend replies and saveable music recommendations, and chose **Supabase + Gemini**. This supersedes earlier implementation pauses for those services only. No credentials/project are connected; the default AI endpoint remains inactive. Payments, deployment and public release are not authorized by that choice. See BACKEND_SETUP.md and the latest checkpoint.
+
+## Latest authorized backend scope — 2026-10-15
+
+Implement gated Supabase email accounts, server-owned conversation context/history, Gemini replies and explicitly saved song/artist playlists. Preserve short natural replies, imagined-future truth and safety behavior. Login alone never uploads the local journal. Connecting shares only the active identity and separately consented text; photos, drafts, layouts, interpretations and music metadata are excluded from memory context. Playlists are a separate collection, not Saved Moments or constellation growth. Search links must not pretend to be verified track IDs, external-account playlists or playback.
+
+Local implementation now includes migrations/RLS, verified-user APIs, HttpOnly sessions, quotas/rate limits/idempotency, history expiry and explicit connection/settings/UI. This does not establish live service readiness: actual project configuration, safety evaluation, hosted RLS/concurrency checks and background cleanup remain required. Full journal cloud storage, Free Saved Moment allowance enforcement, account-deletion UX and backup/provider-retention decisions are not implemented by the context table. BACKEND_SETUP.md lists these release gates. Existing consent/provenance rules and unresolved product decisions remain in force. Earlier statements describing entirely mock auth/provider controls are historical baselines, not the latest implementation checkpoint.
 
 ## 1. Product concept and differentiation
 
@@ -161,7 +167,7 @@ It must also clarify that this is an interpretation of selected evidence, not a 
 
 ## 5. Provisional dark-only wabi-sabi design direction
 
-The current working direction is dark-only and wabi-sabi-inspired. Do not add a light theme or theme toggle during this phase. This constrains the current mock; the final visual direction remains unresolved and requires explicit approval.
+This earlier direction remains guidance for untouched routes. Section 11 supersedes its palette, navigation, bubble, and font constraints only for the approved messenger, onboarding, Personal Space, and scrapbook surfaces. Do not add an app-wide light theme or theme toggle. Mascot and public-site artwork remain unapproved.
 
 ### Palette
 
@@ -281,11 +287,11 @@ The server-side context builder must enforce these rules by construction. Recent
 - The language consistently frames the identity as possible rather than predicted.
 - Onboarding uses three stages and offers every approved horizon option.
 - Only one default voice is presented.
-- `/now` visually distinguishes the user’s present voice from the possible future perspective without generic chat bubbles.
+- `/now` visually distinguishes present and possible-future voices using the approved intimate messenger treatment in Section 11.
 - Saving is optional, manual, reviewable, and explicitly confirmed.
 - `/memory` uses sparse realistic data and collapses empty months.
 - `/future-self` explains edit, archive, memory retention, and non-inheritance behavior.
-- Primary navigation contains Now, Memory, and Future Self only.
+- The main experience is one chat; its Your Space entry opens memories, settings, and direction management without a dashboard shell.
 
 ### Memory integrity
 
@@ -311,7 +317,7 @@ The server-side context builder must enforce these rules by construction. Recent
 
 ### Design and accessibility
 
-- Every route uses the current provisional dark-only palette.
+- The app shell stays dark; approved scrapbook pages may use light paper inside it, as specified in Section 11.
 - No light-mode toggle is present.
 - Text and interactive controls maintain accessible contrast.
 - Keyboard focus is visible.
@@ -362,3 +368,41 @@ The server-side context builder must enforce these rules by construction. Recent
 - Move to Public Beta after one month only if security, deletion, usage-limit, and safety gates pass.
 - Continue testing with 30–50 users through months 2–3.
 - “One month” and “months 2–3” are relative to the closed beta start date; no calendar launch date is implied or yet locked.
+
+## 11. Approved messenger, scrapbook, and personalization scope
+
+Provenance: the owner explicitly rejected the headline-led reading-page composition, supplied messenger and tactile scrapbook references, approved that direction, and authorized implementation in this conversation. On **2026-10-14**, they additionally requested usable settings, freely positioned stickers, and beautiful selectable fonts. These authorizations supersede conflicting earlier visual constraints only within this scope; they do not authorize production services or a mascot.
+
+- One intimate conversation with the user's imagined possible future self is primary. Short, responsive replies are the default; longer replies should be used only when warranted. The horizon follows the chosen identity, never an invented fixed year. Typing presence is messenger-like, not a claim of supernatural contact.
+- The shell is black with restrained lilac and butter-yellow accents. Distinct message surfaces and a familiar composer replace the earlier reading-form composition. Onboarding and contextual information explain that this is imagined, not prediction. The persona does not decide the user's direction or pressure them to continue a harmful path.
+- Your Space is a secondary drawer or full view. The constellation grows only from explicitly chosen life moments, including ordinary and difficult ones, never tasks, streaks, productivity scores, or progress toward a guaranteed future.
+- Memory may use tactile book covers, cream paper inside the dark shell, photographs, stickers, and handwritten or literary note typography. This is not authorization to turn chat or the whole app into a journal.
+- Personal authored moments and saved conversation pairs share the chronological memory collection. Authorship, immutable original excerpts, paired replies, identity provenance, optional notes, and separate context consent remain intact.
+- Stickers can be dragged with mouse or touch, placed by selecting then tapping, moved with arrow keys, resized, rotated, removed, and undone before confirmation. Position and size are page-relative. A page supports up to 12 stickers, including repeated designs. Reading mode can temporarily hide stickers without deleting them.
+- Four note/caption styles are available: Manrope, Nunito Sans, Caveat, and Lora. Matching Burmese fonts are Noto Sans Myanmar, Padauk, and Noto Serif Myanmar; the handwritten face applies only to Latin text. Decorative font choices never restyle the original excerpt or generated reply. Defaults apply only to new pages; saved pages retain their own choice.
+- Settings provide standard/larger reading text, follow-device/reduced motion, default note style, direction links, and truthful data information. No fake account, billing, notification, or security controls. System reduced motion always wins.
+- Photos, sticker placement, font choice, and display preferences are presentation data and never enter provider-facing context. No global setting silently grants memory consent.
+- As of 2026-10-15, confirmed moments, photos, layouts, identity versions, preferences and book customization persist locally after the save-complete status. Page and cover drafts persist separately and do not add stars or confer context permission. Conversations remain session-only. Local storage is browser/device-specific, may be lost through cleanup or eviction, and is not cloud backup. Authentication, billing, usage enforcement, and production AI remain unimplemented.
+- Landing, login and signup remain outside this redesign scope. On 2026-10-15, the owner separately identified the entire `/future-self` page as an obsolete design and authorized its alignment with Your Space. That route now uses the bounded black/lilac/butter shell for current direction, inline editing, past-version browsing, Horizon Day reflection preview and archive confirmation. This does not authorize public/auth-route redesign or production lifecycle integration.
+
+## 12. Authorized journal expansion — 2026-10-14
+
+The owner subsequently requested a fuller journal editor within Memory: movable photos and text, user-uploaded stickers, richer built-in stickers/tapes/paper clips, customizable book covers, page organization, and music. They authorized continuing implementation in verified increments, including scheduled continuation after usage resets.
+
+Implement local autosave and validated backup/restore before expanding the editor. Local storage must disclose browser/device scope and failure risks; no cloud durability or encryption claim. Hydration must finish before saving; failed reads must never seed over existing data. Reject unsupported or corrupt imports without altering existing records, preserve a pre-restore recovery copy, and require explicit confirmation before replacing data. Concurrent tabs must not silently overwrite each other.
+
+Journal-authored text may be editable; saved conversation excerpts and paired replies remain immutable evidence. Drafts are not confirmed Saved Moments, must not add constellation stars, and must never enter AI context. Media, cover design, and music choices likewise do not confer memory consent. No automatic extraction of memories.
+
+Later editor increments may add photo/text layout, undo/redo, custom local raster sticker uploads, decoration libraries, and book/page customization. Music starts with optional safe user-chosen links, no autoplay or external account/service connection. Recommendations remain design-only until integration is explicitly approved. Existing production-service restrictions remain in effect.
+
+Implementation truth (2026-10-15, latest owner request): the provider hydrates a validated local document and serializes saves with revision conflict protection. Snapshot v1 now accepts optional separately unconsented page drafts, cover drafts and book metadata while retaining compatibility with earlier saved documents. Export omits drafts and conversations. Settings supports import preview/confirmation, atomic pre-restore recovery, recovery download/restore and explicit recovery deletion. Existing recovery records are preserved by ordinary writes and can retain deleted content until separately removed or replaced by a confirmed restore. Failed reads never seed over stored data; failed writes retain this tab's state with error/retry/export options.
+
+Local journal editing now includes editable personal-authored words (conversation excerpts/replies remain immutable), 30-step content/layout Undo/Redo, uploaded JPG/PNG/WebP stickers, 19 built-in sticker/tape/clip designs, paper choices, six customizable cover themes with photographs/fonts/positioned decorations, and per-year page reading order without changing original dates. Optional named HTTPS links to supported music sites open only on user click; no external player, recommendation provider or account is connected. Page and cover drafts autosave locally and can be resumed or explicitly discarded. Saved books remain chronological by year; custom order changes reading sequence within a year.
+
+Raster inputs/imports receive header dimension checks before browser decode, then actual browser load/dimension validation. Limits are 5 MiB per raster, 8192 pixels per side, 32 megapixels, 32 MiB unique encoded media and 96 MiB total encoded media including repeated draft copies; exported files remain capped at 40 MiB. Animated PNG/WebP and unsupported image types are rejected. These are local resource limits, not subscription allowances. Consult JOURNAL_PROGRESS.md for verification and remaining cross-browser/device limits.
+
+Owner clarification (2026-10-15): a chosen photo can fill the whole book cover, not just appear as an inset. New uploads default to full-cover mode; a visible full/inset choice preserves both uses, and existing records retain inset presentation until explicitly changed. Tapes may also use user-uploaded validated raster designs, with the same direct manipulation and presentation-only context exclusions as other decorations. Tape selection must show actual visible swatches and keep the upload control separated from the grid.
+
+### Direct-manipulation follow-up
+
+The owner's subsequent explicit request prioritizes touch/mouse manipulation now, without size/rotation sliders. This scoped editor increment proceeds before unfinished persistence; it does not claim autosave is complete. Photos, original-word blocks, reply blocks, notes and stickers may be visually translated, scaled and rotated. Their text/provenance and consent rules are unchanged. Touch supports two-finger pinch/twist; mouse and single-touch users have object-attached handles. Keyboard alternatives, layout Undo/Redo, reset, and an untransformed reading view keep manipulation recoverable. The messenger and unrelated routes remain unchanged.
