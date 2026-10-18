@@ -49,7 +49,7 @@ export async function readJournalBackup(file: Pick<Blob, "size" | "text">): Prom
 /** Unencrypted local JSON; callers must disclose that before offering a download. */
 export function serializeJournalBackup(snapshot: JournalSnapshot, exportedAt = new Date().toISOString()): string {
   if (!isJournalSnapshot(snapshot)) throw new JournalBackupError("invalid", "The current records cannot be exported safely.");
-  const source = JSON.stringify({ format: "future-echo-backup", version: 1, exportedAt, snapshot: { ...snapshot, drafts: undefined, bookDrafts: undefined } });
+  const source = JSON.stringify({ format: "future-echo-backup", version: 1, exportedAt, snapshot: { ...snapshot, drafts: undefined, bookDrafts: undefined, onboardingDraft: undefined } });
   parseJournalBackup(source);
   return source;
 }

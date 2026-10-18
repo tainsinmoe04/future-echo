@@ -49,6 +49,9 @@ export const initialThreads: Record<string, MessengerThread> = Object.fromEntrie
   }],
 ]);
 
+/** Older previews installed examples. Identify them without deleting or rewriting local records. */
+export const isPreviewExample = (moment: JourneyMoment) => sampleMoments.some((sample) => sample.id === moment.id && sample.originalExcerpt === moment.originalExcerpt);
+
 export function firstMessage(identity: FutureSelfIdentityVersion) {
   return `Hey. It’s you, a little farther along.\n\nYou chose “${identity.definition}”. How is that direction feeling today?`;
 }

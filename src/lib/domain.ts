@@ -26,6 +26,7 @@ export interface SavedMomentConsent {
 }
 
 export interface SavedMoment {
+  calendarDate?: string;
   id: string;
   title?: string;
   identityVersionId: string;
@@ -44,6 +45,7 @@ export interface SavedMoment {
  * AI reply. revisitAt marks when the moment is meant to be revisited.
  */
 export interface JourneyMoment extends SavedMoment {
+  pageLayers?: readonly string[];
   music?: { title: string; url: string };
   paper?: "plain" | "ruled" | "grid" | "blush";
   pageTransforms?: Readonly<Record<string, PageTransform>>;
@@ -79,10 +81,13 @@ export interface StickerPlacement {
 }
 
 export interface MomentPhoto {
+  crop?: PhotoCrop;
   id: string;
   src: string;
   caption: string;
 }
+
+export interface PhotoCrop { x: number; y: number; zoom: number; aspect: "square" | "portrait" | "landscape" | "original" }
 
 export interface ConversationMessage {
   playlist?: import("./playlist").PlaylistSuggestion;

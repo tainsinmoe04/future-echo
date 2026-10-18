@@ -547,3 +547,32 @@
 .echo-saved-playlists { margin: 32px 0; }
 .echo-saved-playlists details { padding: 16px 0; border-bottom: 1px solid #ffffff24; }
 .echo-settings-section .echo-button { max-width: 100%; white-space: normal; }
+.photo-frame { display: block; width: 100%; overflow: hidden; background: #dfdbd2; }
+.photo-frame img { display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; }
+.photo-frame.original img { height: auto; }
+.paper-polaroid .photo-frame img { aspect-ratio: auto; }
+.photo-framing { margin: 18px 0; padding: 16px; border: 1px solid #82758e; border-radius: 18px; background: #17151e; color: #f2edf9; }
+.photo-framing h3 { font-size: 16px; }.photo-framing p { font-size: 12px; line-height: 1.6; margin: 8px 0 16px; color: #c2bacc; }
+.photo-framing-stage { max-width: 280px; margin: auto; cursor: grab; overflow: hidden; border-radius: 8px; }
+.photo-framing-stage .photo-frame { max-height: 360px; }
+.photo-framing .journal-tabs { margin-bottom: 0; }.photo-framing .journal-tabs button { min-width: 44px; }
+.direct-stickers { display: contents; }
+.journal-cover-photo { overflow: hidden; }
+.echo-messages > .echo-exchange-actions { margin: -10px 0 8px; }
+.memory-search { padding: 8px 0 22px; }.memory-search label { display: block; font-size: 12px; color: #c6bfd5; }
+.memory-search input, .memory-search select { width: 100%; min-height: 44px; border: 1px solid #51495f; border-radius: 12px; background: #17151f; color: #f2edf9; padding: 10px; margin-top: 6px; }
+.memory-search-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.memory-results { margin: 20px 0; }.memory-results > button { display: flex; width: 100%; text-align: left; gap: 12px; padding: 16px 0; border-bottom: 1px solid #373040; background: transparent; color: #eee9f5; }
+.memory-results time { flex: none; font-size: 11px; color: #b7adc9; }
+.echo-public { --canvas: #090a0e; --canvas-soft: #101016; --surface: #17151f; --ink: #f5f0fa; --muted: #b4adc2; --line: #353040; --sun: #ffedaf; background: #090a0e; color: #f5f0fa; min-height: 100dvh; }
+.echo-public .display { letter-spacing: -.045em; line-height: 1.08; }
+.echo-public h1.display { font-size: clamp(40px, 6vw, 74px); max-width: 11ch; }
+.echo-public h2.display { font-size: clamp(30px, 4vw, 48px); line-height: 1.15; }
+.echo-public .button-primary { background: #c8c6ff; color: #1c1830; border-radius: 999px; }
+.echo-public .button-secondary { background: transparent; color: #ded6ec; border-color: #79708a; border-radius: 999px; }
+.echo-public .field, .echo-public .panel { background: #17151f; border-color: #42394f; }
+.echo-demo { padding: 24px; border: 1px solid #3e354c; border-radius: 28px; background: #060708; min-width: 0; }
+.echo-demo > p { margin-bottom: 18px; }.echo-demo > header { display: grid; gap: 5px; margin-bottom: 28px; }.echo-demo > header span { font-size: 11px; color: #bbb2cd; }
+.echo-demo > button, .echo-demo > a { margin-top: 22px; }.echo-demo .echo-form-actions { margin-top: 24px; }.echo-demo .echo-paper { min-height: 0; margin: 16px 0; padding-bottom: 34px; }.echo-demo .paper-heading h1 { font-size: 24px; }
+.echo-direction-form input { min-height: 44px; width: 100%; background: #17151f; color: #eee8f6; padding: 12px; border: 1px solid #776586; border-radius: 12px; }
+@media (max-width: 639px) { .echo-public > header .button-secondary { display: none; } }

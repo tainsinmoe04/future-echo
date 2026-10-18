@@ -1,7 +1,13 @@
 import type { JourneyMoment, MomentPhoto, StickerName } from "./domain";
 import { addMonths, buildSavedMomentConsent } from "./moment-lifecycle";
-import { MAX_EXCERPT_LENGTH, MAX_NOTE_LENGTH } from "./redaction";
+import { MAX_JOURNAL_LENGTH, MAX_NOTE_LENGTH } from "./redaction";
 import { DECORATIONS } from "./journal-features";
+import { momentDay } from "./local-date";
+
+/** Explicit permission changes are separate from decorative/content edits. */
+export function changeMomentConsent(moment: JourneyMoment, useInAiContext: boolean, includeMyNoteInAiContext: boolean, stamp: string): JourneyMoment {
+  return { ...moment, consent: buildSavedMomentConsent({ useInAiContext, includeMyNoteInAiContext, note: moment.myNote }, stamp) };
+}
 
 export const STICKERS: readonly StickerName[] = DECORATIONS;
 export const MAX_PHOTOS = 4;
@@ -25,6 +31,7 @@ export function keepMoment(moments: readonly JourneyMoment[], moment: JourneyMom
     relatedAiReply: existing.relatedAiReply,
     identityVersionId: existing.identityVersionId,
     occurredAt: existing.occurredAt,
+    calendarDate: existing.calendarDate,
     revisitAt: existing.revisitAt,
     deletedAt: existing.deletedAt,
     kind: existing.kind,
@@ -46,7 +53,7 @@ export function createPersonalMoment(input: {
   useInAiContext: boolean; includeMyNoteInAiContext: boolean;
 }): JourneyMoment | null {
   const text = input.text.trim();
-  if (!text || text.length > MAX_EXCERPT_LENGTH || input.title.trim().length > 80) return null;
+  if (!text || text.length > MAX_JOURNAL_LENGTH || input.title.trim().length > 80) return null;
   if ((input.note?.trim().length ?? 0) > MAX_NOTE_LENGTH) return null;
   if (!Number.isFinite(Date.parse(input.occurredAt)) || Date.parse(input.occurredAt) > Date.parse(input.savedAt)) return null;
   if (input.photos.length > MAX_PHOTOS || input.stickers.some((sticker) => !STICKERS.includes(sticker))) return null;
@@ -65,7 +72,7 @@ export function memoryBooks(moments: readonly JourneyMoment[]) {
     .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt));
   const books = new Map<string, JourneyMoment[]>();
   for (const moment of sorted) {
-    const year = moment.occurredAt.slice(0, 4);
+    const year = momentDay(moment).slice(0, 4);
     books.set(year, [...(books.get(year) ?? []), moment]);
   }
   return [...books].map(([year, entries]) => ({ year, moments: entries }));

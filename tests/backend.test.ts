@@ -88,3 +88,17 @@ test("account identity is network-verified, never supplied by the browser", asyn
   await assert.rejects(db.user(new Request("http://localhost")), ApiError);
   const user = await db.user(new Request("http://localhost", { headers: { cookie: `fe-access=${"a".repeat(30)}` } })); assert.equal(user.email, "a@example.test");
 });
+
+test("modern server keys use apikey only; legacy service JWTs retain bearer authentication", async () => {
+  for (const key of ["sb_secret_fixture_not_real", "eyJlegacy.fixture.signature"]) {
+    const db = new SupabaseBackend(backendConfig({ SUPABASE_URL: "https://example.supabase.co", SUPABASE_SERVICE_ROLE_KEY: key }), async (_url, options) => {
+      const headers = new Headers(options?.headers);
+      assert.equal(headers.get("apikey"), key);
+      assert.equal(headers.get("authorization"), key.startsWith("sb_secret_") ? null : `Bearer ${key}`);
+      assert.equal(headers.get("prefer"), "return=representation");
+      assert.equal(options?.cache, "no-store");
+      return Response.json([]);
+    });
+    await db.rest("fe_profiles?select=user_id&limit=0", { headers: { Prefer: "return=representation", authorization: "Bearer wrong-token", apikey: "wrong-key" } });
+  }
+});

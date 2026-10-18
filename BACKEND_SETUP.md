@@ -1,5 +1,17 @@
 # Supabase + Gemini — implementation checkpoint
 
+## Migration applied with owner confirmation — 2026-10-17
+
+After the owner signed in and explicitly confirmed Run, the exact reviewed migration was executed in the selected future-echo project's SQL Editor. An initial public-table inventory was empty; the migration completed successfully as one transaction. Post-migration read-only metadata checks passed all 10 expectations: six application tables with RLS enabled, zero anonymous table access, zero authenticated direct writes, five authenticated-readable tables, six server functions, no anonymous/authenticated function execution and six service-role executable functions, with five owner-read policies. WSL Node server requests using the modern secret key then returned HTTP 200 for all six tables with limit=0. No account rows, journal content or test users were inserted; this is schema/security metadata verification, not a completed two-account or concurrency test. Verification SQL is in supabase/verification/schema-security.sql. Do not rerun the non-idempotent creation migration; use the read-only verification query instead. Manual SQL execution is not a claim that Supabase CLI migration history was registered.
+
+Gemini metadata still fails from the actual WSL runtime with HTTP 400 FAILED_PRECONDITION and an unsupported-location error. Google's available-regions page does not list Myanmar at this checkpoint. That supports a regional eligibility blocker but does not prove the key/model/billing is otherwise valid or identify Google's exact location classification. No generation request, routing workaround, billing/account change, deployment or provider substitution was made. AI remains disabled. The adapter now maps region, credentials, billing, model, access and quota errors to safe actionable messages without forwarding raw provider bodies; unknown preconditions remain generic rather than being mislabeled billing errors.
+
+## Live preflight — 2026-10-17
+
+The owner filled private .env.local and authorized continuing setup. No secret values are recorded here. Read-only checks reached Supabase Auth (HTTP 200). A server-side API-key-only request using the modern secret key returned PGRST205 for fe_profiles: the required application table is not exposed/found yet, so do not claim the migration is installed. The server adapter now supports modern sb_secret_ keys without a JWT Authorization header and preserves legacy service_role JWT behavior. The existing SUPABASE_SERVICE_ROLE_KEY variable accepts either format for compatibility.
+
+Gemini model metadata GET returned HTTP 400 FAILED_PRECONDITION with "User location is not supported for the API use." No content-generation request was sent, no journal data uploaded and no billing/network-location/account changes were made. Verify Google-supported regional/account access and billing eligibility; do not assume enabling billing resolves this specific response. FUTURE_ECHO_AI_ENABLED remains false. Remote SQL has not been applied by the agent. Confirm a development project and apply the reviewed migration in its SQL editor before account/data integration tests.
+
 2026-10-15: the owner explicitly chose Supabase + Gemini. This is configuration-gated integration code, **not a connected production deployment**. No credentials, remote migration, real provider call, deployment or push were performed. The default `/api/ai` still returns 501.
 
 ## Implemented
@@ -29,7 +41,7 @@ Copy `.env.example` to `.env.local` locally. Never paste keys into chat or commi
 | `APP_ORIGIN` | Exact browser origin, initially `http://localhost:3000`; HTTPS when hosted. |
 | `SUPABASE_URL` | Selected project's URL. |
 | `SUPABASE_PUBLISHABLE_KEY` | Project publishable/anon key for Auth. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Legacy JWT service-role key, server-only. New secret-key compatibility is not live-tested. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only modern `sb_secret_...` key or legacy service-role JWT. Modern keys use `apikey` only; never use them as a bearer JWT. The variable name is retained for existing local setups. |
 | `GEMINI_API_KEY` | Owner's server-only Gemini API key. |
 | `GEMINI_MODEL` | Explicit structured-output-compatible model ID; no silent cost/model selection. |
 | `FUTURE_ECHO_AI_ENABLED` | Default `false`; enable only for reviewed private integration tests, not public launch. |
@@ -67,3 +79,12 @@ npm run build
 - Password recovery and any separately selected OAuth flow. Google sign-in is explicitly unavailable. Payments remain excluded.
 
 The approved messenger/scrapbook direction is preserved. No mascot choice, unrelated redesign or music-provider integration is included.
+## Local Gemma trial — 2026-10-18
+
+The owner currently wants private local testing, not public launch. Installed model: `gemma3:12b`. In an ignored `.env.development.local`, set `FUTURE_ECHO_LOCAL_AI=true`. For this WSL repository with Ollama running on Windows, also set `FUTURE_ECHO_OLLAMA_WINDOWS_BRIDGE=true`. Keep `FUTURE_ECHO_AI_ENABLED=false`; existing provider credentials are not needed or changed.
+
+Run `npm run dev:local` with the WSL Node runtime, then visit `http://localhost:3000/now`. Create a local direction through onboarding if none exists. No sign-in or cloud Connect action is required. The local route is disabled in production even if its flag is accidentally set. To return to example replies, set `FUTURE_ECHO_LOCAL_AI=false` and restart development.
+
+The bridge is necessary because Windows Ollama was reachable while WSL `127.0.0.1:11434` was not. It performs only a fixed local `/api/chat` request and sends the payload on stdin; do not replace this with `0.0.0.0`, a tunnel, unrestricted CORS or public exposure. On a machine where Ollama and Next run in the same OS, leave the bridge flag false. There is no automatic cloud fallback.
+
+This is not E2EE, encrypted storage, cloud backup or a completed model-safety evaluation. Context remains current message + ten recent messages + active direction + up to three consented excerpts; note permission is separate. Photos, drafts, decoration, AI interpretations and archived/deleted moments are excluded. Requests may take up to three minutes on local hardware. A failed or malformed reply remains an error, not a fabricated example.

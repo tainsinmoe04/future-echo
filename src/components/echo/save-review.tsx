@@ -4,12 +4,13 @@ import { useMockProductState } from "@/components/mock-product-state";
 import { addMonths, createJourneyMoment } from "@/lib/moment-lifecycle";
 import { isVerbatimRedaction, MAX_EXCERPT_LENGTH, MAX_NOTE_LENGTH } from "@/lib/redaction";
 import type { ConversationMessage } from "@/lib/domain";
+import { localDate } from "@/lib/local-date";
 
 export function SaveReview({ user, reply, identityId, onCancel, onSave }: {
   user: ConversationMessage; reply: ConversationMessage; identityId: string;
   onCancel: () => void; onSave: (id: string) => void;
 }) {
-  const { saveJourneyMoment } = useMockProductState();
+  const { saveJourneyMoment, connectedAI } = useMockProductState();
   const [excerpt, setExcerpt] = useState(user.content);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -28,7 +29,7 @@ export function SaveReview({ user, reply, identityId, onCancel, onSave }: {
       note, useInAiContext: allowContext, includeMyNoteInAiContext: allowNote, consentRecordedAt: stamp });
     if (!moment) return;
     submitted.current = true;
-    saveJourneyMoment({ ...moment, kind: "conversation", title: title.trim() || "A conversation worth keeping", stickers: [] });
+    saveJourneyMoment({ ...moment, calendarDate: localDate(), kind: "conversation", title: title.trim() || "A conversation worth keeping", stickers: [] });
     onSave(moment.id);
   }}>
     <h2>Keep the exchange together.</h2>
@@ -45,7 +46,7 @@ export function SaveReview({ user, reply, identityId, onCancel, onSave }: {
       <textarea value={note} maxLength={MAX_NOTE_LENGTH} onChange={(event) => { setNote(event.target.value); if (!event.target.value.trim()) setAllowNote(false); }} rows={2} placeholder="What do you want to remember?" />
     </label>
     <fieldset className="echo-consent"><legend>Future AI context</legend>
-      <p>Saving keeps this record. Model use is a separate choice; no AI is connected in this preview.</p>
+      <p>Saving keeps this record. Model use is a separate choice.{connectedAI ? " Only permitted text may be used in later replies." : " No AI is connected in local preview."}</p>
       <label><input type="checkbox" checked={allowContext} onChange={(event) => { setAllowContext(event.target.checked); if (!event.target.checked) setAllowNote(false); }} />Allow my saved words in future AI context</label>
       {allowContext && note.trim() && <label><input type="checkbox" checked={allowNote} onChange={(event) => setAllowNote(event.target.checked)} />Also allow My Note</label>}
     </fieldset>

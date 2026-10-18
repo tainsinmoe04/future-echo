@@ -9,9 +9,9 @@ export interface PageEditing {
   onChange: (id: string, transform: PageTransform) => void;
 }
 
-export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing, children, className = "", style }: {
+export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing, children, className = "", style, layer }: {
   id: string; label: string; value?: PageTransform; page: RefObject<HTMLElement | null>;
-  editing?: PageEditing; children: ReactNode; className?: string; style?: CSSProperties;
+  editing?: PageEditing; children: ReactNode; className?: string; style?: CSSProperties; layer?: number;
 }) {
   const node = useRef<HTMLDivElement>(null);
   const points = useRef(new Map<number, Point>());
@@ -29,7 +29,7 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing
     if (!cancel) editing?.onChange(id, active.next);
     setPreview(null);
   };
-  return <div className={`echo-page-object ${className} ${editing ? "editable" : ""} ${selected ? "selected" : ""}`} style={style}>
+  return <div className={`echo-page-object ${className} ${editing ? "editable" : ""} ${selected ? "selected" : ""}`} style={{ ...style, zIndex: selected && editing ? 99 : layer }}>
     <div ref={node} data-object={id} className="echo-object-content" role={editing ? "group" : undefined}
       tabIndex={editing ? 0 : undefined} aria-label={editing ? label : undefined}
       aria-description={editing ? "Drag to move. Pinch and turn with two fingers, or drag the resize and rotate handles. Arrow keys move, plus and minus resize, square brackets rotate. Escape cancels." : undefined}

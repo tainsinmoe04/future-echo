@@ -19,8 +19,14 @@ export class SupabaseBackend {
   }
   async rest(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): Promise<unknown> {
     if (!this.config.serviceKey) throw new ApiError(503, "database_setup", "The server database is not configured yet.");
+    // Modern server keys are opaque API keys, not JWT bearer tokens.
+    // Legacy service_role JWTs still need their existing Authorization header.
+    const headers = new Headers({ "Content-Type": "application/json", ...options.headers });
+    headers.set("apikey", this.config.serviceKey);
+    if (this.config.serviceKey.startsWith("sb_secret_")) headers.delete("Authorization");
+    else headers.set("Authorization", `Bearer ${this.config.serviceKey}`);
     let response: Response;
-    try { response = await this.fetcher(`${this.config.supabaseUrl}/rest/v1/${path}`, { method: options.method ?? "GET", headers: { apikey: this.config.serviceKey, Authorization: `Bearer ${this.config.serviceKey}`, "Content-Type": "application/json", ...options.headers }, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }), cache: "no-store", signal: AbortSignal.timeout(12000) }); }
+    try { response = await this.fetcher(`${this.config.supabaseUrl}/rest/v1/${path}`, { method: options.method ?? "GET", headers, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }), cache: "no-store", signal: AbortSignal.timeout(12000) }); }
     catch { throw new ApiError(503, "database_unavailable", "Your account data could not be reached. Local pages have not been replaced."); }
     if (!response.ok) {
       let details = ""; try { const body = await response.json(); details = typeof body.message === "string" ? body.message : ""; } catch {}

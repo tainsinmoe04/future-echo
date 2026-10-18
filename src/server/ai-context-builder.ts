@@ -51,9 +51,9 @@ export function buildAIContext(input: BuildAIContextInput): AIContext {
     )
     .slice(0, MAX_SAVED_MOMENTS)
     .map((moment) => ({
-      originalExcerpt: moment.originalExcerpt,
+      originalExcerpt: moment.originalExcerpt.slice(0, 2000),
       ...(moment.myNote && moment.consent.includeMyNoteInAiContext
-        ? { myNote: moment.myNote }
+        ? { myNote: moment.myNote.slice(0, 500) }
         : {}),
     }));
 

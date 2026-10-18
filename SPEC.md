@@ -1,5 +1,23 @@
 # Future Echo — Product and Implementation Specification
 
+## Owner-authorized local Gemma trial — 2026-10-18
+
+The owner explicitly authorized replacing Gemini with installed Ollama `gemma3:12b` for private local testing only. Public launch is a separate later project. `/api/local-ai` is opt-in, development-only and same-origin/loopback guarded; production `/api/ai`, Supabase synchronization and cloud fallback are not enabled by this trial. Browser-owned local identity/session data are validated and projected through the existing server context builder; this is not the production server-owned account contract. Keep immutable saved conversation evidence, separate note permission and all persona/crisis boundaries unchanged. No redesign, deployment, payment or push is authorized.
+
+Local inference is not E2EE. Saved browser records and JSON backups remain unencrypted. Local trial conversations remain session-only; explicit Saved Moments and playlists use existing local persistence. The Windows/WSL bridge sends JSON on stdin to a fixed Windows localhost request, never interpolates user text into a command, and does not expose Ollama to the LAN. Do not silently switch to cloud when local inference fails.
+
+## Latest owner-authorized non-API completion — 2026-10-15
+
+The owner explicitly approved all findings and additions in the non-API audit: reversible per-moment/note consent, Myanmar-safe deletion-only redaction, local calendar dates, empty real first-use space with isolated demo, saving earlier exchanges, persisted onboarding drafts, complete local horizon/principle version editing and Horizon Day actions, public/auth visual alignment, memory search/calendar filters, nondestructive photo framing, object layer order, longer journal writing and committed browser/CI checks. This supersedes earlier public-route visual exclusions only for alignment with the existing black/lilac/butter system. No new mascot, art direction, production service connection, payment, deployment or push is implied.
+
+New installs start without sample identities, moments or conversations. The landing demo is component-local and never confers consent or adds stars. Existing local records, including old preview examples, are preserved; recognizable examples are labeled rather than silently removed. English redaction keeps whole words; Myanmar may remove complete grapheme clusters in original order, never insert, normalize or rewrite source text. Original saved conversation evidence stays immutable.
+
+Personal journal pages support 20,000 characters; notes support 2,000. Conversation messages/excerpts remain limited to 2,000. Provider-facing saved excerpts are bounded to their first 2,000 characters and separately permitted notes to their first 500, disclosed in the consent controls. Presentation-only crop and layer metadata never enter model context. Local calendarDate preserves the chosen day without changing the original UTC instant or moving old records between years.
+
+Onboarding drafts are private, autosaved and excluded from ordinary exports. Age/replacement confirmations are never restored from drafts. Horizon Day choices persist separately from moments and create no stars or permission. Keep/continue retains the direction; extending opens a reviewed new-version form; replacing or beginning again from past words goes through setup and explicit confirmation, never automatic memory transfer. Search is local and chronological; no inferred categories or productivity scoring are introduced.
+
+Browser tests use fabricated records in isolated storage, with desktop/mobile and reduced-motion coverage. Hosted CI runs only after a later push; physical-device/Safari testing remains a separate validation requirement.
+
 Status: **Product safeguards locked; scoped messenger/scrapbook and gated Supabase + Gemini implementation authorized**
 Decision record: locked by the project owner on **2026-07-16** in the product-specification request that produced this revision. Earlier decisions retained here come from the pre-existing project specification and learnings. This date records documentation provenance, not an implementation or release date.
 

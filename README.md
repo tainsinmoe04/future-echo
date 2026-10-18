@@ -4,6 +4,16 @@ Future Echo is a dark, quiet reflective product for speaking with one possible f
 
 Read [SPEC.md](./SPEC.md) and [LEARN.md](./LEARN.md) before changing product behavior or visual direction. They record locked requirements, durable decisions, and rejected approaches.
 
+### Latest local UX completion
+
+Pre-connection resilience and hardware/safety review steps are in [PRE_CONNECTION_CHECKLIST.md](./PRE_CONNECTION_CHECKLIST.md). The repository now includes isolated-browser failure-path tests and a 16-case bilingual offline safety corpus. Corpus checks are not live model evaluation; actual-device, screen-reader and provider/account-deletion policy gates remain explicit.
+
+Validated on 2026-10-16: 88 unit tests, SQL checks, lint, full TypeScript check, production build and 15 browser tests pass. Final browser tests used the production server with reduced motion asserted. For a separate local test server, set `ECHO_BASE_URL=http://localhost:3001`; CI builds first and then starts the production server. Physical-device/Safari and hosted CI checks remain outstanding. See JOURNAL_PROGRESS.md for the development-server retry and exact coverage.
+
+New installs start empty; the public demo never becomes personal memory. Memory controls now allow permission changes, Myanmar redaction, earlier-exchange saving, local dates, resumable setup, versioned horizon/principles and meaningful Horizon Day actions. Journal adds local search/year/month filters, original-preserving photo framing, layer order, 20,000-character personal pages and 2,000-character notes. Model context remains bounded to 2,000-character excerpts and 500-character permitted notes. Existing records are never reset.
+
+`npm run test:e2e` runs the committed browser suite against localhost:3000 (start the app first). `PW_CHANNEL=chrome` uses installed Chrome; otherwise install Chromium with `npx playwright install chromium`. Desktop 1440×1000, mobile 390×844 and small mobile 320×740 are configured. GitHub checks run unit/SQL/lint/build/browser on future pushes and pull requests, with no provider credentials or deployment.
+
 ### Current preview
 
 `/future-self` now shares Your Space's dark/lilac/butter layout rather than the public-site shell. It supports inline versioned direction editing, past-version reading links, a non-AI Horizon Day preview and archive confirmation; existing moments retain their provenance.
@@ -79,3 +89,8 @@ npm test
 npm run lint
 npm run build
 ```
+## Private local Gemma trial (2026-10-18)
+
+Ollama model: `gemma3:12b`. For the owner-authorized private development trial, use ignored `.env.development.local` with `FUTURE_ECHO_LOCAL_AI=true`; enable `FUTURE_ECHO_OLLAMA_WINDOWS_BRIDGE=true` only for WSL Next + Windows Ollama. Run `npm run dev:local` inside WSL, then open `http://localhost:3000/now`. The bridge keeps Ollama on Windows localhost, without exposing its port. See BACKEND_SETUP.md for full instructions.
+
+This trial needs no cloud key or sign-in, uses no automatic cloud fallback, and cannot enable local inference in a production build. Existing Gemini/Supabase production gating remains unchanged. Local records/backups are not encrypted; this is not E2EE or public-launch readiness.

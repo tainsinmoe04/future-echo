@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMockProductState } from "@/components/mock-product-state";
 import { EchoDialog } from "@/components/echo/dialog";
@@ -10,13 +10,14 @@ import { SaveReview } from "@/components/echo/save-review";
 import { BackIcon, ClipIcon, OrbitIcon, PlusIcon, SendIcon, StarIcon } from "@/components/echo/icons";
 import { MAX_MESSAGE_LENGTH } from "@/lib/redaction";
 import { horizonDistance } from "@/lib/personal-space";
+import { localDate } from "@/lib/local-date";
 import type { MessengerThread } from "@/lib/mock-messenger";
 import { PlaylistCard } from "@/components/echo/playlist-card";
 
 const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 
 function Conversation() {
-  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, connectionError, loadPastConversation } = useMockProductState();
+  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, localAI, connectionError, loadPastConversation } = useMockProductState();
   const query = useSearchParams();
   const pastIdentity = identityVersions.find((identity) => identity.id === query.get("past") && identity.status === "past");
   const identity = pastIdentity ?? activeIdentity;
@@ -28,11 +29,8 @@ function Conversation() {
   const [about, setAbout] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
+  const following = useRef(true);
   const reviewTrigger = useRef<HTMLButtonElement | null>(null);
-  const latestUserIndex = thread.messages.findLastIndex((message) => message.role === "user");
-  const user = thread.messages[latestUserIndex];
-  const reply = thread.messages.at(-1);
-  const hasExchange = user && reply?.role === "assistant" && latestUserIndex < thread.messages.length - 1;
   const year = identity?.horizon.targetMonth.slice(0, 4);
 
   useEffect(() => {
@@ -42,11 +40,12 @@ function Conversation() {
 
   useEffect(() => {
     const element = scroller.current;
-    if (element && !saving) element.scrollTop = element.scrollHeight;
+    if (element && !saving && following.current) element.scrollTop = element.scrollHeight;
   }, [thread.messages.length, thread.typing, saving]);
 
   const submit = () => {
     if (!identity || readOnly || !thread.draft.trim() || thread.typing) return;
+    following.current = true;
     setSaving(null);
     sendMessage(identity.id, thread.draft);
     requestAnimationFrame(() => composer.current?.focus());
@@ -59,24 +58,21 @@ function Conversation() {
       <div className="echo-header-light" aria-hidden="true" />
       <header className="echo-chat-header">
         {readOnly && <Link href="/now" className="echo-icon-button" aria-label="Return to current conversation"><BackIcon /></Link>}
-        <div className="echo-chat-heading"><h1>{year} <span>·</span> Your Future Self</h1><p>{horizonDistance(identity.horizon.targetMonth, new Date().toISOString().slice(0, 10))}{readOnly ? " · Read only" : ""}</p><button className="echo-context-link" onClick={() => setAbout(true)}>An imagined possible future</button></div>
+        <div className="echo-chat-heading">{!readOnly && identity.horizon.targetMonth <= localDate().slice(0, 7) && <Link href="/future-self" className="echo-context-link">Your horizon is here · take a moment</Link>}<h1>{year} <span>·</span> Your Future Self</h1><p>{horizonDistance(identity.horizon.targetMonth, localDate())}{readOnly ? " · Read only" : ""}</p><button className="echo-context-link" onClick={() => setAbout(true)}>An imagined possible future</button></div>
         <button className="echo-orbit-button" onClick={() => setSpace({})} aria-label="Open Your Space"><OrbitIcon /><span>Your Space</span></button>
       </header>
-      <div className="echo-chat-scroll" ref={scroller}>
+      <div className="echo-chat-scroll" ref={scroller} onScroll={(event) => { const el = event.currentTarget; following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
         <div className={`echo-presence ${thread.typing && !readOnly ? "is-typing" : ""}`} role="status">
           {thread.typing && !readOnly ? <span><i aria-hidden="true"><b /><b /><b /></i>{year} · Your Future Self is typing…</span> : <span className="echo-presence-rest">{readOnly ? "From an earlier direction" : "A little farther along"}</span>}
         </div>
         <div role="log" aria-label="Conversation messages" aria-live="polite" aria-relevant="additions text" className="echo-messages">
-          {thread.messages.map((message) => <article key={message.id} className={`echo-message ${message.role === "user" ? "from-present" : "from-future"}`}><span className="sr-only">{message.role === "user" ? "You" : message.safety === "support" ? "Support outside the future-self perspective" : "Your possible future self"}: </span>{message.safety === "support" && <small>Stepping out of the future-self perspective</small>}<p>{message.content}</p>{message.playlist && <PlaylistCard playlist={message.playlist} messageId={message.id} />}</article>)}
+          {thread.messages.map((message, index) => { const previousUser = message.role === "assistant" ? thread.messages.slice(0, index).findLast((item) => item.role === "user") : undefined; return <Fragment key={message.id}><article className={`echo-message ${message.role === "user" ? "from-present" : "from-future"}`}><span className="sr-only">{message.role === "user" ? "You" : message.safety === "support" ? "Support outside the future-self perspective" : "Your possible future self"}: </span>{message.safety === "support" && <small>Stepping out of the future-self perspective</small>}<p>{message.content}</p>{message.playlist && <PlaylistCard playlist={message.playlist} messageId={message.id} />}</article>{previousUser && !readOnly && !settled[message.id] && saving !== message.id && <div className="echo-exchange-actions" aria-label={`Actions for reply ${index + 1}`}><button className="echo-button butter" onClick={(event) => { reviewTrigger.current = event.currentTarget; setSaving(message.id); }}><StarIcon />Save this moment</button><button className="echo-button outline" onClick={() => { setSettled((current) => ({ ...current, [message.id]: true })); composer.current?.focus(); }}>Leave it here</button></div>}{previousUser && saving === message.id && <SaveReview key={message.id} user={previousUser} reply={message} identityId={identity.id} onCancel={() => { setSaving(null); requestAnimationFrame(() => reviewTrigger.current?.focus()); }} onSave={(id) => { setSettled((current) => ({ ...current, [message.id]: id })); setSaving(null); requestAnimationFrame(() => composer.current?.focus()); }} />}{typeof settled[message.id] === "string" && <div className="echo-saved-line" role="status">Kept in your memory book. <button onClick={() => setSpace({ momentId: String(settled[message.id]) })}>Open moment</button></div>}</Fragment>; })}
         </div>
-        {hasExchange && !readOnly && !thread.typing && !settled[reply.id] && saving !== reply.id && <div className="echo-exchange-actions"><button className="echo-button butter" onClick={(event) => { reviewTrigger.current = event.currentTarget; setSaving(reply.id); }}><StarIcon />Save this moment</button><button className="echo-button outline" onClick={() => { setSettled((current) => ({ ...current, [reply.id]: true })); composer.current?.focus(); }}>Leave it here</button></div>}
-        {hasExchange && saving === reply.id && <SaveReview key={reply.id} user={user} reply={reply} identityId={identity.id} onCancel={() => { setSaving(null); requestAnimationFrame(() => reviewTrigger.current?.focus()); }} onSave={(id) => { setSettled((current) => ({ ...current, [reply.id]: id })); setSaving(null); requestAnimationFrame(() => composer.current?.focus()); }} />}
-        {hasExchange && typeof settled[reply.id] === "string" && <div className="echo-saved-line" role="status">Kept in your memory book. <button onClick={() => setSpace({ momentId: String(settled[reply.id]) })}>Open moment</button></div>}
         {readOnly && !thread.messages.length && <p className="echo-muted">No conversation was kept for this version.</p>}
       </div>
       {readOnly ? <footer className="echo-readonly"><p>This conversation belongs to an earlier direction.</p><Link href="/now" className="echo-button white">Return to your current chat</Link></footer> : <footer className="echo-composer-area">
         {connectionError && <p className="echo-muted" role="alert">{connectionError} Your words remain here; check before sending again.</p>}
-        <div className="echo-composer-above"><span>{connectedAI ? "Connected · Gemini · imagined perspective" : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
+        <div className="echo-composer-above"><span>{localAI ? "Local Gemma · on this computer" : connectedAI ? "Connected · Gemini · imagined perspective" : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
         <form className="echo-composer" onSubmit={(event) => { event.preventDefault(); submit(); }}>
           <button type="button" className="echo-icon-button" aria-label="Add a moment with photos" onClick={() => setSpace({ create: true })}><ClipIcon /></button>
           <label htmlFor="echo-message" className="sr-only">Message your future self</label>
@@ -88,7 +84,7 @@ function Conversation() {
       </footer>}
     </main>
     <EchoDialog open={Boolean(space)} label="Your Space" onClose={() => setSpace(null)} className="echo-space-drawer"><PersonalSpace onClose={() => setSpace(null)} initialMomentId={space?.momentId} initialCreate={space?.create} /></EchoDialog>
-    <EchoDialog open={about} label="About this possible future" onClose={() => setAbout(false)} className="echo-about-dialog"><section className="echo-about"><OrbitIcon /><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p><p className="echo-muted">{connectedAI ? "Gemini replies use your current direction, up to ten recent messages and up to three consented saved excerpts. This is not professional care." : "This preview uses sample replies. No AI provider is connected."}</p><button className="echo-button lilac" onClick={() => setAbout(false)}>Back to our conversation</button></section></EchoDialog>
+    <EchoDialog open={about} label="About this possible future" onClose={() => setAbout(false)} className="echo-about-dialog"><section className="echo-about"><OrbitIcon /><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p><p className="echo-muted">{localAI ? "Gemma replies run locally through Ollama. No cloud fallback is used. Conversations reset on refresh; saved moments stay on this device. This is an imagined perspective, not professional care." : connectedAI ? "Gemini replies use your current direction, up to ten recent messages and up to three consented saved excerpts. This is not professional care." : "This preview uses sample replies. No AI provider is connected."}</p><button className="echo-button lilac" onClick={() => setAbout(false)}>Back to our conversation</button></section></EchoDialog>
   </div>;
 }
 

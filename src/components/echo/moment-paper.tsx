@@ -4,6 +4,9 @@ import type { JourneyMoment, StickerPlacement } from "@/lib/domain";
 import { boundSticker, stickersForMoment } from "@/lib/scrapbook";
 import { StickerLayer, type StickerEditing } from "./sticker-layer";
 import { PageObject, type PageEditing } from "./page-object";
+import { FramedPhoto } from "./photo-framing";
+import { momentDay } from "@/lib/local-date";
+import { pageObjectIds } from "@/lib/journal-tools";
 import { Sticker } from "./sticker";
 
 export function MomentPaper({ moment, placements = stickersForMoment(moment), editing, pageEditing }: {
@@ -20,7 +23,8 @@ export function MomentPaper({ moment, placements = stickersForMoment(moment), ed
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const objectProps = (id: string, label: string) => ({ id, label, editing: pageEditing, value: moment.pageTransforms?.[id] });
+  const layerOrder = [...new Set([...(moment.pageLayers ?? []), ...pageObjectIds({ ...moment, stickerPlacements: placements })])];
+  const objectProps = (id: string, label: string) => ({ id, label, layer: 2 + layerOrder.indexOf(id), editing: pageEditing, value: moment.pageTransforms?.[id] });
   const suppressPlacementClick = useRef(false);
   return <article ref={page} className={`echo-paper paper-${moment.paper ?? "plain"} ${editing ? "arranging-stickers" : ""}`} data-note-font={moment.noteFont ?? "handwritten"} aria-label={moment.title || "Saved moment"}
     onPointerDownCapture={() => { suppressPlacementClick.current = false; }}
@@ -37,10 +41,9 @@ export function MomentPaper({ moment, placements = stickersForMoment(moment), ed
       editing.onChange(placements.map((item) => item.id === editing.selected ? boundSticker({ ...item, x: (event.clientX - rect.left) / rect.width * 100, y: (event.clientY - rect.top) / rect.height * 100 }, rect.width, rect.height) : item));
     }}>
     <div className="paper-rings" aria-hidden="true">{[0, 1, 2, 3, 4].map((ring) => <i key={ring} />)}</div>
-    <header className="paper-heading"><h1>{moment.title || "A moment worth keeping"}</h1><time dateTime={moment.occurredAt}>{new Date(moment.occurredAt).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</time></header>
+    <header className="paper-heading"><h1>{moment.title || "A moment worth keeping"}</h1><time dateTime={moment.occurredAt}>{new Date(`${momentDay(moment)}T12:00:00Z`).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</time></header>
     <div className="paper-photos">{moment.photos?.map((photo) => <PageObject page={page} key={photo.id} {...objectProps(`photo:${photo.id}`, "Photo")}><figure className="paper-polaroid">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={photo.src} alt={photo.caption || "A photo chosen for this moment"} draggable={false} />
+      <FramedPhoto src={photo.src} alt={photo.caption || "A photo chosen for this moment"} crop={photo.crop} />
       {photo.caption && <figcaption className="note-styled">{photo.caption}</figcaption>}
     </figure></PageObject>)}</div>
     <PageObject page={page} {...objectProps("words", "My words")}><section className="paper-text"><h2>My words</h2><p className="paper-original">{moment.originalExcerpt}</p></section></PageObject>

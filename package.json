@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "tsc -p tsconfig.test.json && node --test \".test-dist/tests/*.test.js\"",
-    "test:db": "node scripts/verify-backend-sql.mjs"
+    "test:db": "node scripts/verify-backend-sql.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "16.2.10",
@@ -16,6 +18,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@electric-sql/pglite": "0.5.10",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

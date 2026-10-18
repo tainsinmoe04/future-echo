@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { useMockProductState } from "@/components/mock-product-state";
 import { BackIcon } from "./icons";
 import { FontPicker } from "./font-picker";
@@ -7,9 +8,11 @@ import { JournalStorageStatus } from "./journal-storage-status";
 import { BackendSettings } from "./backend-settings";
 
 export function SpaceSettings({ onClose }: { onClose: () => void }) {
+  const backButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => { backButton.current?.focus(); }, []);
   const { preferences, updatePreferences, identityVersions, activeIdentity } = useMockProductState();
   return <section className="echo-settings">
-    <header className="echo-space-header"><button className="echo-icon-button" aria-label="Back to Your Space" onClick={onClose}><BackIcon /></button><h1>Settings</h1><span className="settings-spacer" /></header>
+    <header className="echo-space-header"><button ref={backButton} className="echo-icon-button" aria-label="Back to Your Space" onClick={onClose}><BackIcon /></button><h1>Settings</h1><span className="settings-spacer" /></header>
     <div className="echo-settings-scroll">
       <div className="journal-settings-heading"><span className="journal-eyebrow">YOUR LITTLE CORNER</span><p className="echo-settings-intro">Make room<br />for yourself.</p><p>Small comforts for the pages you keep.</p></div>
       <BackendSettings />
