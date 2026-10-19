@@ -1,5 +1,10 @@
 # Future Echo journal implementation checkpoint
 
+## Rotation correction — 2026-10-19
+
+- Removed the rejected +/-15-degree toolbar actions only. Photo rotation continues through the shared sticker-style direct handle, pinch/twist and keyboard fallback; all other compact editor/welcome behavior remains unchanged.
+- Focused isolated Chrome at 1440x1000 and 390x844: mouse and emulated touch handle drag to approximately 23 degrees (not snapped), Undo/Redo, keyboard fallback and saved transform pass; no page errors/overflow or provider calls. Lint passes. Screenshots: external free-rotation-desktop/mobile.png. Full unit/build results above are the prior increment, not rerun for this two-button removal. Physical phone/Safari remain untested.
+
 ## Compact journal controls and first-use welcome — 2026-10-19
 
 - Owner requested accessible photo rotation, a smaller editor control box, and a future-self-first greeting after setup, for eventual phone/laptop BarCamp testing. Added an Arrange photo entry, compact left/right 15-degree actions, existing direct rotation handle/pinch/keyboard support, collapsed decorations and Help/reset. Rotation normalizes through the shared transform helper; Undo/Redo and local layout persistence remain intact. Original conversation evidence and separate consent are unchanged.

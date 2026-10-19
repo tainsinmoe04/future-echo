@@ -2,6 +2,8 @@
 
 ## 30. Discoverable rotation and transparent welcome — 2026-10-19
 
+- Owner rejected the added fixed 15-degree rotation buttons. Removed only those two toolbar actions; photos retain the same continuous round-handle mouse/touch rotation as stickers. Focused Chrome checks at desktop/mobile sizes rotated a photo approximately 23 degrees via actual mouse / emulated touch, verified no 15-degree snapping, Undo/Redo, keyboard fallback and saved transform. Lint passes. Physical hardware remains untested; no other design changes.
+
 - Rotation already existed behind Arrange, but the owner could not discover it. Add Arrange photo beside framing and concise rotation actions; keep existing round handle, two-finger twist and keyboard support. Collapse collection/help content so arranging does not begin with a long tool card. Apple/Emil guidance informed direct manipulation and progressive disclosure, not extra decorative motion or a new UI direction.
 - The requested first-contact feeling must not become a literal time-travel claim. The private trial now uses a short horizon/language-aware built-in welcome, identified as written by Future Echo, without spending a model request. It is separate from actual AI responses, not a fallback. Production connected accounts are not silently given a fabricated server record. Session refresh may show it again because chats remain session-only.
 - 102 tests, lint/build and isolated desktop/mobile rendered checks pass. The full e2e suite and physical-device gestures were not rerun. BarCamp audience access still requires hosting and multi-user/privacy/reliability gates; localhost alone is not a remotely usable demo.

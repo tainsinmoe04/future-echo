@@ -2,6 +2,8 @@
 
 ## Scoped editor and welcome follow-up — 2026-10-19
 
+Owner correction: photo rotation must use the same continuous direct-manipulation handle/touch interaction as stickers, not fixed 15-degree toolbar buttons. Keep accessible keyboard alternatives and existing compact controls unchanged.
+
 The owner requested clearer photo rotation and compact journal tools, plus a future-self-first message after completing identity setup. Keep direct mouse/touch rotation and keyboard alternatives; hide long instructions and decoration collections behind deliberate disclosure rather than placing a tall control card above the page. The private prototype may use a visibly identified app-written welcome, localized from the setup language and selected horizon, without a provider call. It must frame the future perspective as imagined, not claim unexpected literal time contact, and must never impersonate a successful live reply during an outage. Connected account/production greeting behavior remains a separate integration task. The owner intends phone/laptop audience testing at BarCamp; this does not establish deployed or public-release readiness.
 
 ## Owner-authorized OpenRouter trial — 2026-10-19
