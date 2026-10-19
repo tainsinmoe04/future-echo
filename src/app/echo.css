@@ -94,6 +94,16 @@
 .echo-presence { min-height: 63px; display: flex; align-items: center; justify-content: center; margin: 7px 0 14px; }
 .echo-presence.echo-typing { min-height: 0; justify-content: flex-start; margin: 18px 0 0; max-width: 100%; }
 .echo-presence.echo-typing > span { max-width: 100%; }
+.compact-placement-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.compact-placement-heading h3 { margin: 0; }
+.compact-placement-heading > span { font-size: 11px; color: #bcb5cf; }
+.compact-decoration-picker > summary, .compact-layout-help > summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-size: 12px; }
+.compact-decoration-picker > summary > span { float: right; color: #bcb5cf; }
+.compact-object-actions { gap: 6px; margin: 8px 0; }
+.compact-object-actions button { padding: 8px 12px; }
+.compact-layout-help p { font-size: 12px; line-height: 1.6; }
+.compact-placement { padding: 14px!important; }
+.photo-edit-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .echo-presence-rest { color: #a0a0b5; font-size: 11px; letter-spacing: .02em; }
 .echo-presence.is-typing > span { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 24px; color: #16152e; background: #c3beff; font-size: 10px; font-weight: 650; }
 .echo-presence i { display: flex; gap: 3px; }

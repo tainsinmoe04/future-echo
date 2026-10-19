@@ -208,22 +208,22 @@ export function MockProductStateProvider({ children, trialAI = false }: { childr
     ...current, [id]: { ...(current[id] ?? emptyThread), draft: draft.slice(0, MAX_MESSAGE_LENGTH) },
   })), []);
 
-  const queueReply = useCallback((id: string, content: string, delay: number) => {
+  const queueReply = useCallback((id: string, content: string, delay: number, welcome = false) => {
     timers.current.set(id, setTimeout(() => {
       timers.current.delete(id);
       setThreads((current) => {
         const thread = current[id] ?? emptyThread;
         return { ...current, [id]: { ...thread, typing: false, messages: [...thread.messages,
-          { id: crypto.randomUUID(), role: "assistant", content, createdAt: new Date().toISOString() }] } };
+          { id: `${welcome ? "welcome-" : ""}${crypto.randomUUID()}`, role: "assistant", content, createdAt: new Date().toISOString() }] } };
       });
     }, delay));
   }, []);
 
   const ensureGreeting = useCallback((id: string) => {
-    if (trialAI || connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
+    if (connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
     setThreads((current) => ({ ...current, [id]: { ...(current[id] ?? emptyThread), typing: true } }));
-    queueReply(id, firstMessage(activeIdentity), 900);
-  }, [activeIdentity, threads, queueReply, connectedAI, trialAI]);
+    queueReply(id, firstMessage(activeIdentity), 900, true);
+  }, [activeIdentity, threads, queueReply, connectedAI]);
 
   const sendMessage = useCallback((id: string, raw: string) => {
     const content = raw.trim();

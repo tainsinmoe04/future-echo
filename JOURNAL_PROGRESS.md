@@ -1,5 +1,12 @@
 # Future Echo journal implementation checkpoint
 
+## Compact journal controls and first-use welcome — 2026-10-19
+
+- Owner requested accessible photo rotation, a smaller editor control box, and a future-self-first greeting after setup, for eventual phone/laptop BarCamp testing. Added an Arrange photo entry, compact left/right 15-degree actions, existing direct rotation handle/pinch/keyboard support, collapsed decorations and Help/reset. Rotation normalizes through the shared transform helper; Undo/Redo and local layout persistence remain intact. Original conversation evidence and separate consent are unchanged.
+- The private trial now opens an empty active session with a deterministic bilingual welcome using the chosen horizon year and setup language. It explicitly frames the perspective as imagined and visibly says Welcome / written by Future Echo. It is not a generated reply or an outage fallback and makes no provider request. Production connected-account greeting behavior is unchanged. Conversations remain session-only; a refreshed empty session can show the welcome again.
+- Verification: 102 unit tests, lint and production build pass. Isolated Chrome desktop 1440x1000 and mobile 390x844 with reduced motion verify Myanmar onboarding/welcome, no provider call, photo upload/Arrange entry, collapsed picker, rotation buttons/keyboard, Undo/Redo, Done and saved transform, reload and no page errors/document overflow. Existing e2e assertions were updated for new visible copy; the whole e2e suite was not rerun. Screenshots are outside Git. Physical touch/pinch, Safari and real multi-device hosted access remain unverified in this increment.
+- BarCamp access is a next milestone, not complete: localhost is not a public phone URL; hosted auth, per-user isolation, server quotas, live-model reliability, bilingual safety and privacy release gates remain required. No deployment, remote migration, key change or production AI enablement occurred.
+
 ## OpenRouter wiring and typing correction — 2026-10-19
 
 - Continued the owner-authorized private trial from the clean GitHub backup. Layout/provider, chat, Settings and playlist saving now select the OpenRouter trial instead of Ollama. The old local route remains disabled by the local environment flag. Cloud trial requests bypass Supabase sync/auth/history; chosen playlists use local journal persistence. No key values or user journal data enter source control.

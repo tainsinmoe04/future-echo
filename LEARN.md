@@ -1,5 +1,11 @@
 # Future Echo — Project Learnings
 
+## 30. Discoverable rotation and transparent welcome — 2026-10-19
+
+- Rotation already existed behind Arrange, but the owner could not discover it. Add Arrange photo beside framing and concise rotation actions; keep existing round handle, two-finger twist and keyboard support. Collapse collection/help content so arranging does not begin with a long tool card. Apple/Emil guidance informed direct manipulation and progressive disclosure, not extra decorative motion or a new UI direction.
+- The requested first-contact feeling must not become a literal time-travel claim. The private trial now uses a short horizon/language-aware built-in welcome, identified as written by Future Echo, without spending a model request. It is separate from actual AI responses, not a fallback. Production connected accounts are not silently given a fabricated server record. Session refresh may show it again because chats remain session-only.
+- 102 tests, lint/build and isolated desktop/mobile rendered checks pass. The full e2e suite and physical-device gestures were not rerun. BarCamp audience access still requires hosting and multi-user/privacy/reliability gates; localhost alone is not a remotely usable demo.
+
 ## 29. OpenRouter private trial continuation — 2026-10-19
 
 - The owner rejected Ollama, supplied OpenRouter credentials privately, and authorized continuing from the backed-up WIP. Frontend wiring now uses `/api/trial-ai`; production remains disabled. Do not keep the old local-only privacy claims: selected context is sent to OpenRouter and its provider. No Supabase account or journal upload occurs in this trial.

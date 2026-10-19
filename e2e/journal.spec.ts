@@ -16,7 +16,7 @@ async function begin(page: Page) {
   await page.getByRole("checkbox", { name: "I am 18 or older.", exact: true }).check();
   await page.getByRole("button", { name: "Meet your Future Self", exact: true }).click();
   await page.getByRole("textbox", { name: "Message your future self", exact: true }).waitFor();
-  await expect(page.getByText(/How is that direction feeling today/)).toBeVisible();
+  await expect(page.getByText(/A little strange to meet yourself here/)).toBeVisible();
 }
 async function noOverflow(page: Page) { expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
 
@@ -73,7 +73,7 @@ test("long journal, local day, photo framing, layers, search and cover persist",
   const object = page.getByRole("group", { name: "Photo", exact: true }); await object.scrollIntoViewIfNeeded(); const box = await object.boundingBox();
   if (box) { await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 80)); await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 + 18, box.y + Math.min(box.height / 2, 80) + 12, { steps: 4 }); await page.mouse.up(); await expect(object).not.toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)"); }
   await object.focus();
-  await page.getByRole("button", { name: "Bring to front", exact: true }).click();
+  await page.getByRole("button", { name: "Front", exact: true }).click();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await expect(page.locator(".paper-original")).toHaveText(words.trim());
   await expect(page.locator(".paper-polaroid img")).toHaveCSS("object-position", "55% 50%");

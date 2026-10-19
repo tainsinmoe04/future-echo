@@ -53,7 +53,11 @@ export const initialThreads: Record<string, MessengerThread> = Object.fromEntrie
 export const isPreviewExample = (moment: JourneyMoment) => sampleMoments.some((sample) => sample.id === moment.id && sample.originalExcerpt === moment.originalExcerpt);
 
 export function firstMessage(identity: FutureSelfIdentityVersion) {
-  return `Hey. It’s you, a little farther along.\n\nYou chose “${identity.definition}”. How is that direction feeling today?`;
+  const year = identity.horizon.targetMonth.slice(0, 4);
+  if (/[\u1000-\u109f\uaa60-\uaa7f]/u.test(identity.definition)) {
+    return `ဟေး၊ မင်္ဂလာပါ။ ${year} က မင်းဖြစ်လာနိုင်တဲ့ ကိုယ့်ကိုယ်ကို စိတ်ကူးကြည့်ရင်း ဒီမှာ စကားပြောကြမယ်။\n\nဒီလို ကိုယ့်ကိုယ်ကို ပြန်တွေ့ရတာ နည်းနည်းထူးဆန်းတယ်နော်။ မင်းရွေးထားတဲ့လမ်းအကြောင်းပဲဖြစ်ဖြစ်၊ ဒီနေ့ဖြစ်ခဲ့တာပဲဖြစ်ဖြစ် ပြောချင်တာကနေ စလို့ရတယ်။`;
+  }
+  return `Hey. Imagine it's ${year}, and you're talking to one possible version of yourself.\n\nA little strange to meet yourself here, isn't it? We can start with the direction you chose—or just how today went.`;
 }
 
 /** Deterministic preview responses. Never sends content to a model or provider. */
