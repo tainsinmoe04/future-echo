@@ -1,5 +1,11 @@
 # Supabase + Gemini — implementation checkpoint
 
+## Current private trial: OpenRouter — 2026-10-19
+
+This supersedes the Ollama selection, not hosted release gates. In ignored `.env.local`, provide `OPENROUTER_API_KEY` and exact `OPENROUTER_MODEL=google/gemma-4-31b-it:free`. In ignored `.env.development.local`, set `FUTURE_ECHO_OPENROUTER_TRIAL=true`, `FUTURE_ECHO_LOCAL_AI=false` and `FUTURE_ECHO_OLLAMA_WINDOWS_BRIDGE=false`. Keep `FUTURE_ECHO_AI_ENABLED=false`. Restart `npm run dev:local` in WSL. `/api/trial-ai` accepts only development, loopback, same-origin validated narrow context; it is not a production authenticated endpoint.
+
+The chat sends selected context to OpenRouter and its provider. It is neither local inference nor E2EE. No Supabase account sync is used; conversations reset on refresh. Free-only and data-policy guards fail closed. Actual fictional generation returned 429/router_limit on 2026-10-19; do not repeatedly retry or enable paid/privacy fallbacks. Real voice/safety evaluation remains pending. Official endpoint inventory lists Google AI Studio, so OpenRouter does not by itself prove resolution of earlier Google eligibility limits.
+
 ## Migration applied with owner confirmation — 2026-10-17
 
 After the owner signed in and explicitly confirmed Run, the exact reviewed migration was executed in the selected future-echo project's SQL Editor. An initial public-table inventory was empty; the migration completed successfully as one transaction. Post-migration read-only metadata checks passed all 10 expectations: six application tables with RLS enabled, zero anonymous table access, zero authenticated direct writes, five authenticated-readable tables, six server functions, no anonymous/authenticated function execution and six service-role executable functions, with five owner-read policies. WSL Node server requests using the modern secret key then returned HTTP 200 for all six tables with limit=0. No account rows, journal content or test users were inserted; this is schema/security metadata verification, not a completed two-account or concurrency test. Verification SQL is in supabase/verification/schema-security.sql. Do not rerun the non-idempotent creation migration; use the read-only verification query instead. Manual SQL execution is not a claim that Supabase CLI migration history was registered.

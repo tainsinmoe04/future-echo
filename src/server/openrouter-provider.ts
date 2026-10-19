@@ -24,7 +24,7 @@ export async function requestOpenRouterReply(context: AIContext, config: { key: 
       401: ["router_key", "OpenRouter rejected the API key. Check the server-only key."],
       402: ["router_credit", "OpenRouter requires an account or credit change for this request. No paid model was used."],
       403: ["router_access", "OpenRouter denied this request. Check account, region and provider permissions."],
-      404: ["router_privacy", "No eligible free endpoint is available with the required data policy. Privacy restrictions have not been relaxed."],
+      404: ["router_privacy", "The selected free model or an endpoint meeting the required data policy is unavailable. Privacy restrictions have not been relaxed."],
       429: ["router_limit", "OpenRouter or its provider is at its free request limit. Try again later."],
     };
     const [code, message] = messages[response.status] ?? ["router_error", "OpenRouter could not complete this request. Your words remain here."];

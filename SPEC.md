@@ -1,5 +1,9 @@
 # Future Echo — Product and Implementation Specification
 
+## Owner-authorized OpenRouter trial — 2026-10-19
+
+The owner subsequently rejected Ollama and supplied a server-only OpenRouter key for private development testing. This supersedes the local-trial selection below, not production release gates. The frontend now uses development-only, opt-in `/api/trial-ai`, with same-origin/loopback checks and the existing validated bounded context. The approved model is `google/gemma-4-31b-it:free`; reject other model IDs, require zero prompt/completion price, deny provider data collection and disable fallbacks. Never weaken privacy or buy credits automatically. Cloud processing is disclosed; this is not local inference or E2EE. Conversations remain session-only; chosen moments/playlists persist locally, without Supabase sync. Production `/api/ai` remains disabled. Typing belongs below the latest message; familiar short Burmese uses natural language without claims of actual time travel or guaranteed outcomes. Actual generation verification on 2026-10-19 returned 429, so live voice quality remains unverified.
+
 ## Owner-authorized local Gemma trial — 2026-10-18
 
 The owner explicitly authorized replacing Gemini with installed Ollama `gemma3:12b` for private local testing only. Public launch is a separate later project. `/api/local-ai` is opt-in, development-only and same-origin/loopback guarded; production `/api/ai`, Supabase synchronization and cloud fallback are not enabled by this trial. Browser-owned local identity/session data are validated and projected through the existing server context builder; this is not the production server-owned account contract. Keep immutable saved conversation evidence, separate note permission and all persona/crisis boundaries unchanged. No redesign, deployment, payment or push is authorized.

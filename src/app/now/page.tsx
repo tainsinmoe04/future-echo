@@ -17,7 +17,7 @@ import { PlaylistCard } from "@/components/echo/playlist-card";
 const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 
 function Conversation() {
-  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, localAI, connectionError, loadPastConversation } = useMockProductState();
+  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, trialAI, connectionError, loadPastConversation } = useMockProductState();
   const query = useSearchParams();
   const pastIdentity = identityVersions.find((identity) => identity.id === query.get("past") && identity.status === "past");
   const identity = pastIdentity ?? activeIdentity;
@@ -62,17 +62,18 @@ function Conversation() {
         <button className="echo-orbit-button" onClick={() => setSpace({})} aria-label="Open Your Space"><OrbitIcon /><span>Your Space</span></button>
       </header>
       <div className="echo-chat-scroll" ref={scroller} onScroll={(event) => { const el = event.currentTarget; following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
-        <div className={`echo-presence ${thread.typing && !readOnly ? "is-typing" : ""}`} role="status">
-          {thread.typing && !readOnly ? <span><i aria-hidden="true"><b /><b /><b /></i>{year} · Your Future Self is typing…</span> : <span className="echo-presence-rest">{readOnly ? "From an earlier direction" : "A little farther along"}</span>}
+        <div className="echo-presence">
+          <span className="echo-presence-rest">{readOnly ? "From an earlier direction" : "A little farther along"}</span>
         </div>
         <div role="log" aria-label="Conversation messages" aria-live="polite" aria-relevant="additions text" className="echo-messages">
           {thread.messages.map((message, index) => { const previousUser = message.role === "assistant" ? thread.messages.slice(0, index).findLast((item) => item.role === "user") : undefined; return <Fragment key={message.id}><article className={`echo-message ${message.role === "user" ? "from-present" : "from-future"}`}><span className="sr-only">{message.role === "user" ? "You" : message.safety === "support" ? "Support outside the future-self perspective" : "Your possible future self"}: </span>{message.safety === "support" && <small>Stepping out of the future-self perspective</small>}<p>{message.content}</p>{message.playlist && <PlaylistCard playlist={message.playlist} messageId={message.id} />}</article>{previousUser && !readOnly && !settled[message.id] && saving !== message.id && <div className="echo-exchange-actions" aria-label={`Actions for reply ${index + 1}`}><button className="echo-button butter" onClick={(event) => { reviewTrigger.current = event.currentTarget; setSaving(message.id); }}><StarIcon />Save this moment</button><button className="echo-button outline" onClick={() => { setSettled((current) => ({ ...current, [message.id]: true })); composer.current?.focus(); }}>Leave it here</button></div>}{previousUser && saving === message.id && <SaveReview key={message.id} user={previousUser} reply={message} identityId={identity.id} onCancel={() => { setSaving(null); requestAnimationFrame(() => reviewTrigger.current?.focus()); }} onSave={(id) => { setSettled((current) => ({ ...current, [message.id]: id })); setSaving(null); requestAnimationFrame(() => composer.current?.focus()); }} />}{typeof settled[message.id] === "string" && <div className="echo-saved-line" role="status">Kept in your memory book. <button onClick={() => setSpace({ momentId: String(settled[message.id]) })}>Open moment</button></div>}</Fragment>; })}
         </div>
+        {thread.typing && !readOnly && <div className="echo-presence echo-typing is-typing" role="status"><span><i aria-hidden="true"><b /><b /><b /></i>{year} · Your Future Self is typing…</span></div>}
         {readOnly && !thread.messages.length && <p className="echo-muted">No conversation was kept for this version.</p>}
       </div>
       {readOnly ? <footer className="echo-readonly"><p>This conversation belongs to an earlier direction.</p><Link href="/now" className="echo-button white">Return to your current chat</Link></footer> : <footer className="echo-composer-area">
         {connectionError && <p className="echo-muted" role="alert">{connectionError} Your words remain here; check before sending again.</p>}
-        <div className="echo-composer-above"><span>{localAI ? "Local Gemma · on this computer" : connectedAI ? "Connected · Gemini · imagined perspective" : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
+        <div className="echo-composer-above"><span>{trialAI ? "OpenRouter · private cloud trial" : connectedAI ? "Connected · Gemini · imagined perspective" : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
         <form className="echo-composer" onSubmit={(event) => { event.preventDefault(); submit(); }}>
           <button type="button" className="echo-icon-button" aria-label="Add a moment with photos" onClick={() => setSpace({ create: true })}><ClipIcon /></button>
           <label htmlFor="echo-message" className="sr-only">Message your future self</label>
@@ -84,7 +85,7 @@ function Conversation() {
       </footer>}
     </main>
     <EchoDialog open={Boolean(space)} label="Your Space" onClose={() => setSpace(null)} className="echo-space-drawer"><PersonalSpace onClose={() => setSpace(null)} initialMomentId={space?.momentId} initialCreate={space?.create} /></EchoDialog>
-    <EchoDialog open={about} label="About this possible future" onClose={() => setAbout(false)} className="echo-about-dialog"><section className="echo-about"><OrbitIcon /><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p><p className="echo-muted">{localAI ? "Gemma replies run locally through Ollama. No cloud fallback is used. Conversations reset on refresh; saved moments stay on this device. This is an imagined perspective, not professional care." : connectedAI ? "Gemini replies use your current direction, up to ten recent messages and up to three consented saved excerpts. This is not professional care." : "This preview uses sample replies. No AI provider is connected."}</p><button className="echo-button lilac" onClick={() => setAbout(false)}>Back to our conversation</button></section></EchoDialog>
+    <EchoDialog open={about} label="About this possible future" onClose={() => setAbout(false)} className="echo-about-dialog"><section className="echo-about"><OrbitIcon /><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p><p className="echo-muted">{trialAI ? "Replies send your current direction, up to ten recent messages and up to three permitted excerpts to OpenRouter and its model provider. Notes require separate permission. Conversations reset on refresh; saved moments stay on this device. This is not E2EE or professional care." : connectedAI ? "Gemini replies use your current direction, up to ten recent messages and up to three consented saved excerpts. This is not professional care." : "This preview uses sample replies. No AI provider is connected."}</p><button className="echo-button lilac" onClick={() => setAbout(false)}>Back to our conversation</button></section></EchoDialog>
   </div>;
 }
 

@@ -1,5 +1,12 @@
 # Future Echo — Project Learnings
 
+## 29. OpenRouter private trial continuation — 2026-10-19
+
+- The owner rejected Ollama, supplied OpenRouter credentials privately, and authorized continuing from the backed-up WIP. Frontend wiring now uses `/api/trial-ai`; production remains disabled. Do not keep the old local-only privacy claims: selected context is sent to OpenRouter and its provider. No Supabase account or journal upload occurs in this trial.
+- The approved free model is fixed; zero-price, no-fallback and data-collection-deny guards stay intact. The official endpoint inventory lists Google AI Studio; that does not prove this account can generate or establish zero retention. One fictional live app request returned 429/router_limit. No automatic retry, privacy relaxation or paid fallback was attempted. Real reply tone and bilingual safety remain unverified.
+- Conversational messages preserve actual roles rather than serializing the whole conversation as one user message. The shared prompt asks for specific, short, familiar Burmese while retaining crisis, honesty and uncertainty boundaries. Prompt instructions alone are not evidence of model compliance.
+- Typing now follows the final message, left-aligned. Isolated Chrome desktop/mobile checks verify geometry, keyboard submit, reduced motion, inline saving with consent off, truthful settings, session-only refresh and duplicate-free error retry. Success-path UI replies were intercepted and are not live-model evidence. Existing user browser data was not edited.
+
 ## 28. Private local Gemma trial — 2026-10-18
 
 - Owner confirmed `gemma3:12b` (8.2 GB) in PowerShell and explicitly requested temporary local inference, leaving public launch for later. This supersedes the provider pause only for the private dev trial. Do not infer public release, E2EE implementation, cloud fallback or key changes.

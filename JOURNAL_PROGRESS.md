@@ -1,5 +1,12 @@
 # Future Echo journal implementation checkpoint
 
+## OpenRouter wiring and typing correction — 2026-10-19
+
+- Continued the owner-authorized private trial from the clean GitHub backup. Layout/provider, chat, Settings and playlist saving now select the OpenRouter trial instead of Ollama. The old local route remains disabled by the local environment flag. Cloud trial requests bypass Supabase sync/auth/history; chosen playlists use local journal persistence. No key values or user journal data enter source control.
+- Typing appears below the latest message, aligned with the future side. Existing composition, immutable evidence, separate memory/note consent, error-retained words and version-change late-response guards are preserved. Shared voice instructions use actual conversation roles and familiar short Burmese, without future certainty or supernatural claims.
+- Real fictional app request to OpenRouter returned HTTP 429/router_limit. No finished live reply, Burmese-quality pass or crisis evaluation is claimed. No automatic retry, paid fallback, privacy relaxation, production activation or deployment. Free quota/availability must recover before real voice testing resumes; do not treat 429 as proof of invalid key or successful model access.
+- Validation: 101/101 unit tests, lint and production build passed. Isolated Chrome at 1440x1000 and 390x844 (reduced motion) passed onboarding, Ctrl+Enter, bottom typing geometry, controlled reply rendering, inline save with consent off, cloud disclosure, refresh, retained failure draft and duplicate-free retry. No page errors or document overflow. Browser plugin unavailable; bundled Playwright used. Success-path replies were controlled fixtures. Screenshots/scripts remain outside Git. Physical phones/Safari and live model behavior remain unverified. Existing parent-lockfile warning persists.
+
 ## Owner-requested GitHub backup checkpoint — 2026-10-18
 
 - Owner explicitly requested backing up all current code to GitHub before any further implementation. This is a work-in-progress snapshot, not a release or deployment.

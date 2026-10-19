@@ -25,7 +25,7 @@ export interface CreateIdentityInput {
 }
 
 interface MockProductStateValue {
-  localAI: boolean;
+  trialAI: boolean;
   setMomentConsent: (id: string, words: boolean, note: boolean) => void;
   connectedAI: boolean;
   connectionError: string;
@@ -63,7 +63,7 @@ const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 const initialJournal: JournalSnapshot = { version: 1, preferences: DEFAULT_PREFERENCES,
   identityVersions: [], moments: [] };
 
-export function MockProductStateProvider({ children, localAI = false }: { children: React.ReactNode; localAI?: boolean }) {
+export function MockProductStateProvider({ children, trialAI = false }: { children: React.ReactNode; trialAI?: boolean }) {
   const [journal] = useState(() => createJournalSession(initialJournal));
   const local = useSyncExternalStore(journal.subscribe, journal.getSnapshot, journal.getSnapshot);
   const { preferences, identityVersions, moments } = local.snapshot;
@@ -107,7 +107,7 @@ export function MockProductStateProvider({ children, localAI = false }: { childr
   }, []);
 
   const connectAI = useCallback(async () => {
-    if (localAI) throw new Error("Local Gemma mode does not connect to cloud accounts.");
+    if (trialAI) throw new Error("The OpenRouter trial does not connect to cloud accounts.");
     if (!activeIdentity) throw new Error("Choose a direction first.");
     cancelReplies();
     const epoch = connectionEpoch.current;
@@ -124,7 +124,7 @@ export function MockProductStateProvider({ children, localAI = false }: { childr
     journal.update((current) => ({ ...current, playlists: [...(current.playlists ?? []).filter((p) => !saved.playlists.some((s) => s.id === p.id)), ...saved.playlists.filter((p) => current.identityVersions.some((i) => i.id === p.identityVersionId))] }));
     attempts.current.delete(activeIdentity.id);
     setConnectionError(""); setConnectedAI(true);
-  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, localAI]);
+  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI]);
   const disconnectAI = useCallback(async () => {
     cancelReplies(); setConnectedAI(false);
     await updateAccountContext({}, "DELETE");
@@ -220,31 +220,31 @@ export function MockProductStateProvider({ children, localAI = false }: { childr
   }, []);
 
   const ensureGreeting = useCallback((id: string) => {
-    if (localAI || connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
+    if (trialAI || connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
     setThreads((current) => ({ ...current, [id]: { ...(current[id] ?? emptyThread), typing: true } }));
     queueReply(id, firstMessage(activeIdentity), 900);
-  }, [activeIdentity, threads, queueReply, connectedAI, localAI]);
+  }, [activeIdentity, threads, queueReply, connectedAI, trialAI]);
 
   const sendMessage = useCallback((id: string, raw: string) => {
     const content = raw.trim();
     if (activeIdentity?.id !== id || !content || content.length > MAX_MESSAGE_LENGTH || timers.current.has(id) || requests.current.has(id)) return;
-    const previousAttempt = connectedAI || localAI ? attempts.current.get(id) : undefined;
+    const previousAttempt = connectedAI || trialAI ? attempts.current.get(id) : undefined;
     const retrying = previousAttempt?.content === content;
     setThreads((current) => {
       const thread = current[id] ?? emptyThread;
       return { ...current, [id]: { draft: "", typing: true, messages: retrying ? thread.messages : [...thread.messages,
         { id: crypto.randomUUID(), role: "user", content, createdAt: new Date().toISOString() }] } };
     });
-    if (!connectedAI && !localAI) { queueReply(id, previewReply(content), 1100); return; }
+    if (!connectedAI && !trialAI) { queueReply(id, previewReply(content), 1100); return; }
     requests.current.add(id); setConnectionError("");
     const requestId = retrying ? previousAttempt.requestId : crypto.randomUUID();
     attempts.current.set(id, { content, requestId });
     const epoch = connectionEpoch.current;
     void (async () => {
       try {
-        if (localAI) {
+        if (trialAI) {
           const history = threads[id]?.messages ?? [];
-          const result = await backendRequest<{ message: ConversationMessage }>("/api/local-ai", localReplyPayload(activeIdentity, moments, retrying ? history.slice(0, -1) : history, content), "POST", false, 190000);
+          const result = await backendRequest<{ message: ConversationMessage }>("/api/trial-ai", localReplyPayload(activeIdentity, moments, retrying ? history.slice(0, -1) : history, content), "POST", false, 70000);
           if (epoch !== connectionEpoch.current) return;
           attempts.current.delete(id);
           setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, messages: [...current[id].messages, result.message] } }));
@@ -258,19 +258,19 @@ export function MockProductStateProvider({ children, localAI = false }: { childr
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, messages: [...current[id].messages, result.message] } }));
       } catch (error) {
         if (epoch !== connectionEpoch.current) return;
-        if (!localAI && error instanceof BackendRequestError && error.code !== "pending_request") attempts.current.delete(id);
+        if (!trialAI && error instanceof BackendRequestError && error.code !== "pending_request") attempts.current.delete(id);
         setConnectionError(error instanceof Error ? error.message : "Your reply could not arrive.");
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, draft: current[id].draft || content } }));
       } finally { if (epoch === connectionEpoch.current) requests.current.delete(id); }
     })();
-  }, [activeIdentity, queueReply, connectedAI, moments, updateAccountContext, localAI, threads]);
+  }, [activeIdentity, queueReply, connectedAI, moments, updateAccountContext, trialAI, threads]);
 
-  const value = useMemo(() => ({ localAI, connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
+  const value = useMemo(() => ({ trialAI, connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
     journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal, readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
     storageStatus: local.status, storageError: local.error, retryStorage: journal.retry, exportJournal,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting,
-  }), [localAI, connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
+  }), [trialAI, connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
     archiveActiveIdentity, activateMockIdentity, saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting, local.snapshot, local.status, local.error, journal, exportJournal, restoreConnectedJournal]);
 
   if (!local.ready) return <main style={{ minHeight: "100dvh", background: "#0b0b10", color: "#eeeaf5", padding: "12vh 24px" }}><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;
