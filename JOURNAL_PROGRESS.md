@@ -1,5 +1,11 @@
 # Future Echo journal implementation checkpoint
 
+## Welcome wording and language follow-through — 2026-10-19
+
+- Replaced the welcome's explicit imagination exercise and direction discussion with the owner's everyday introduction and question about today. Kept the strange-to-meet-yourself line, app-written provenance and contextual imagined-future disclosure. No literal time-contact claim or redesign.
+- Added explicit latest-message-language / requested-language / mixed-language instructions to the shared server prompt. Built-in welcome is still Burmese/English only; other welcome translations and full UI localization are pending. Runtime model fluency/safety across languages is not verified by these instructions.
+- 102 unit tests and lint pass. One fictional Burmese generation through the actual compiled adapter still returned 429/router_limit; no retry loop, paid fallback, privacy change or production activation. Live Burmese and other-language evaluation remains blocked by provider availability. Existing user records and keys were not changed.
+
 ## Rotation correction — 2026-10-19
 
 - Removed the rejected +/-15-degree toolbar actions only. Photo rotation continues through the shared sticker-style direct handle, pinch/twist and keyboard fallback; all other compact editor/welcome behavior remains unchanged.

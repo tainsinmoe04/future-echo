@@ -31,6 +31,8 @@ test("OpenRouter keeps real conversation roles, fixed free model, privacy and ze
     assert.equal(body.messages[0].role, "system");
     assert.ok(body.messages[0].content.includes("ငါ"));
     assert.ok(body.messages[0].content.includes("not actual time travel"));
+    assert.ok(body.messages[0].content.includes("Reply in the language of the user's latest message"));
+    assert.ok(body.messages[0].content.includes("Follow a language switch immediately"));
     return response(normal);
   });
   assert.equal(reply.text, normal.text);

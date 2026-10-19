@@ -2,6 +2,8 @@
 
 ## 30. Discoverable rotation and transparent welcome — 2026-10-19
 
+- Latest owner wording correction removes the imagination-exercise/direction language inside the welcome and asks about today instead. Keep the approved strange-to-meet-yourself line, contextual imagined-future disclosure and app-written label. The welcome no longer repeats the horizon year; the header remains authoritative. Model instructions follow the latest user's language, explicit language request and natural code-switching, without weakening any safety boundary. Burmese/English built-in welcomes are not full multilingual UI support.
+
 - Owner rejected the added fixed 15-degree rotation buttons. Removed only those two toolbar actions; photos retain the same continuous round-handle mouse/touch rotation as stickers. Focused Chrome checks at desktop/mobile sizes rotated a photo approximately 23 degrees via actual mouse / emulated touch, verified no 15-degree snapping, Undo/Redo, keyboard fallback and saved transform. Lint passes. Physical hardware remains untested; no other design changes.
 
 - Rotation already existed behind Arrange, but the owner could not discover it. Add Arrange photo beside framing and concise rotation actions; keep existing round handle, two-finger twist and keyboard support. Collapse collection/help content so arranging does not begin with a long tool card. Apple/Emil guidance informed direct manipulation and progressive disclosure, not extra decorative motion or a new UI direction.
