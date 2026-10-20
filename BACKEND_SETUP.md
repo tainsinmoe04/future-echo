@@ -1,5 +1,7 @@
 # Supabase + Gemini — implementation checkpoint
 
+Current private trial (2026-10-20): `OPENROUTER_MODEL=dots-studio/dots-3-note-preview:free` supersedes the earlier Gemma setup below. The owner authorized this free alternative. Actual app requests returned 200 for fictional English/Burmese inputs on October 19, but Burmese quality failed. Keep it private evaluation only; do not claim BarCamp/multilingual readiness. The API key is unchanged; existing development, privacy, zero-price/no-fallback and production gates remain mandatory.
+
 ## Current private trial: OpenRouter — 2026-10-19
 
 This supersedes the Ollama selection, not hosted release gates. In ignored `.env.local`, provide `OPENROUTER_API_KEY` and exact `OPENROUTER_MODEL=google/gemma-4-31b-it:free`. In ignored `.env.development.local`, set `FUTURE_ECHO_OPENROUTER_TRIAL=true`, `FUTURE_ECHO_LOCAL_AI=false` and `FUTURE_ECHO_OLLAMA_WINDOWS_BRIDGE=false`. Keep `FUTURE_ECHO_AI_ENABLED=false`. Restart `npm run dev:local` in WSL. `/api/trial-ai` accepts only development, loopback, same-origin validated narrow context; it is not a production authenticated endpoint.

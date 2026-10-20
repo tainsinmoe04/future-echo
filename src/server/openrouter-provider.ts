@@ -3,7 +3,7 @@ import { ApiError, object } from "./backend-http";
 import { isFutureReply, requestsMusic, type FutureReply } from "../lib/playlist";
 import { futureSelfMessages } from "./future-self-messages";
 
-export const OPENROUTER_TRIAL_MODEL = "google/gemma-4-31b-it:free";
+export const OPENROUTER_TRIAL_MODEL = "dots-studio/dots-3-note-preview:free";
 export function openRouterTrialEnabled(env: Readonly<Record<string, string | undefined>> = process.env) {
   return env.NODE_ENV === "development" && env.FUTURE_ECHO_OPENROUTER_TRIAL === "true";
 }

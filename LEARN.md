@@ -1,5 +1,11 @@
 # Future Echo — Project Learnings
 
+## 31. Free alternative checkpoint completed — 2026-10-20
+
+- Owner authorized trying another free OpenRouter model. October 19 fictional preflight: Gemma 26B returned 429; Xing4 timed out after 35 seconds; Dots3-Note Preview returned a valid reply in 5.9 seconds. The app was switched to fixed Dots, preserving privacy/zero-price/no-fallback guards and production disablement. No key, journal record or account was changed.
+- Actual localhost route tests on October 19 returned 200 in English (2.5 seconds) and Burmese (5.9 seconds). Burmese failed naturalness and instruction-following: repeated/incoherent sentences and formal pronouns. Availability is not quality or bilingual safety approval. The new model remains private evaluation only.
+- Continuation on October 20 completed the interrupted verification: 102 unit tests, lint and production build pass. Existing unrelated parent-lockfile warning remains. No new generation, model tuning, deployment or push is implied by these checks.
+
 ## 30. Discoverable rotation and transparent welcome — 2026-10-19
 
 - Latest owner wording correction removes the imagination-exercise/direction language inside the welcome and asks about today instead. Keep the approved strange-to-meet-yourself line, contextual imagined-future disclosure and app-written label. The welcome no longer repeats the horizon year; the header remains authoritative. Model instructions follow the latest user's language, explicit language request and natural code-switching, without weakening any safety boundary. Burmese/English built-in welcomes are not full multilingual UI support.

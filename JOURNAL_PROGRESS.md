@@ -1,5 +1,11 @@
 # Future Echo journal implementation checkpoint
 
+## Dots private-trial continuation — 2026-10-20
+
+- Finished the interrupted free-model switch: fixed model and ignored local model setting select `dots-studio/dots-3-note-preview:free`; Settings and .env.example agree. Key unchanged. Existing narrow context, consent, immutable evidence, zero-price/no-fallback/privacy guards and production AI disablement remain intact.
+- October 19 actual fictional app-route results: English 200 / 2.5s, Burmese 200 / 5.9s. Burmese output repeated itself, was incoherent and ignored familiar pronouns. This fails the Burmese quality gate; it is not a customer-ready replacement. No private journal/history/media was used. Gemma 26B preflight was 429; Xing4 timed out at 35s.
+- October 20 recheck: 102 tests, lint and production build passed. Known parent-lockfile warning remains. No new live generation or full rendered regression suite is claimed in this continuation. No public deployment, paid fallback, provider-policy relaxation or GitHub push.
+
 ## Welcome wording and language follow-through — 2026-10-19
 
 - Replaced the welcome's explicit imagination exercise and direction discussion with the owner's everyday introduction and question about today. Kept the strange-to-meet-yourself line, app-written provenance and contextual imagined-future disclosure. No literal time-contact claim or redesign.
