@@ -1,5 +1,21 @@
 # Future Echo — Project Learnings
 
+## 45. Ongoing conversation reload correction — 2026-11-05
+
+- Earlier QA covered completed server replies only, not unsent drafts or in-flight
+  messages. Those still lived solely in React state. A synchronous tab cache now
+  preserves messages/drafts/request IDs before rendering, without journal export
+  or memory permission. Reload stops typing and requires explicit resend; original
+  request IDs prevent duplicate live generation on ambiguous interrupted sends.
+- Validate bounded exact fields, safe IDs, timestamps, playlist shape and owner;
+  normalize the live RPC's nullable playlist. Verify account before showing its
+  cached messages. Cache has a 24-hour idle TTL and 100-message/direction limit;
+  display storage warnings. No claim of encrypted or durable cloud draft backup.
+- Added regression for typing a draft, interrupting send, resending without a
+  duplicate user bubble and three successive reloads of completed chat. Desktop,
+  mobile and small-mobile reduced-motion Chrome checks passed. Final hosted
+  validation and release result are recorded after deployment.
+
 ## 44. Live onboarding, reply menu and reload — 2026-11-05
 
 - Explicit live onboarding review connects without a Settings visit; device-only

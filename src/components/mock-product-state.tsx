@@ -9,6 +9,7 @@ import type { SavedPlaylist } from "@/lib/playlist";
 import { activeIdentityVersion } from "@/lib/mock-data";
 import { firstMessage, previewReply, connectedConversation, type MessengerThread } from "@/lib/mock-messenger";
 import { LIVE_CONNECTION_KEY, parseLiveConnectionConsent } from "@/lib/live-connection";
+import { CHAT_RECOVERY_KEY, parseChatRecovery, recoveredThreads } from "@/lib/chat-recovery";
 import { changeMomentConsent, keepMoment } from "@/lib/personal-space";
 import { DEFAULT_PREFERENCES, type SpacePreferences } from "@/lib/scrapbook";
 import { MAX_IDENTITY_LENGTH, MAX_MESSAGE_LENGTH } from "@/lib/redaction";
@@ -83,7 +84,12 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [local.ready, local.status]);
-  const [threads, setThreads] = useState<Record<string, MessengerThread>>({});
+  const [threads, publishThreads] = useState<Record<string, MessengerThread>>({});
+  const threadsRef = useRef<Record<string, MessengerThread>>({});
+  const recoveryOwner = useRef<string | null>(null);
+  const recoveryWritable = useRef(false);
+  const [chatReady, setChatReady] = useState(false);
+  const [chatStorageError, setChatStorageError] = useState("");
   const [connectedAI, setConnectedAI] = useState(false);
   const [connectionError, setConnectionError] = useState("");
   const [pendingLiveIdentity,setPendingLiveIdentity]=useState<string|null>(null);
@@ -91,6 +97,43 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   const connectionEpoch = useRef(0);
   const requests = useRef(new Set<string>());
   const attempts = useRef(new Map<string, { content: string; requestId: string }>());
+  const setThreads = useCallback((change: Record<string, MessengerThread> | ((current: Record<string, MessengerThread>) => Record<string, MessengerThread>)) => {
+    const next = typeof change === "function" ? change(threadsRef.current) : change;
+    threadsRef.current = next;
+    try {
+      if (!recoveryWritable.current) throw new Error("recovery locked");
+      const bounded = Object.fromEntries(Object.entries(next).slice(-20).map(([key, thread]) => [key, { ...thread, messages: thread.messages.slice(-100) }]));
+      const value = JSON.stringify({ version: 1, owner: recoveryOwner.current, savedAt: Date.now(), threads: bounded, attempts: Object.fromEntries([...attempts.current].filter(([key]) => Object.hasOwn(bounded, key))) });
+      if (value.length > 2_000_000) throw new Error("chat capacity");
+      sessionStorage.setItem(CHAT_RECOVERY_KEY, value);
+      setChatStorageError("");
+    } catch { setChatStorageError("Chat recovery is unavailable in this tab. Keep it open and copy any unsaved words before reloading."); }
+    publishThreads(next);
+  }, []);
+  useEffect(() => {
+    let current = true;
+    void (async () => {
+      try {
+        const recovery = parseChatRecovery(sessionStorage.getItem(CHAT_RECOVERY_KEY));
+        if (recovery?.owner) {
+          const session = await backendRequest<{ user: { id: string } | null }>("/api/auth/session");
+          if (!current) return;
+          if (session.user?.id !== recovery.owner) { sessionStorage.removeItem(CHAT_RECOVERY_KEY); recoveryWritable.current = true; return; }
+        }
+        if (!current) return;
+        recoveryWritable.current = true;
+        if (!recovery) return;
+        recoveryOwner.current = recovery.owner;
+        attempts.current = new Map(Object.entries(recovery.attempts));
+        const restored = recoveredThreads(recovery);
+        threadsRef.current = restored;
+        publishThreads(restored);
+        if (Object.values(recovery.threads).some(thread => thread.typing)) setConnectionError("Your interrupted conversation was recovered. Check the latest messages before choosing to send again; no message was automatically resent.");
+      } catch { if (current) setChatStorageError("Chat recovery could not be opened. It has not been overwritten; reconnect the same account and reload to try again."); }
+      finally { if (current) setChatReady(true); }
+    })();
+    return () => { current = false; };
+  }, []);
   const contextQueue = useRef<Promise<unknown>>(Promise.resolve());
   const updateAccountContext = useCallback((body: unknown, method = "PUT") => {
     const pending = contextQueue.current.catch(() => {}).then(() => backendRequest("/api/context", body, method));
@@ -111,7 +154,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     timers.current.forEach(clearTimeout);
     timers.current.clear();
     setThreads((current) => Object.fromEntries(Object.entries(current).map(([id, thread]) => [id, { ...thread, typing: false }])));
-  }, []);
+  }, [setThreads]);
 
   const connectAI = useCallback(async () => {
     if (trialAI) throw new Error("The private trial does not connect to cloud accounts.");
@@ -121,6 +164,9 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     const session=await backendRequest<{user:{id:string}|null}>("/api/auth/session");
     if (!session.user) throw new Error("Sign in to connect live AI. Your direction stays on this device.");
     if(epoch!==connectionEpoch.current) throw new Error("Your direction changed. Connect the current one.");
+    if (recoveryOwner.current && recoveryOwner.current !== session.user.id) { attempts.current.clear(); setThreads({}); }
+    recoveryOwner.current = session.user.id;
+    recoveryWritable.current = true;
     try{sessionStorage.setItem(LIVE_CONNECTION_KEY,JSON.stringify({identityId:activeIdentity.id,userId:session.user.id,provider:connectedProvider}));}catch{/* A tab without storage can still explicitly connect. */}
     await backendRequest("/api/auth/attest-adult",{adultConfirmed:true});
     await updateAccountContext(contextSyncPayload(activeIdentity, moments));
@@ -132,13 +178,21 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       await updateAccountContext({ archiveIdentityId: activeIdentity.id }, "POST");
       throw new Error("Your direction changed. Connect it again when ready.");
     }
-    setThreads((current) => ({ ...current, [activeIdentity.id]: { draft: current[activeIdentity.id]?.draft ?? "", typing: false, messages: connectedConversation(history.messages,current[activeIdentity.id]?.messages??[],activeIdentity) } }));
+    const interrupted = attempts.current.get(activeIdentity.id);
+    const completed = interrupted && history.messages.some(message => message.id === interrupted.requestId && message.role === "assistant");
+    setThreads((current) => {
+      const thread = current[activeIdentity.id];
+      const messages = connectedConversation(history.messages, thread?.messages ?? [], activeIdentity);
+      const pendingUser = interrupted && !completed ? thread?.messages.findLast(message => message.role === "user" && message.content === interrupted.content) : undefined;
+      if (pendingUser) messages.push(pendingUser);
+      return { ...current, [activeIdentity.id]: { draft: completed && thread?.draft === interrupted?.content ? "" : thread?.draft ?? "", typing: false, messages } };
+    });
     journal.update((current) => ({ ...current, playlists: [...(current.playlists ?? []).filter((p) => !saved.playlists.some((s) => s.id === p.id)), ...saved.playlists.filter((p) => current.identityVersions.some((i) => i.id === p.identityVersionId))] }));
-    attempts.current.delete(activeIdentity.id);
+    if (completed || !interrupted) attempts.current.delete(activeIdentity.id);
     setConnectionError(""); setConnectedAI(true);
-  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI, connectedProvider]);
+  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI, connectedProvider, setThreads]);
   useEffect(()=>{
-    if(!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
+    if(!chatReady||!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
     const key=`${connectedProvider}:${activeIdentity.id}`;
     if(automaticAttempt.current===key)return;
     let consent=null;try{consent=parseLiveConnectionConsent(sessionStorage.getItem(LIVE_CONNECTION_KEY));}catch{}
@@ -152,23 +206,25 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       await connectAI();
     }).catch(error=>{if(current)setConnectionError(error instanceof Error?error.message:"Live connection could not be restored.");});
     return()=>{current=false;};
-  },[liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI]);
+  },[chatReady,liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI]);
   const disconnectAI = useCallback(async () => {
     try{sessionStorage.removeItem(LIVE_CONNECTION_KEY);}catch{}
     setPendingLiveIdentity(null);
     cancelReplies(); setConnectedAI(false);
     await updateAccountContext({}, "DELETE");
     attempts.current.clear();
+    recoveryOwner.current = null;
     setConnectionError("");
     setThreads({});
-  }, [cancelReplies, updateAccountContext]);
+    try { sessionStorage.removeItem(CHAT_RECOVERY_KEY); } catch {}
+  }, [cancelReplies, updateAccountContext, setThreads]);
   const loadPastConversation = useCallback(async (id: string) => {
     if (!connectedAI || !identityVersions.some((identity) => identity.id === id && identity.status === "past")) return;
     const epoch = connectionEpoch.current;
     try { const history = await backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(id)}`);
       if (epoch === connectionEpoch.current) setThreads((current) => ({ ...current, [id]: { draft: "", typing: false, messages: history.messages } }));
     } catch (error) { if (epoch === connectionEpoch.current) setConnectionError(error instanceof Error ? error.message : "Earlier conversation could not be loaded."); }
-  }, [connectedAI, identityVersions]);
+  }, [connectedAI, identityVersions, setThreads]);
   const restoreConnectedJournal = useCallback(async (snapshot: JournalSnapshot) => {
     cancelReplies();
     if (connectedAI) await disconnectAI();
@@ -237,7 +293,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   })), [journal]);
   const setThreadDraft = useCallback((id: string, draft: string) => setThreads((current) => ({
     ...current, [id]: { ...(current[id] ?? emptyThread), draft: draft.slice(0, MAX_MESSAGE_LENGTH) },
-  })), []);
+  })), [setThreads]);
 
   const queueReply = useCallback((id: string, content: string, delay: number, welcome = false) => {
     timers.current.set(id, setTimeout(() => {
@@ -248,29 +304,31 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
           { id: `${welcome ? "welcome-" : ""}${crypto.randomUUID()}`, role: "assistant", content, createdAt: new Date().toISOString() }] } };
       });
     }, delay));
-  }, []);
+  }, [setThreads]);
 
   const ensureGreeting = useCallback((id: string) => {
     if (connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
     setThreads((current) => ({ ...current, [id]: { ...(current[id] ?? emptyThread), typing: true } }));
     queueReply(id, firstMessage(activeIdentity), 900, true);
-  }, [activeIdentity, threads, queueReply, connectedAI]);
+  }, [activeIdentity, threads, queueReply, connectedAI, setThreads]);
 
   const sendMessage = useCallback((id: string, raw: string) => {
     const content = raw.trim();
     if (activeIdentity?.id !== id || !content || content.length > MAX_MESSAGE_LENGTH || timers.current.has(id) || requests.current.has(id)) return;
     if (liveAIAvailable && !connectedAI && !trialAI) { setConnectionError("Open Your Space → Settings, sign in, then explicitly connect this direction to live AI. No sample reply was sent."); return; }
     const previousAttempt = connectedAI || trialAI ? attempts.current.get(id) : undefined;
+    const lastMessage = threadsRef.current[id]?.messages.at(-1);
     const retrying = previousAttempt?.content === content;
+    const reusePreviewUser = !connectedAI && !trialAI && lastMessage?.role === "user" && lastMessage.content === content;
+    const requestId = retrying ? previousAttempt.requestId : crypto.randomUUID();
+    if (connectedAI || trialAI) attempts.current.set(id, { content, requestId });
     setThreads((current) => {
       const thread = current[id] ?? emptyThread;
-      return { ...current, [id]: { draft: "", typing: true, messages: retrying ? thread.messages : [...thread.messages,
+      return { ...current, [id]: { draft: "", typing: true, messages: retrying || reusePreviewUser ? thread.messages : [...thread.messages,
         { id: crypto.randomUUID(), role: "user", content, createdAt: new Date().toISOString() }] } };
     });
     if (!connectedAI && !trialAI) { queueReply(id, previewReply(content), 1100); return; }
     requests.current.add(id); setConnectionError("");
-    const requestId = retrying ? previousAttempt.requestId : crypto.randomUUID();
-    attempts.current.set(id, { content, requestId });
     const epoch = connectionEpoch.current;
     void (async () => {
       try {
@@ -295,17 +353,17 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, draft: current[id].draft || content } }));
       } finally { if (epoch === connectionEpoch.current) requests.current.delete(id); }
     })();
-  }, [activeIdentity, queueReply, connectedAI, moments, updateAccountContext, trialAI, threads, liveAIAvailable]);
+  }, [activeIdentity, queueReply, connectedAI, moments, updateAccountContext, trialAI, threads, liveAIAvailable, setThreads]);
 
-  const value = useMemo(() => ({ trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
+  const value = useMemo(() => ({ trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError: chatStorageError || connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
     journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal, readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
     storageStatus: local.status, storageError: local.error, retryStorage: journal.retry, exportJournal,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting,
-  }), [trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
+  }), [trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError, chatStorageError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
     archiveActiveIdentity, activateMockIdentity, saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting, local.snapshot, local.status, local.error, journal, exportJournal, restoreConnectedJournal]);
 
-  if (!local.ready) return <main style={{ minHeight: "100dvh", background: "#0b0b10", color: "#eeeaf5", padding: "12vh 24px" }}><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;
+  if (!local.ready || !chatReady) return <main style={{ minHeight: "100dvh", background: "#0b0b10", color: "#eeeaf5", padding: "12vh 24px" }}><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;
   return <MockProductState.Provider value={value}><div data-echo-reading={preferences.readingSize} data-echo-motion={preferences.motion}>{children}</div></MockProductState.Provider>;
 }
 

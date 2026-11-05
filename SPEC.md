@@ -1,5 +1,17 @@
 # Future Echo — Product and Implementation Specification
 
+## Reload recovery correction — 2026-11-05
+
+Owner reported repeated loss of an ongoing conversation after the earlier
+server-history fix. Preserve unsent drafts, displayed messages and interrupted
+request IDs in a bounded versioned sessionStorage cache, separate from journal
+and exports. Recover within the same tab for up to 24 hours, up to 100 messages
+per direction; do not automatically resend interrupted messages or restart fake
+typing. Verify the same account before displaying account-owned recovery.
+Disconnect/sign-out clears recovery. Storage failure must be visible. This
+cache is unencrypted, not cloud sync, not Saved Moments and not AI-memory
+consent. Account history retention and server-owned bounded context stay intact.
+
 ## Explicit live onboarding and reload restoration — 2026-11-05
 
 Owner requested direct first-use live connection, preservation of the app-written
