@@ -1,5 +1,19 @@
 # Future Echo journal implementation checkpoint
 
+## Reply actions and authenticated reload verified — 2026-11-05
+
+- Deployed ead3daa, production READY. Live onboarding has explicit cloud consent
+  and direct connection; same-tab user/identity/provider consent restores owned
+  server conversation history after reload and retains the app-written welcome.
+- Save/Leave are behind reply-side three dots; existing inline saving and journal
+  decorations unchanged.126 unit tests, lint/build and three responsive browser
+  save/consent checks passed. Actual hosted English reply and reload restoration
+  passed with a temporary QA account; menu Escape/mobile overflow checked.
+- Myanmar probe failed502 invalid_reply; provider reliability remains unresolved.
+  Both temporary QA accounts/test rows were deleted after nonce verification.
+  Device-only preview chat still resets; old expired/session-only messages cannot
+  be recovered by this change. No cloud journal sync or memory-consent change.
+
 ## Hosted live SEA-LION verified — 2026-11-05
 
 - Existing authenticated /api/ai now selects fixed Qwen SEA-LION v4.5, retaining adult confirmation, owner-filtered server context, quotas/reservations/idempotency and explicit memory consent. Login alone does not upload/connect the journal. Unconnected live mode blocks sends instead of substituting examples.

@@ -1,5 +1,25 @@
 # Future Echo — Project Learnings
 
+## 44. Live onboarding, reply menu and reload — 2026-11-05
+
+- Explicit live onboarding review connects without a Settings visit; device-only
+  continuation remains. Tab consent binds verified user, identity and provider.
+  Reload reconnects only that account and restores server history with exactly
+  one app-written welcome. Disconnect removes tab consent; local preview chat is
+  still session-only and server history remains subject to existing expiry.
+- Reply Save/Leave actions now live in a keyboard-accessible three-dot disclosure.
+  Inline save and separate note permission remain. Omitted topics must not become
+  invented life decisions; timeout failures permit explicit retry without adding
+  another user bubble. No provider fallback or journal-wide memory was added.
+-126 tests, lint and build passed. Reduced-motion Chrome tests at1440x1000,
+  390x844 and320x740 passed earlier-reply saving and consent reversal.
+- Production ead3daa/dpl_EYGJhtzaDoNZvgd7yv7ZCF3Y7kTv READY. Isolated marker-owned
+  QA verified onboarding auto-connect, real English200, reload reconnect and exact
+  message restoration, menu Escape, no page errors/mobile overflow. A preceding
+  Myanmar probe returned502 invalid_reply; language/schema reliability is not
+  fixed or certified. Two QA accounts were marker-verified and deleted along
+  with only their cascading test records. No real user journal was used.
+
 ## 43. Hosted SEA-LION request — 2026-11-05
 
 - Completion after owner corrected the Vercel server key: production deployment dpl_Ewa1fEvtTnZj8sabZfG13m6KFVrC/e979b50 is READY. Actual isolated QA login200, adult/context connection and real account-backed /api/ai English200/Myanmar200 succeeded on future-echo-sandy.vercel.app. Desktop1440x1000/mobile390x844 screenshots inspected; no page errors or mobile document overflow. An initial network failure occurred before account creation; one retry succeeded. The test account was marker-verified and deleted, cascading only its test records. No user journal/password was used. This supersedes the earlier blocker below, not the limited-quality/safety caveats.
