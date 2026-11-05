@@ -2,8 +2,11 @@
 
 ## 43. Hosted SEA-LION request — 2026-11-05
 
+- Completion after owner corrected the Vercel server key: production deployment dpl_Ewa1fEvtTnZj8sabZfG13m6KFVrC/e979b50 is READY. Actual isolated QA login200, adult/context connection and real account-backed /api/ai English200/Myanmar200 succeeded on future-echo-sandy.vercel.app. Desktop1440x1000/mobile390x844 screenshots inspected; no page errors or mobile document overflow. An initial network failure occurred before account creation; one retry succeeded. The test account was marker-verified and deleted, cascading only its test records. No user journal/password was used. This supersedes the earlier blocker below, not the limited-quality/safety caveats.
+
 - Owner explicitly authorized live AI on Vercel. Reused account-backed /api/ai and existing reservation/owner/context/consent limits instead of exposing localhost trial. Provider selection is explicit and fails closed for unknown values; Dots/private trial remains separate and no fallback is added.
 - Hosted availability is passed to the UI as booleans/provider label only. Without explicit connection, sending is blocked with a Connect action rather than silently returning samples. Settings names SEA-LION and explains cloud context/retention uncertainty and account history separately from the local journal.
+- Deployed c6a4241, followed by safe auth-stage diagnostics and malformed-key guard (e979b50).124 tests, lint/build and local SQL/RLS suite pass. Actual hosted status selects SEA-LION; anonymous /api/ai rejects401. Owner explicitly approved temporary marker-owned QA account create/send/screenshot/delete. Attempts stopped before AI: hosted login500 narrowed to adult-attestation TypeError; explicit guard now confirms503/database_key_format from Vercel server key. Local key read-only tables200 and own-QA adult RPC204 succeed. All created QA users/test rows cleaned via marker-verified deletion. Hosted real replies/screenshots not yet achieved; requires correcting SUPABASE_SERVICE_ROLE_KEY in Vercel. Sensitive value was not read/printed. Live feature mode blocks samples even when setup fails; no fallback or privacy relaxation.
 
 ## 42. Bare REST signup confirmation response — 2026-11-05
 

@@ -1,5 +1,11 @@
 # Future Echo journal implementation checkpoint
 
+## Hosted live SEA-LION verified — 2026-11-05
+
+- Existing authenticated /api/ai now selects fixed Qwen SEA-LION v4.5, retaining adult confirmation, owner-filtered server context, quotas/reservations/idempotency and explicit memory consent. Login alone does not upload/connect the journal. Unconnected live mode blocks sends instead of substituting examples.
+- Owner corrected malformed Vercel SUPABASE_SERVICE_ROLE_KEY; safe format guard and secret-free auth-stage diagnostics remain. Production e979b50 deployment is READY on https://future-echo-sandy.vercel.app.
+- Actual owner-approved temporary QA account: login200 → adult/connect/context → English live reply200 → Myanmar live reply200; desktop1440x1000/mobile390x844 inspected, no page errors/overflow. QA account and only its cascading test data deleted after marker verification.124 unit tests, lint/build and local SQL/RLS checks passed. Anonymous /api/ai401 verified. No full native-language/safety, load or physical-device certification implied; provider trial limits/retention caveats remain.
+
 ## SEA-LION private app trial connected — 2026-11-05
 
 - Owner explicitly approved connecting Qwen SEA-LION v4.5 27B after English/Myanmar fictional evaluation and provider privacy disclosure. Development-only fixed-model adapter now uses the existing loopback/same-origin trial route and bounded context. Dots config retained, no automatic fallback, production AI inactive.
