@@ -1,5 +1,27 @@
 # Future Echo journal implementation checkpoint
 
+## Ongoing chat reload recovery verified — 2026-11-05
+
+- Earlier server-history verification missed drafts/in-flight sends. Added a
+  validated bounded tab cache, separate from journal/export/memory consent, and
+  account-owner checks.132 tests, lint and build pass. Three viewport regression
+  checks passed for draft, pending send and repeated completed-chat reload.
+- Hosted tests exposed a genuine immediate-reload race: unload cancellation could
+  stop typing before draft recovery, leaving an empty composer.09ea59f fixes both
+  cancellation preservation and recovery from a pending request even when typing
+  is already false. Disconnect clears local recovery before cloud cleanup.
+- Production dpl_ARGgRZYgwAZLvoquohHoWd1ihd2C/09ea59f READY. Final isolated QA
+  passed explicit onboarding auto-connect, Myanmar unsent draft reload, outgoing
+  interrupted-send recovery with no automatic resend, real English reply200 and
+  complete history reload, then immediate post-Send reload before provider call.
+  Final mobile screenshot inspected; no page errors/document overflow. All QA
+  accounts from diagnostic and final runs were nonce-verified and deleted with
+  only their cascading test data. Final run did not test Myanmar AI quality.
+- Recovery is an unencrypted same-tab copy with24-hour idle TTL,100 messages per
+  direction and bounded capacity, not permanent/cloud draft storage. Tab closure,
+  storage failure and browser cleanup remain limitations. Expired/previously lost
+  conversations cannot be reconstructed. Existing account retention is unchanged.
+
 ## Reply actions and authenticated reload verified — 2026-11-05
 
 - Deployed ead3daa, production READY. Live onboarding has explicit cloud consent

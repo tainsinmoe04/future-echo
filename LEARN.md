@@ -2,6 +2,13 @@
 
 ## 45. Ongoing conversation reload correction — 2026-11-05
 
+- Final production09ea59f READY:132 tests/lint/build pass. Actual isolated hosted
+  QA passed unsent draft reload, intercepted in-flight recovery, real English200
+  and completed chat reload, plus immediate post-Send reload. Cancellation had
+  cleared typing before recovery; pending request identity, not typing alone,
+  must decide whether unsent words should return. A completed request must not
+  resurrect an old draft. No automatic resend; temporary QA records all removed.
+
 - Earlier QA covered completed server replies only, not unsent drafts or in-flight
   messages. Those still lived solely in React state. A synchronous tab cache now
   preserves messages/drafts/request IDs before rendering, without journal export
