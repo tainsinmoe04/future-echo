@@ -2,6 +2,9 @@ name: Future Echo checks
 on:
   push:
   pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1"
 permissions:
   contents: read
 concurrency:
@@ -11,6 +14,18 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      APP_ORIGIN: "https://future-echo.invalid"
+      SUPABASE_URL: ""
+      SUPABASE_PUBLISHABLE_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      GEMINI_API_KEY: ""
+      OPENROUTER_API_KEY: ""
+      FUTURE_ECHO_AI_ENABLED: "false"
+      FUTURE_ECHO_LOCAL_AI: "false"
+      FUTURE_ECHO_OPENROUTER_TRIAL: "false"
+      FUTURE_ECHO_OLLAMA_WINDOWS_BRIDGE: "false"
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -19,13 +34,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - name: Repository credential and artifact hygiene
+        run: |
+          node scripts/verify-repository-security.mjs --self-test
+          node scripts/verify-repository-security.mjs
+      - run: npm ci --registry=https://registry.npmjs.org
+      - run: npm audit --registry=https://registry.npmjs.org --audit-level=high
+      - run: npm exec --no -- tsc --noEmit
       - run: npm test
       - run: npm run test:db
       - run: npm run lint
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - run: npm exec --no -- playwright install --with-deps chromium
       - run: npm run test:e2e
-        env:
-          FUTURE_ECHO_AI_ENABLED: "false"
-          NEXT_TELEMETRY_DISABLED: "1"

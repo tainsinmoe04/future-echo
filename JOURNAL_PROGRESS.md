@@ -1,5 +1,62 @@
 # Future Echo journal implementation checkpoint
 
+## SEA-LION private app trial connected — 2026-11-05
+
+- Owner explicitly approved connecting Qwen SEA-LION v4.5 27B after English/Myanmar fictional evaluation and provider privacy disclosure. Development-only fixed-model adapter now uses the existing loopback/same-origin trial route and bounded context. Dots config retained, no automatic fallback, production AI inactive.
+- Chat/About/Settings identify AI Singapore processing and unestablished zero-retention/non-training. Keys stay server-side; original evidence, separate note consent and local journal persistence unchanged.
+- 117 unit tests, lint and production build pass. Actual isolated Chrome onboarding → English reply → Myanmar follow-up passed via app API; screenshots at1440x1000/390x844, no page errors or mobile document overflow. Current Myanmar output still had overconfident future framing: demo evaluation only, not safety/fluency approval. No deployment/push or user data mutation.
+
+## SEA-LION key test — 2026-10-27
+
+- Key valid, inventory200. Dots remains active, app/env/provider selection unchanged.
+- Qwen SEA-LION4.5 with JSON + thinking off passes four fictional Burmese/English/
+  honesty/boundary schema cases,2.7–3.5s. Promising alternative, not integration.
+- Gemma one valid adapted case; default Nemotron repetitive/invalid. Full results
+  in DEMO_MODEL_EVALUATION.md. No real journal/user content sent, no key exposure.
+- Only documentation changed; no app build/full test rerun or live browser claim.
+
+## Dots preserved; Burmese alternatives — 2026-10-27
+
+- Dots remains selected exactly as owner requested; candidate tests are separate.
+- Gemma free31B/26B Burmese probes429. Dots Burmese output incomplete and rejected.
+- SEA-LION Burmese-adapted model researched through first-party sources, not yet
+  generated/tested: separate trial key required. No provider/env/key/UI change.
+- Fictional evaluation tool adds --burmese. Syntax/lint pass; details in
+  DEMO_MODEL_EVALUATION.md. No paid call, push or deployment.
+
+## English-first live demo — 2026-10-27
+
+- Agent-assisted screening14 free models selected fixed Dots provisionally.12 controlled adapter calls complete; median2.216s, worst10.915s. No broad multilingual claim: Burmese deferred, Japanese failed, German needs review.
+- Actual live English desktop and Spanish mobile send→reply→inline save→reopen pass in isolated Chrome, consent off, no account sync/page errors. Existing UI/keys/journal unchanged.114 tests, lint/build/security scanner pass.
+- Full comparison/limitations/rehearsal instructions: DEMO_MODEL_EVALUATION.md. Demo uses local onboarding then /now, not blocked account signup. Production AI stays disabled; no deployment/push or privacy fallback.
+
+## Qwen/account configuration checkpoint — 2026-10-27
+
+- Requested fixed private model is qwen/qwen3-8b:free; endpoint inventory empty and one fictional call fails router_privacy. No working-model or language-quality claim. No automatic alternate model.
+- Exact localhost development Origin restored; removed /rest/v1/ from existing private Supabase URL without changing hostname or keys. Account configuration is recognized; same-origin invalid signup returns400 rather than Origin403, other origins remain blocked.
+- Supabase hostname currently fails DNS in WSL/Windows. Actual account creation/login remains unverified and blocked by reachability. No accounts/journal records changed.
+- 114 tests, lint/build pass. Production AI remains false, private env files ignored, no push/deploy/migration.
+
+## Login/signup UI refinement — 2026-10-24
+
+- Shared account shell now uses a narrow, form-first black/lilac layout; removed large marketing headline/demo and corrected icon/text overlap. Signup follows the same scoped system. Journal/chat/landing unchanged.
+- Added accessible feedback focus, explicit pending state, password toggle targets and duplicate-submit protection. Local continuation and 18+ requirement remain; no Google/recovery feature is implied.
+- Verification: 114 unit tests, lint, production build; nine auth browser checks pass against development and production. Desktop/mobile screenshots inspected outside repo. Actual hosted signup/login/recovery still unverified. No real account, provider request, key change, push or deployment.
+
+## Agent-split non-AI readiness — 2026-10-24
+
+- Three agents completed focused HTTP/auth, CI/release and journal-resilience increments; parent integrated production URL validation and honest Settings sign-out feedback. AI work remains paused and all validation disabled provider modes.
+- Fixed journal re-entrant save notification queue, exact/byte-bounded HTTP parsing, duplicate cookie ambiguity, bounded auth cookies/expiry and logout revocation reporting. Added pre-install tracked-file secret/artifact checks with synthetic self-tests and deterministic no-account CI settings.
+- Final checks: 114 unit tests; SQL/RLS; lint; TypeScript; production build; security scanner; npm audit (zero findings); full browser suite 39/39. Isolated Windows Chrome, reduced motion, 1440x1000 / 390x844 / 320x740. No personal journal or real service call used. QA screenshots/results are outside the repository. Known unrelated parent-lockfile warning remains.
+- Not public-ready certification: hosting and GitHub protection settings, physical-device/Safari checks, real multi-user Auth/concurrency, distributed abuse protection, password recovery and approved deletion/retention policy remain. Do not add a fake account-deletion success or silently upload the journal. No push/deploy/remote data change.
+
+## Non-AI security/CI increment — 2026-10-24
+
+- Updated Next/eslint-config-next to 16.4.3 and compatible transitive security fixes; official npm audit now reports zero findings. No forced major upgrade.
+- Added browser security headers, narrow CSP, CI dependency/type checks, weekly/manual verification and Dependabot proposals. SECURITY.md records remaining public-release gates; no automatic deployment.
+- Preserved chat/journal design, keys, provider configuration, consent and immutable evidence. AI work is paused by owner. No remote migration, push or deployment.
+- Passed: 102 unit tests, SQL/RLS suite, lint, TypeScript, production build, 6 security/origin HTTP checks and corrected 3 decoration/revisit browser checks. WSL Chromium launch failed; isolated Windows Chrome fallback used. Full browser run initially hit stale selectors; fixed tests rather than changing UI. See LEARN section 32.
+
 ## Dots private-trial continuation — 2026-10-20
 
 - Finished the interrupted free-model switch: fixed model and ignored local model setting select `dots-studio/dots-3-note-preview:free`; Settings and .env.example agree. Key unchanged. Existing narrow context, consent, immutable evidence, zero-price/no-fallback/privacy guards and production AI disablement remain intact.

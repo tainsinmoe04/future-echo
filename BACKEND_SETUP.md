@@ -1,5 +1,60 @@
 # Supabase + Gemini — implementation checkpoint
 
+## Google and Vercel setup — 2026-11-05
+
+Google login is implemented but defaults off. In Google Cloud create a Web OAuth
+client with the Supabase project callback URL shown in Supabase Auth > Providers
+> Google (normally https://PROJECT.supabase.co/auth/v1/callback). Keep the Google
+client secret in Supabase, never in frontend code or Git. Enable Google there.
+In Supabase URL Configuration allow the exact app callback route
+https://YOUR-APP/api/auth/google-callback (including the state query used by the
+flow; restrict any wildcard to this callback path), plus the localhost equivalent
+for private testing. Use the app's exact HTTPS origin as APP_ORIGIN on Vercel.
+Configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY as server env vars; privileged
+backend operations additionally require the existing service key. Set
+FUTURE_ECHO_GOOGLE_AUTH=true only after reviewing the provider setup. Test both
+success and cancel/expired/mismatched-state flows with a real consenting account.
+Login does not upload the journal or implicitly connect AI.
+
+Hosted builds keep FUTURE_ECHO_AI_ENABLED=false, FUTURE_ECHO_SEALION_TRIAL=false,
+FUTURE_ECHO_OPENROUTER_TRIAL=false and FUTURE_ECHO_LOCAL_AI=false. The current
+SEA-LION adapter remains localhost/development only. A Vercel UI deployment is
+not a hosted live-AI release; authenticated quotas/abuse controls and separate
+provider disclosure remain required before that next step.
+
+## Current demo choice — 2026-10-27
+
+The owner authorized agent-assisted sequential comparison of other free models.
+Fixed Dots3-Note Preview now supersedes the unavailable Qwen trial below as an
+English-first private demo. Fourteen distinct models were screened; Dots alone
+repeatedly returned valid conversational JSON under required privacy/free rules.
+Japanese failed and German needs review; Burmese remains deferred. See
+DEMO_MODEL_EVALUATION.md for actual results and limitations. No provider policy,
+key, production activation or account DNS status changed.
+
+## Latest private setup — 2026-10-27
+
+Owner selected qwen/qwen3-8b:free. It is configured for the private development
+trial only, but current endpoint inventory is empty and a fictional request fails
+router_privacy. No fallback or privacy relaxation was approved.
+
+Use npm run dev:local for localhost account testing. Ignored development settings
+pin APP_ORIGIN=http://localhost:3000, the requested OpenRouter model and
+FUTURE_ECHO_AI_ENABLED=false. Existing Supabase credentials are restored without
+printing or changing keys. SUPABASE_URL is now the project origin rather than
+/rest/v1/. Current host DNS fails; verify the existing project's active status and
+correct Project URL before claiming real signup/login success.
+
+## Non-AI production configuration guard — 2026-10-24
+
+AI work remains paused. Account configuration in production now requires an
+explicit HTTPS APP_ORIGIN and HTTPS SUPABASE_URL. Both must be origin-only (an
+optional trailing slash is accepted), with no embedded credentials/query/fragment.
+Loopback HTTP is accepted only outside production. Invalid configuration disables
+account availability; the local journal does not require an account.
+This guard does not configure hosting, email, Auth abuse limits or deletion policy.
+Do not enable AI or change private keys to run the non-AI verification suite.
+
 Current private trial (2026-10-20): `OPENROUTER_MODEL=dots-studio/dots-3-note-preview:free` supersedes the earlier Gemma setup below. The owner authorized this free alternative. Actual app requests returned 200 for fictional English/Burmese inputs on October 19, but Burmese quality failed. Keep it private evaluation only; do not claim BarCamp/multilingual readiness. The API key is unchanged; existing development, privacy, zero-price/no-fallback and production gates remain mandatory.
 
 ## Current private trial: OpenRouter — 2026-10-19

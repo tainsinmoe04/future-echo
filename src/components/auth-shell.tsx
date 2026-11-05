@@ -1,27 +1,71 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DemoJourney } from "./echo/demo-journey";
 import { Brand } from "./brand";
 import { Eye, Lock, Mail } from "./icons";
 import { backendRequest } from "@/lib/backend-client";
+
 export function AuthShell({ mode }: { mode: "login" | "signup" }) {
   const signup = mode === "signup", router = useRouter();
-  const [show, setShow] = useState(false), [busy, setBusy] = useState(false), [notice, setNotice] = useState("");
-  async function submit(form: HTMLFormElement) {
-    const data = new FormData(form); setBusy(true); setNotice("");
-    try {
-      const result = await backendRequest<{ signedIn?: boolean; message?: string }>(`/api/auth/${mode}`, { email: data.get("email"), password: data.get("password"), ...(signup ? { name: data.get("name") } : {}), adultConfirmed: data.get("adult") === "on" });
-      if (result.signedIn) router.push(signup ? "/onboarding" : "/now"); else setNotice(result.message ?? "Check your email before signing in.");
-    } catch (error) { setNotice(error instanceof Error ? error.message : "Sign-in is unavailable."); } finally { setBusy(false); }
+  const [show, setShow] = useState(false), [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ text: string; error: boolean }>();
+  const submitting = useRef(false), feedback = useRef<HTMLParagraphElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => { if (notice) feedback.current?.focus(); }, [notice]);
+  useEffect(() => { const timer=setTimeout(()=>{ if(new URLSearchParams(window.location.search).get("google")==="failed") setNotice({text:"Google sign-in was not completed or expired. Please try again.",error:true}); },0); return ()=>clearTimeout(timer); },[]);
+  async function google() {
+    if (submitting.current) return;
+    const adult=formRef.current?.elements.namedItem("adult") as HTMLInputElement|null;
+    if (!adult?.checked) { adult?.reportValidity(); adult?.focus(); return; }
+    submitting.current=true; setBusy(true); setNotice(undefined);
+    try { const result=await backendRequest<{url:string}>("/api/auth/google",{adultConfirmed:true,signup}); window.location.assign(result.url); }
+    catch(error) { setNotice({text:error instanceof Error?error.message:"Google sign-in is unavailable.",error:true}); submitting.current=false;setBusy(false); }
   }
-  return <main className="echo-public shell grid min-h-screen gap-10 py-7 lg:grid-cols-[1fr_.9fr]"><section className="flex flex-col"><Brand /><div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-14"><p className="eyebrow">{signup ? "Make a private space" : "Welcome back"}</p><h1 className="display mt-4 text-5xl sm:text-6xl">{signup ? "Begin with one possible direction." : "Return to what you chose to carry."}</h1><p className="mt-5 leading-7 text-muted">An imagined possible future, not a prediction. Signing in does not upload your local journal. Connect AI separately in Your Space settings.</p><p className="mt-6 text-sm text-muted">Email sign-in · Google sign-in is not configured.</p>
-    <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}>
-      {signup && <label className="block text-sm"><span className="mb-2 block">Name</span><input name="name" className="field" maxLength={120} autoComplete="name" /></label>}
-      <label className="block text-sm"><span className="mb-2 block">Email</span><span className="relative block"><Mail className="absolute left-4 top-4 text-muted" /><input name="email" type="email" required maxLength={254} autoComplete="email" className="field pl-12" placeholder="you@example.com" /></span></label>
-      <label className="block text-sm"><span className="mb-2 block">Password</span><span className="relative block"><Lock className="absolute left-4 top-4 text-muted" /><input name="password" type={show ? "text" : "password"} required minLength={8} maxLength={256} autoComplete={signup ? "new-password" : "current-password"} className="field px-12" placeholder="At least 8 characters" /><button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow(!show)} className="absolute right-4 top-4 text-muted"><Eye /></button></span></label>
-      <label className="flex items-start gap-3 text-sm"><input name="adult" type="checkbox" required className="mt-1" /><span>I confirm I am 18 or older. This beta is for adults.</span></label>
-      {notice && <p role="status" className="text-sm leading-6">{notice}</p>}<button type="submit" disabled={busy} className="button-primary mt-2 w-full">{busy ? "Please wait…" : signup ? "Create my space" : "Log in"}</button>
-    </form><p className="mt-7 text-center text-sm text-muted">{signup ? "Already have an account?" : "New to Future Echo?"} <Link className="quiet-link" href={signup ? "/login" : "/signup"}>{signup ? "Log in" : "Create an account"}</Link></p><Link href="/onboarding" className="quiet-link mt-5 text-center text-sm">Start on this device without an account</Link></div></section><aside className="hidden items-center justify-center lg:flex"><div className="w-full max-w-md"><DemoJourney /><p className="mt-5 max-w-sm text-sm leading-6 text-muted">Quiet company without pretending to know your future.</p></div></aside></main>;
+
+  async function submit(form: HTMLFormElement) {
+    if (submitting.current) return;
+    submitting.current = true;
+    const data = new FormData(form);
+    setBusy(true); setNotice(undefined);
+    try {
+      const result = await backendRequest<{ signedIn?: boolean; message?: string }>(`/api/auth/${mode}`, {
+        email: data.get("email"), password: data.get("password"),
+        ...(signup ? { name: data.get("name") } : {}), adultConfirmed: data.get("adult") === "on",
+      });
+      if (result.signedIn) {
+        form.reset();
+        router.push(signup ? "/onboarding" : "/now");
+      } else setNotice({ text: result.message ?? "Check your email before signing in.", error: false });
+    } catch (error) {
+      setNotice({ text: error instanceof Error ? error.message : "Sign-in is unavailable. Please try again.", error: true });
+    } finally { submitting.current = false; setBusy(false); }
+  }
+
+  return <main className="echo-public auth-page">
+    <header className="auth-header"><Brand /><Link href="/" className="auth-back-link">Back to home</Link></header>
+    <section className="auth-content" aria-labelledby="auth-heading">
+      <div className="auth-heading">
+        <h1 id="auth-heading">{signup ? "A space of your own." : "Welcome back."}</h1>
+        <p>{signup ? "Create your account, then meet one possible future you." : "Come back to your conversation."}</p>
+      </div>
+      <form ref={formRef} className="auth-form" aria-label={signup ? "Create an account" : "Log in"} aria-busy={busy} onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}>
+        <fieldset disabled={busy}>
+          {signup && <label className="auth-label" htmlFor="auth-name">Name <span className="auth-optional">optional</span><input id="auth-name" name="name" className="auth-input" maxLength={120} autoComplete="name" /></label>}
+          <label className="auth-label" htmlFor="auth-email">Email</label>
+          <div className="auth-input-wrap"><Mail aria-hidden="true" /><input id="auth-email" name="email" type="email" required maxLength={254} autoComplete="email" autoCapitalize="none" spellCheck={false} className="auth-input auth-input-email" placeholder="you@example.com" /></div>
+          <label className="auth-label" htmlFor="auth-password">Password</label>
+          <div className="auth-input-wrap"><Lock aria-hidden="true" /><input id="auth-password" name="password" type={show ? "text" : "password"} required minLength={8} maxLength={256} autoComplete={signup ? "new-password" : "current-password"} aria-describedby={signup ? "auth-password-help" : undefined} className="auth-input auth-input-password" placeholder={signup ? "Create a password" : "Enter your password"} /><button type="button" className="auth-password-toggle" aria-label={show ? "Hide password" : "Show password"} aria-pressed={show} onClick={() => setShow(current => !current)}><Eye aria-hidden="true" /></button></div>
+          {signup && <p id="auth-password-help" className="auth-field-help">At least 8 characters.</p>}
+          <label className="auth-adult"><input name="adult" type="checkbox" required /><span>I am 18 or older.<small>This beta is for adults.</small></span></label>
+          <button type="submit" className="auth-submit" disabled={busy}>{busy ? signup ? "Creating your account…" : "Signing in…" : signup ? "Create account" : "Log in"}</button>
+          <button type="button" className="auth-submit" disabled={busy} onClick={()=>void google()}>Continue with Google</button>
+        </fieldset>
+        {notice && <p ref={feedback} tabIndex={-1} role={notice.error ? "alert" : "status"} className={`auth-feedback ${notice.error ? "is-error" : ""}`}>{notice.text}</p>}
+      </form>
+      <p className="auth-switch">{signup ? "Already have an account?" : "New here?"} <Link href={signup ? "/login" : "/signup"}>{signup ? "Log in" : "Create an account"}</Link></p>
+      <div className="auth-device-option"><span>Or keep it on this device</span><Link href="/onboarding">Continue without an account</Link></div>
+      <div className="auth-privacy"><p>Your journal stays on this device. Signing in does not upload it.</p><p>An imagined possible future self, not a prediction.</p><details><summary>About account access</summary><p>Email/password and Google sign-in require server and provider setup. Password recovery is not available in this beta. You can use the local journal without an account.</p></details></div>
+    </section>
+  </main>;
 }

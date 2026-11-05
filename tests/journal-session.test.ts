@@ -60,6 +60,29 @@ test("conflicts retain unsaved data and never adopt another tab's revision", asy
   session.retry(); await tick(); assert.deepEqual(revisions, [3, 3]);
 });
 
+test("an update queued by a saved-state subscriber is persisted after the write lock releases", async () => {
+  const writes: JournalSnapshot[] = [];
+  const session = createJournalSession(initial, {
+    read: async () => makeJournalDocument(initial, 0, stamp),
+    write: async (value, revision) => { writes.push(value); return makeJournalDocument(value, revision, stamp); },
+  });
+  await session.load();
+  const first = { ...initial, preferences: { ...DEFAULT_PREFERENCES, readingSize: "large" as const } };
+  const second = { ...first, preferences: { ...first.preferences, motion: "reduced" as const } };
+  let queued = false;
+  session.subscribe(() => {
+    if (!queued && session.getSnapshot().status === "saved") {
+      queued = true;
+      session.update(() => second);
+    }
+  });
+  session.update(() => first);
+  await tick();
+  assert.deepEqual(writes, [first, second]);
+  assert.equal(session.getSnapshot().snapshot, second);
+  assert.equal(session.getSnapshot().status, "saved");
+});
+
 test("restore is exclusive, adopts only a completed transaction and retains state on failure", async () => {
   let release: () => void = () => {}; let fail = false;
   const target = { ...initial, preferences: { ...DEFAULT_PREFERENCES, readingSize: "large" as const } };

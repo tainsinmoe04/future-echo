@@ -2,6 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { safetyCases } from "./fixtures/safety-cases";
 import { FUTURE_SELF_INSTRUCTIONS } from "../src/server/future-self-provider";
+import { futureSelfMessages } from "../src/server/future-self-messages";
+import { buildAIContext } from "../src/server/ai-context-builder";
+import { activeIdentityVersion } from "../src/lib/mock-data";
+
+test("imagined-scene voice distinguishes life questions from reality claims and guarantees", () => {
+  const context = buildAIContext({currentMessage:"How are you living there?",recentMessages:[],activeIdentityVersion,relevantSavedMoments:[]});
+  const prompt = futureSelfMessages(context)[0].content;
+  for (const rule of ["normally invites the agreed imagined scene", "aspirations actually supplied", "real time travel", "actual guarantee", "Never disguise", "Do not invent a university", "If no relevant aspiration was supplied"]) assert.ok(prompt.includes(rule), rule);
+  assert.ok(FUTURE_SELF_INSTRUCTIONS.includes("not as a verified real-world outcome"));
+});
 
 test("offline safety corpus has unique paired English/Myanmar cases and explicit human rubrics", () => {
   assert.equal(safetyCases.length, 16);

@@ -17,7 +17,7 @@ import { PlaylistCard } from "@/components/echo/playlist-card";
 const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 
 function Conversation() {
-  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, trialAI, connectionError, loadPastConversation } = useMockProductState();
+  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, trialAI, trialProvider, connectionError, loadPastConversation } = useMockProductState();
   const query = useSearchParams();
   const pastIdentity = identityVersions.find((identity) => identity.id === query.get("past") && identity.status === "past");
   const identity = pastIdentity ?? activeIdentity;
@@ -73,7 +73,7 @@ function Conversation() {
       </div>
       {readOnly ? <footer className="echo-readonly"><p>This conversation belongs to an earlier direction.</p><Link href="/now" className="echo-button white">Return to your current chat</Link></footer> : <footer className="echo-composer-area">
         {connectionError && <p className="echo-muted" role="alert">{connectionError} Your words remain here; check before sending again.</p>}
-        <div className="echo-composer-above"><span>{trialAI ? "OpenRouter · private cloud trial" : connectedAI ? "Connected · Gemini · imagined perspective" : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
+        <div className="echo-composer-above"><span>{trialAI ? `${trialProvider} · private cloud trial` : connectedAI ? "Connected · Gemini · imagined perspective" : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
         <form className="echo-composer" onSubmit={(event) => { event.preventDefault(); submit(); }}>
           <button type="button" className="echo-icon-button" aria-label="Add a moment with photos" onClick={() => setSpace({ create: true })}><ClipIcon /></button>
           <label htmlFor="echo-message" className="sr-only">Message your future self</label>
@@ -85,7 +85,7 @@ function Conversation() {
       </footer>}
     </main>
     <EchoDialog open={Boolean(space)} label="Your Space" onClose={() => setSpace(null)} className="echo-space-drawer"><PersonalSpace onClose={() => setSpace(null)} initialMomentId={space?.momentId} initialCreate={space?.create} /></EchoDialog>
-    <EchoDialog open={about} label="About this possible future" onClose={() => setAbout(false)} className="echo-about-dialog"><section className="echo-about"><OrbitIcon /><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p><p className="echo-muted">{trialAI ? "Replies send your current direction, up to ten recent messages and up to three permitted excerpts to OpenRouter and its model provider. Notes require separate permission. Conversations reset on refresh; saved moments stay on this device. This is not E2EE or professional care." : connectedAI ? "Gemini replies use your current direction, up to ten recent messages and up to three consented saved excerpts. This is not professional care." : "This preview uses sample replies. No AI provider is connected."}</p><button className="echo-button lilac" onClick={() => setAbout(false)}>Back to our conversation</button></section></EchoDialog>
+    <EchoDialog open={about} label="About this possible future" onClose={() => setAbout(false)} className="echo-about-dialog"><section className="echo-about"><OrbitIcon /><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p><p className="echo-muted">{trialAI ? `Replies send your current direction, up to ten recent messages and up to three permitted excerpts to ${trialProvider === "SEA-LION" ? "AI Singapore's SEA-LION API. Zero retention and non-training are not established; avoid sensitive details" : "OpenRouter and its model provider"}. Notes require separate permission. Conversations reset on refresh; saved moments stay on this device. This is not E2EE or professional care.` : connectedAI ? "Gemini replies use your current direction, up to ten recent messages and up to three consented saved excerpts. This is not professional care." : "This preview uses sample replies. No AI provider is connected."}</p><button className="echo-button lilac" onClick={() => setAbout(false)}>Back to our conversation</button></section></EchoDialog>
   </div>;
 }
 

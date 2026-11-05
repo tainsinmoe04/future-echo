@@ -11,6 +11,7 @@ const response = (content: unknown, finish_reason = "stop") => Response.json({ c
 const normal = { text: "You can pause before deciding.", safety: "normal", playlist: null };
 
 test("OpenRouter trial is opt-in and impossible in production", () => {
+  assert.equal(OPENROUTER_TRIAL_MODEL, "dots-studio/dots-3-note-preview:free");
   assert.equal(openRouterTrialEnabled({ NODE_ENV: "production", FUTURE_ECHO_OPENROUTER_TRIAL: "true" }), false);
   assert.equal(openRouterTrialEnabled({ NODE_ENV: "development" }), false);
   assert.equal(openRouterTrialEnabled({ NODE_ENV: "development", FUTURE_ECHO_OPENROUTER_TRIAL: "true" }), true);

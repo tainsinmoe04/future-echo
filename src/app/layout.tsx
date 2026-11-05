@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Caveat, Lora, Manrope, Noto_Sans_Myanmar, Noto_Serif_Myanmar, Nunito_Sans, Padauk } from "next/font/google";
 import { MockProductStateProvider } from "@/components/mock-product-state";
 import { openRouterTrialEnabled } from "@/server/openrouter-provider";
+import { seaLionTrialEnabled } from "@/server/sealion-provider";
 import "./globals.css";
 import "./echo.css";
+import "./auth.css";
 
 const body = Manrope({ variable:"--font-body", subsets:["latin"] });
 const display = Nunito_Sans({ variable:"--font-display", subsets:["latin"] });
@@ -13,4 +15,4 @@ const myanmar = Noto_Sans_Myanmar({ variable: "--font-myanmar", subsets: ["myanm
 const myanmarSoft = Padauk({ variable: "--font-myanmar-soft", subsets: ["myanmar"], weight: "400", display: "swap", preload: false });
 const myanmarBook = Noto_Serif_Myanmar({ variable: "--font-myanmar-book", subsets: ["myanmar"], weight: "400", display: "swap", preload: false });
 export const metadata: Metadata = { title:{ default:"Future Echo", template:"%s — Future Echo" }, description:"A quiet conversation with one possible future perspective." };
-export default function RootLayout({ children }:{ children:React.ReactNode }) { return <html lang="en"><body className={`${body.variable} ${display.variable} ${handwritten.variable} ${book.variable} ${myanmar.variable} ${myanmarSoft.variable} ${myanmarBook.variable}`}><MockProductStateProvider trialAI={openRouterTrialEnabled()}>{children}</MockProductStateProvider></body></html>; }
+export default function RootLayout({ children }:{ children:React.ReactNode }) { const seaLion = seaLionTrialEnabled(); return <html lang="en"><body className={`${body.variable} ${display.variable} ${handwritten.variable} ${book.variable} ${myanmar.variable} ${myanmarSoft.variable} ${myanmarBook.variable}`}><MockProductStateProvider trialAI={seaLion || (openRouterTrialEnabled() && process.env.FUTURE_ECHO_SEALION_TRIAL !== "true")} trialProvider={seaLion ? "SEA-LION" : "OpenRouter"}>{children}</MockProductStateProvider></body></html>; }

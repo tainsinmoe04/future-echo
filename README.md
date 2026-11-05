@@ -1,6 +1,25 @@
 # Future Echo
 
-Future Echo is a dark, quiet reflective product for speaking with one possible future perspective a user is deliberately working toward. It is not prediction, therapy, or a productivity tracker. The default remains a local preview. The owner-authorized Supabase + Gemini backend is implemented behind configuration and explicit user connection, but no project or API key is connected. See [BACKEND_SETUP.md](./BACKEND_SETUP.md) for setup, tests, data boundaries and unfinished production gates.
+Future Echo is a dark, quiet reflective product for speaking with one imagined possible future perspective. It is not prediction, therapy, or a productivity tracker. Its journal is browser-local. Account/backend integration is gated separately; AI work and public release are currently paused. A hosted schema was explicitly applied on October 17, but that does not establish live account or public-release readiness. See [BACKEND_SETUP.md](./BACKEND_SETUP.md), [SECURITY.md](./SECURITY.md) and [JOURNAL_PROGRESS.md](./JOURNAL_PROGRESS.md) for dated evidence and remaining gates. Never copy private environment files into an issue or commit.
+
+### Non-AI production preparation
+
+The current baseline is Next.js 16.4.3 with browser security headers, isolated
+local journal persistence/backup tests and read-only CI. CI does not deploy.
+Production account configuration must provide an explicit HTTPS APP_ORIGIN and
+HTTPS SUPABASE_URL with no credentials, query, fragment or path. Invalid
+configuration leaves account services unavailable rather than sending secrets to
+an insecure destination. Development permits explicit loopback HTTP.
+
+Run `npm run test:security` for synthetic scanner checks and a sanitized scan of
+Git-tracked working files. This does not inspect ignored keys or Git history.
+Auth responses now validate cookie token/expiry shapes; sign-out distinguishes
+local cookie removal from unconfirmed upstream session revocation.
+
+AI provider flags, keys and models are not part of this preparation. Do not enable
+them to run journal/security checks. Public release still needs reviewed hosting,
+real two-account tests, deletion/retention decisions, abuse controls and physical
+device/accessibility checks; passing local tests is not release certification.
 
 Read [SPEC.md](./SPEC.md) and [LEARN.md](./LEARN.md) before changing product behavior or visual direction. They record locked requirements, durable decisions, and rejected approaches.
 
@@ -31,11 +50,11 @@ Confirmed moments, photos, layouts, identity versions, covers and preferences pe
 
 ## Run locally
 
-Requires Node.js 20.9+ and npm.
+Use Node.js 24 (matching CI) and npm. In a WSL checkout, use WSL-native Node.
 
 ```bash
-npm install
-npm run dev
+npm ci
+npm run dev:local
 ```
 
 ## Routes
@@ -43,8 +62,8 @@ npm run dev
 | Route | Purpose |
 | --- | --- |
 | `/` | Responsive product landing page and core-loop demonstration |
-| `/login` | Static Google and email/password login UI |
-| `/signup` | Static Google and email/password signup UI |
+| `/login` | Configuration-gated email login; Google sign-in unavailable |
+| `/signup` | Configuration-gated email registration with adult confirmation |
 | `/onboarding` | Three-stage possible-future setup with horizon presets |
 | `/now` | Mock conversation, session review, and Save Moment flow |
 | `/memory` | Sparse chronological saved moments and editable notes |
@@ -72,12 +91,12 @@ src/server/
 └── ai-context-builder.ts   # Enforced provider-facing context boundary
 ```
 
-Tailwind v4 design tokens live in `src/app/globals.css`. Interactive mock state remains local to client components. No module reads API keys in client code.
+Tailwind v4 design tokens live in `src/app/globals.css`. Journal state is local and revision-protected in IndexedDB. Account/context APIs are separately gated; no module reads API keys in client code.
 
 ## Intentionally deferred
 
 - Final mascot and hero artwork
-- Supabase Auth, PostgreSQL schema, and RLS
+- Hosted account/session verification, password recovery and approved account-deletion behavior
 - Real AI provider and safety evaluation
 - Conversation persistence, expiry jobs, and backup-erasure policy
 - Notifications, export/print, multiple identities, rich search, and thematic views

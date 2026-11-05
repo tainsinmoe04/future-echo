@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { isVerbatimRedaction, MAX_JOURNAL_LENGTH } from "../src/lib/redaction";
 import { localDate, momentDay } from "../src/lib/local-date";
-import { changeMomentConsent, keepMoment, memoryBooks } from "../src/lib/personal-space";
+import { changeMomentConsent, keepMoment, memoryBooks, horizonDistance } from "../src/lib/personal-space";
 import { DEFAULT_CROP, findMoments, moveLayer, normalizeCrop } from "../src/lib/journal-tools";
 import { isJournalSnapshot } from "../src/lib/journal-snapshot";
 import { parseJournalBackup, serializeJournalBackup } from "../src/lib/journal-backup";
@@ -12,6 +12,13 @@ import { buildAIContext } from "../src/server/ai-context-builder";
 import type { JourneyMoment } from "../src/lib/domain";
 const moment: JourneyMoment = { id: "personal", identityVersionId: activeIdentityVersion.id, kind: "personal", originalExcerpt: "I walked home.", occurredAt: "2026-12-31T18:30:00.000Z", calendarDate: "2027-01-01", revisitAt: "2027-07-01T00:00:00.000Z", myNote: "A quiet morning", consent: { useInAiContext: false, includeMyNoteInAiContext: false, recordedAt: "2026-12-31T18:30:00.000Z" } };
 const snapshot = () => ({ version: 1 as const, identityVersions: [activeIdentityVersion], moments: [moment], preferences: DEFAULT_PREFERENCES });
+test("horizon distance uses calendar years/months, never decimal years", () => {
+  assert.equal(horizonDistance("2029-04", "2026-11-05"), "2 years, 5 months ahead");
+  assert.equal(horizonDistance("2029-11", "2026-11-05"), "3 years ahead");
+  assert.equal(horizonDistance("2027-12", "2026-11-05"), "1 year, 1 month ahead");
+  assert.equal(horizonDistance("2027-05", "2026-11-05"), "6 months ahead");
+  assert.equal(horizonDistance("2026-11", "2026-11-05"), "Your horizon is here");
+});
 test("Myanmar deletion works without spaces, without inserting, reordering or splitting graphemes", () => {
   assert.ok(isVerbatimRedaction("ဒီနေ့စာမေးပွဲအောင်တယ်ဒါပေမယ့်စိတ်ပင်ပန်းတယ်", "ဒီနေ့စာမေးပွဲအောင်တယ်"));
   assert.equal(isVerbatimRedaction("မင်္ဂလာပါ", "င်"), false);

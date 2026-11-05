@@ -110,6 +110,7 @@ test("direct decoration gestures, layer ordering and six-month revisit preserve 
   await page.getByRole("textbox", { name: "Moment title", exact: true }).fill("The middle of the road");
   await page.getByRole("textbox", { name: "My words", exact: true }).fill("I took my time and made something small.");
   await page.getByRole("button", { name: "Arrange", exact: true }).click();
+  await page.locator("summary").filter({ hasText: "Add decorations" }).click();
   await page.getByRole("button", { name: "Tapes", exact: true }).click();
   await page.getByRole("button", { name: "Add tape-lilac sticker", exact: true }).click();
   const sticker = page.getByRole("group", { name: "tape-lilac sticker", exact: true }); await sticker.scrollIntoViewIfNeeded();
@@ -124,7 +125,7 @@ test("direct decoration gestures, layer ordering and six-month revisit preserve 
     await sticker.focus(); await sticker.press("]"); await sticker.press("+");
     await expect(sticker).toHaveAttribute("style", /rotate\(5deg\).*scale\(1.1\)/);
   }
-  await page.getByRole("button", { name: "Send to back", exact: true }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Done", exact: true }).click(); await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
   await page.clock.setFixedTime(new Date("2027-04-16T05:00:00.000Z")); await page.reload();
   await page.getByRole("button", { name: "Open 2026 memory book", exact: true }).click();

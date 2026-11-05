@@ -1,5 +1,77 @@
 # Future Echo — Product and Implementation Specification
 
+## GitHub/Vercel and Google sign-in authorization — 2026-11-05
+
+Owner explicitly requested backup of current work to the existing GitHub repo,
+a new Vercel project linked to it, Google account sign-in, and readable whole
+year/month horizon distance instead of decimal years. Preserve server-side
+Supabase accounts and local journal isolation; Google uses PKCE and explicit
+adult confirmation. Provider/dashboard OAuth credentials and redirect allowlists
+must be configured before enabling Google. Deployment authorization does not
+remove the private loopback AI boundary: hosted builds keep trial AI inactive
+until a separate authenticated, rate-limited hosted SEA-LION path is reviewed.
+
+## Imagined-scene voice correction — 2026-11-05
+
+Owner explicitly requested an immersive first-person answer to ordinary questions
+about the chosen future life, rather than repetitive AI/uncertainty disclaimers.
+Within the visibly imagined scenario, supplied aspirations may be described as
+the persona's present life. This is not an actual prediction or factual future
+record. Explicit reality/time-travel/guarantee questions still receive honest
+clarification. Never invent unsupplied life achievements, shared memories or
+specific institutions, pressure harmful persistence, or continue persona in crisis.
+
+## Owner-authorized SEA-LION private connection — 2026-11-05
+
+After reviewing provider/privacy limitations and English/Myanmar fictional probes,
+the owner explicitly authorized connecting AI Singapore's SEA-LION API for their
+private development demo. Use fixed aisingapore/Qwen-SEA-LION-v4.5-27B-IT,
+native JSON and thinking disabled. English/Myanmar are priorities, not certified
+fluency or public safety approval. This supersedes the research-only restriction
+for this opt-in development mode only. Retain Dots configuration; never fallback.
+Keep bounded context, separate note consent, strict complete-output validation,
+same-origin/loopback checks, session-only chat and inactive production AI.
+Disclose SEA-LION processing and unestablished zero-retention/non-training; do
+not claim OpenRouter privacy-deny controls apply to this separate provider.
+
+## Retain Dots during alternative research — 2026-10-27
+
+Owner explicitly instructed keeping the current Dots demo while separately
+researching/testing Burmese-capable alternatives. Do not remove/reselect Dots or
+enable automatic fallback. No Burmese quality approval is implied. SEA-LION is
+currently a researched candidate requiring its own privately supplied trial key
+and review, not a connected provider or an approved replacement.
+
+## Provisional English-first private demo — 2026-10-27
+
+The owner authorized sequential free-model comparison and selection for a usable
+demo, with Burmese deferred. Dots3-Note Preview supersedes Qwen as the fixed
+private-trial model after fourteen-model screening. It is an availability-based
+provisional English-first choice, not approved multilingual or production AI.
+Keep the existing privacy, zero-price, no-fallback, output-schema and consent
+boundaries. Japanese failed and German needs review; no broad language guarantee.
+See DEMO_MODEL_EVALUATION.md for actual calls, latency, quality limits and rendered
+live send/save verification. Supabase DNS remains a separate account blocker.
+
+## Private Qwen trial and account configuration repair — 2026-10-27
+
+Owner explicitly requested qwen/qwen3-8b:free and restoration of preview account
+configuration. This supersedes the previous fixed Dots private-trial model only.
+Keep development-only gating, zero-price/no-fallback/data-collection-deny checks,
+validated bounded context and inactive production /api/ai. Do not infer public
+release, fallback approval or changed retention guarantees.
+
+Current verification: the Qwen endpoint inventory returns zero endpoints and one
+fictional request through the compiled adapter fails with router_privacy. The
+official model page advertises October 9 deprecation. Configuration is changed,
+but this is not a working AI or language-quality approval.
+
+Local account testing uses npm run dev:local and APP_ORIGIN=http://localhost:3000,
+not a production server with a fabricated CI origin. SUPABASE_URL must be the
+HTTPS project origin, not its /rest/v1/ endpoint. Local configuration is restored,
+but the configured project hostname currently fails DNS in WSL and Windows.
+Do not claim signup/login works until reachability and real-user checks pass.
+
 ## Scoped editor and welcome follow-up — 2026-10-19
 
 Latest welcome-copy correction: keep the intimate future-self voice and the line about meeting yourself feeling strange; ask how today went. Remove the explicit imagination exercise and chosen-direction prompt from the welcome itself. Retain the visible imagined-possible-future context and app-written provenance; do not claim literal unexpected time contact. The chosen year remains in the header. Model replies should follow the latest user language or explicit language request, including natural mixed-language use; this instruction is not certification of language fluency. Built-in welcome translations currently cover Burmese and English only; full app localization and broader welcome translations remain pending.

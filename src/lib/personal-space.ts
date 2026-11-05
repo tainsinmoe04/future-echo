@@ -92,6 +92,7 @@ export function horizonDistance(targetMonth: string, today: string) {
   const distance = (year - nowYear) * 12 + month - nowMonth;
   if (distance <= 0) return "Your horizon is here";
   if (distance < 12) return `${distance} ${distance === 1 ? "month" : "months"} ahead`;
-  const years = Math.round(distance / 12 * 10) / 10;
-  return `${years} ${years === 1 ? "year" : "years"} ahead`;
+  const years = Math.floor(distance / 12), months = distance % 12;
+  const label = `${years} ${years === 1 ? "year" : "years"}`;
+  return months ? `${label}, ${months} ${months === 1 ? "month" : "months"} ahead` : `${label} ahead`;
 }

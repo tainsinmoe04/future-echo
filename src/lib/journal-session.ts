@@ -38,8 +38,10 @@ export function createJournalSession(initial: JournalSnapshot, storage: JournalP
         try { revision = (await storage.write(value, revision, isJournalSnapshot)).revision; }
         catch (error) { pending = state.snapshot; fail(error); return; }
       }
-      publish({ status: "saved" });
     } finally { writing = false; }
+    // Release the queue lock before notifying subscribers. A subscriber may
+    // synchronously enqueue another edit in response to the saved state.
+    publish({ status: "saved" });
   }
 
   const load = () => {

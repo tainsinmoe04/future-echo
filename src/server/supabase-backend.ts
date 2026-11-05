@@ -9,6 +9,7 @@ export class SupabaseBackend {
     try { response = await this.fetcher(`${this.config.supabaseUrl}/auth/v1/${path}`, { method: body === undefined ? "GET" : "POST", headers: { apikey: this.config.supabaseKey, "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), cache: "no-store", signal: AbortSignal.timeout(12000) }); }
     catch { throw new ApiError(503, "auth_unavailable", "Account services are temporarily unavailable."); }
     if (!response.ok) throw new ApiError(response.status === 429 ? 429 : 401, "authentication", response.status === 429 ? "Please wait before trying again." : "Sign-in could not be verified. Check your details or sign in again.");
+    if (path === "logout" && response.status === 204) return {};
     const value: unknown = await response.json(); if (!object(value)) throw new ApiError(502, "auth_response", "Account services returned an invalid response."); return value;
   }
   async user(request: Request): Promise<{ id: string; email: string }> {
