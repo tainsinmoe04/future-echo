@@ -1,5 +1,6 @@
 import type { MessengerThread } from "./mock-messenger";
 import { isPlaylist } from "./playlist";
+export const CHAT_RETENTION_MS = 30 * 86400000;
 
 export const CHAT_RECOVERY_KEY = "future-echo.chat-recovery.v1";
 export interface ChatAttempt { content: string; requestId: string }
@@ -7,6 +8,7 @@ export interface ChatRecovery {
   version: 1;
   owner: string | null;
   savedAt: number;
+  retentionDays?: 30 | 90;
   threads: Record<string, MessengerThread>;
   attempts: Record<string, ChatAttempt>;
 }
@@ -18,9 +20,9 @@ export function parseChatRecovery(raw: string | null, now = Date.now()): ChatRec
   if (!raw || raw.length > 2_000_000) return null;
   try {
     const value: unknown = JSON.parse(raw);
-    if (!object(value) || !exact(value, ["version", "owner", "savedAt", "threads", "attempts"]) || value.version !== 1 || !(value.owner === null || (typeof value.owner === "string" && /^[0-9a-f-]{36}$/i.test(value.owner))) || typeof value.savedAt !== "number" || value.savedAt > now + 60000 || now - value.savedAt > 86400000 || !object(value.threads) || Object.keys(value.threads).length > 20 || !object(value.attempts)) return null;
+    if (!object(value) || !exact(value, ["version", "owner", "savedAt", "retentionDays", "threads", "attempts"]) || value.version !== 1 || !(value.owner === null || (typeof value.owner === "string" && /^[0-9a-f-]{36}$/i.test(value.owner))) || (value.retentionDays !== undefined && ![30,90].includes(value.retentionDays as number)) || typeof value.savedAt !== "number" || value.savedAt > now + 60000 || now - value.savedAt >= (value.retentionDays === 90 ? 90 : 30) * 86400000 || !object(value.threads) || Object.keys(value.threads).length > 20 || !object(value.attempts)) return null;
     for (const [key, thread] of Object.entries(value.threads)) {
-      if (!id(key) || !object(thread) || !exact(thread, ["messages", "draft", "typing"]) || typeof thread.draft !== "string" || thread.draft.length > 2000 || typeof thread.typing !== "boolean" || !Array.isArray(thread.messages) || thread.messages.length > 100) return null;
+      if (!id(key) || !object(thread) || !exact(thread, ["messages", "draft", "typing"]) || typeof thread.draft !== "string" || thread.draft.length > 2000 || typeof thread.typing !== "boolean" || !Array.isArray(thread.messages) || thread.messages.length > 500) return null;
       for (const message of thread.messages) {
         if (!object(message) || !exact(message, ["id", "role", "content", "createdAt", "safety", "playlist"]) || !id(message.id) || !["user", "assistant"].includes(message.role as string) || typeof message.content !== "string" || message.content.length > 4000 || typeof message.createdAt !== "string" || !Number.isFinite(Date.parse(message.createdAt)) || (message.safety !== undefined && !["normal", "support"].includes(message.safety as string)) || (message.playlist != null && !isPlaylist(message.playlist))) return null;
         if (message.playlist === null) delete message.playlist;
@@ -31,9 +33,9 @@ export function parseChatRecovery(raw: string | null, now = Date.now()): ChatRec
   } catch { return null; }
 }
 
-export function recoveredThreads(value: ChatRecovery): Record<string, MessengerThread> {
+export function recoveredThreads(value: ChatRecovery, now = Date.now()): Record<string, MessengerThread> {
   return Object.fromEntries(Object.entries(value.threads).map(([key, thread]) => [key, {
-    ...thread, messages: thread.messages.filter(message => message.id.startsWith("welcome-") || Date.parse(message.createdAt) > Date.now() - 30 * 86400000), typing: false,
+    ...thread, messages: thread.messages.filter(message => Date.parse(message.createdAt) > now - (value.retentionDays ?? 30) * 86400000), typing: false,
     draft: thread.draft || (value.attempts[key] && !thread.messages.some(message => message.role === "assistant" && message.id === value.attempts[key].requestId)
       ? value.attempts[key].content
       : thread.typing ? thread.messages.findLast(message => message.role === "user")?.content ?? "" : ""),

@@ -43,7 +43,7 @@ Confirmed moments, photos, layouts, identity versions, covers and preferences pe
 
 ## Locked privacy boundaries
 
-- Free conversation history is retained for up to 30 days; Plus history for up to 90 days. Saved Moments remain until the user deletes them.
+- Free conversation history is retained for up to 30 days; Plus history for up to 90 days. Device chat survives tab closure. Saved Moments remain until the user deletes them.
 - AI context is limited to the current message, up to 10 recent non-deleted messages, the active Future Self version, and up to 3 relevant consented Saved Moments.
 - My Note requires separate explicit opt-in. AI interpretations, archived or deleted memories, full history, and payment or support data are always excluded.
 - The context boundary is implemented and tested server-side, but no model receives it while `/api/ai` remains inactive.

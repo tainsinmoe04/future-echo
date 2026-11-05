@@ -1,5 +1,26 @@
 # Future Echo journal implementation checkpoint
 
+## Persistent chat and sticker controls — 2026-11-05
+
+- Owner clarified: retain Free30/Plus90; seven-day deletion is withdrawn. No new
+  deletion route/schedule is shipped and no seven-day production cleanup ran.
+- Device-local validated chat/draft recovery survives tab closure; existing tab
+  records migrate. Reconnect consent persists for the same verified account,
+  provider and direction. Cross-tab write conflicts warn rather than overwrite.
+  Server-reported30/90 controls cache retention, independently of Saved Moments.
+- One app-written English/Myanmar return check-in appears after a day away,
+  following the latest user language. Reload does not repeat introductions or
+  that check-in. No notification, automatic resend or new memory permission.
+- Uploaded sticker preview offers on-device plain-background cutout, original or
+  cancel; no cloud image processing/dependency. Complex backgrounds are not
+  universal automatic segmentation. Selected page/cover stickers/photos expose
+  direct44px Delete and keyboard Delete, with existing30-step Undo/Redo.
+- Fresh-directory unit tests137 pass, lint/build/security scan pass. Rendered
+  Chrome reduced-motion regressions cover tab close/reopen, day-away deduplication,
+  reload, PNG alpha, sticker/photo delete and Undo at1440x1000,390x844,320x740.
+  Screenshot evidence is outside repo. Hosted verification is recorded after
+  release; physical devices/Safari and full-background segmentation remain gaps.
+
 ## Ongoing chat reload recovery verified — 2026-11-05
 
 - Earlier server-history verification missed drafts/in-flight sends. Added a

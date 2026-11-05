@@ -7,7 +7,7 @@ import { contextSyncPayload } from "@/server/context-sync";
 import { localReplyPayload } from "@/lib/local-ai-input";
 import type { SavedPlaylist } from "@/lib/playlist";
 import { activeIdentityVersion } from "@/lib/mock-data";
-import { firstMessage, previewReply, connectedConversation, type MessengerThread } from "@/lib/mock-messenger";
+import { firstMessage, returningMessage, previewReply, connectedConversation, type MessengerThread } from "@/lib/mock-messenger";
 import { LIVE_CONNECTION_KEY, parseLiveConnectionConsent } from "@/lib/live-connection";
 import { CHAT_RECOVERY_KEY, parseChatRecovery, recoveredThreads } from "@/lib/chat-recovery";
 import { changeMomentConsent, keepMoment } from "@/lib/personal-space";
@@ -88,6 +88,9 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   const threadsRef = useRef<Record<string, MessengerThread>>({});
   const recoveryOwner = useRef<string | null>(null);
   const recoveryWritable = useRef(false);
+  const recoveryRevision = useRef<string | null>(null);
+  const returning = useRef(false);
+  const retentionDays = useRef<30 | 90>(30);
   const [chatReady, setChatReady] = useState(false);
   const [chatStorageError, setChatStorageError] = useState("");
   const [connectedAI, setConnectedAI] = useState(false);
@@ -102,38 +105,45 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     threadsRef.current = next;
     try {
       if (!recoveryWritable.current) throw new Error("recovery locked");
-      const bounded = Object.fromEntries(Object.entries(next).slice(-20).map(([key, thread]) => [key, { ...thread, messages: thread.messages.slice(-100) }]));
-      const value = JSON.stringify({ version: 1, owner: recoveryOwner.current, savedAt: Date.now(), threads: bounded, attempts: Object.fromEntries([...attempts.current].filter(([key]) => Object.hasOwn(bounded, key))) });
+      if (localStorage.getItem(CHAT_RECOVERY_KEY) !== recoveryRevision.current) throw new Error("Another tab changed this chat; reload before continuing.");
+      const bounded = Object.fromEntries(Object.entries(next).slice(-20).map(([key, thread]) => [key, { ...thread, messages: thread.messages.filter(message => Date.parse(message.createdAt) > Date.now() - retentionDays.current * 86400000).slice(-500) }]));
+      const value = JSON.stringify({ version: 1, owner: recoveryOwner.current, savedAt: Date.now(), retentionDays: retentionDays.current, threads: bounded, attempts: Object.fromEntries([...attempts.current].filter(([key]) => Object.hasOwn(bounded, key))) });
       if (value.length > 2_000_000) throw new Error("chat capacity");
-      sessionStorage.setItem(CHAT_RECOVERY_KEY, value);
+      localStorage.setItem(CHAT_RECOVERY_KEY, value);
+      recoveryRevision.current = value;
       setChatStorageError("");
-    } catch { setChatStorageError("Chat recovery is unavailable in this tab. Keep it open and copy any unsaved words before reloading."); }
+    } catch { setChatStorageError("Chat could not be saved, or another tab changed it. Keep this tab open and copy unsaved words before reloading."); }
     publishThreads(next);
   }, []);
   useEffect(() => {
     let current = true;
     void (async () => {
       try {
-        const recovery = parseChatRecovery(sessionStorage.getItem(CHAT_RECOVERY_KEY));
+        const stored = localStorage.getItem(CHAT_RECOVERY_KEY);
+        recoveryRevision.current = stored;
+        const recovery = parseChatRecovery(stored ?? sessionStorage.getItem(CHAT_RECOVERY_KEY));
         if (recovery?.owner) {
           const session = await backendRequest<{ user: { id: string } | null }>("/api/auth/session");
           if (!current) return;
-          if (session.user?.id !== recovery.owner) { sessionStorage.removeItem(CHAT_RECOVERY_KEY); recoveryWritable.current = true; return; }
+          if (session.user?.id !== recovery.owner) { localStorage.removeItem(CHAT_RECOVERY_KEY); sessionStorage.removeItem(CHAT_RECOVERY_KEY); recoveryRevision.current = null; recoveryWritable.current = true; return; }
         }
         if (!current) return;
         recoveryWritable.current = true;
-        if (!recovery) return;
+        if (!recovery) { localStorage.removeItem(CHAT_RECOVERY_KEY); sessionStorage.removeItem(CHAT_RECOVERY_KEY); recoveryRevision.current = null; return; }
+        returning.current = Date.now() - recovery.savedAt >= 86400000;
         recoveryOwner.current = recovery.owner;
+        retentionDays.current = recovery.retentionDays ?? 30;
         attempts.current = new Map(Object.entries(recovery.attempts));
         const restored = recoveredThreads(recovery);
         threadsRef.current = restored;
-        publishThreads(restored);
+        setThreads(restored);
+        sessionStorage.removeItem(CHAT_RECOVERY_KEY);
         if (Object.values(recovery.threads).some(thread => thread.typing)) setConnectionError("Your interrupted conversation was recovered. Check the latest messages before choosing to send again; no message was automatically resent.");
       } catch { if (current) setChatStorageError("Chat recovery could not be opened. It has not been overwritten; reconnect the same account and reload to try again."); }
       finally { if (current) setChatReady(true); }
     })();
     return () => { current = false; };
-  }, []);
+  }, [setThreads]);
   const contextQueue = useRef<Promise<unknown>>(Promise.resolve());
   const updateAccountContext = useCallback((body: unknown, method = "PUT") => {
     const pending = contextQueue.current.catch(() => {}).then(() => backendRequest("/api/context", body, method));
@@ -142,6 +152,18 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   }, []);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const activeIdentity = identityVersions.find((identity) => identity.status === "active") ?? null;
+
+  useEffect(() => {
+    if (!chatReady) return;
+    const prune = () => {
+      const cutoff = Date.now() - retentionDays.current * 86400000;
+      if (!Object.values(threadsRef.current).some(thread => thread.messages.some(message => Date.parse(message.createdAt) <= cutoff))) return;
+      setThreads(current => Object.fromEntries(Object.entries(current).map(([key, thread]) => [key, { ...thread, messages: thread.messages.filter(message => Date.parse(message.createdAt) > cutoff) }])));
+    };
+    const timer = setInterval(prune, 60000);
+    window.addEventListener("focus", prune);
+    return () => { clearInterval(timer); window.removeEventListener("focus", prune); };
+  }, [chatReady, setThreads]);
 
   useEffect(() => {
     const pending = timers.current;
@@ -169,11 +191,11 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     if (recoveryOwner.current && recoveryOwner.current !== session.user.id) { attempts.current.clear(); setThreads({}); }
     recoveryOwner.current = session.user.id;
     recoveryWritable.current = true;
-    try{sessionStorage.setItem(LIVE_CONNECTION_KEY,JSON.stringify({identityId:activeIdentity.id,userId:session.user.id,provider:connectedProvider}));}catch{/* A tab without storage can still explicitly connect. */}
+    try{localStorage.setItem(LIVE_CONNECTION_KEY,JSON.stringify({identityId:activeIdentity.id,userId:session.user.id,provider:connectedProvider}));}catch{/* A browser without storage can still explicitly connect. */}
     await backendRequest("/api/auth/attest-adult",{adultConfirmed:true});
     await updateAccountContext(contextSyncPayload(activeIdentity, moments));
     const [history, saved] = await Promise.all([
-      backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(activeIdentity.id)}`),
+      backendRequest<{ messages: ConversationMessage[]; retentionDays?: 30 | 90 }>(`/api/conversations/${encodeURIComponent(activeIdentity.id)}`),
       backendRequest<{ playlists: SavedPlaylist[] }>("/api/playlists"),
     ]);
     if (epoch !== connectionEpoch.current) {
@@ -181,6 +203,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       throw new Error("Your direction changed. Connect it again when ready.");
     }
     const interrupted = attempts.current.get(activeIdentity.id);
+    retentionDays.current = history.retentionDays === 90 ? 90 : 30;
     const completed = interrupted && history.messages.some(message => message.id === interrupted.requestId && message.role === "assistant");
     setThreads((current) => {
       const thread = current[activeIdentity.id];
@@ -197,7 +220,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     if(!chatReady||!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
     const key=`${connectedProvider}:${activeIdentity.id}`;
     if(automaticAttempt.current===key)return;
-    let consent=null;try{consent=parseLiveConnectionConsent(sessionStorage.getItem(LIVE_CONNECTION_KEY));}catch{}
+    let consent=null;try{consent=parseLiveConnectionConsent(localStorage.getItem(LIVE_CONNECTION_KEY) ?? sessionStorage.getItem(LIVE_CONNECTION_KEY));}catch{}
     const requested=pendingLiveIdentity===activeIdentity.id;
     if(!requested&&(!consent||consent.identityId!==activeIdentity.id||consent.provider!==connectedProvider))return;
     let current=true;
@@ -210,14 +233,14 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     return()=>{current=false;};
   },[chatReady,liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI]);
   const disconnectAI = useCallback(async () => {
-    try{sessionStorage.removeItem(LIVE_CONNECTION_KEY);}catch{}
+    try{sessionStorage.removeItem(LIVE_CONNECTION_KEY);localStorage.removeItem(LIVE_CONNECTION_KEY);}catch{}
     setPendingLiveIdentity(null);
     cancelReplies(); setConnectedAI(false);
     attempts.current.clear();
     recoveryOwner.current = null;
     setConnectionError("");
     setThreads({});
-    try { sessionStorage.removeItem(CHAT_RECOVERY_KEY); } catch {}
+    try { sessionStorage.removeItem(CHAT_RECOVERY_KEY); localStorage.removeItem(CHAT_RECOVERY_KEY); recoveryRevision.current = null; } catch {}
     await updateAccountContext({}, "DELETE");
   }, [cancelReplies, updateAccountContext, setThreads]);
   const loadPastConversation = useCallback(async (id: string) => {
@@ -309,7 +332,14 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   }, [setThreads]);
 
   const ensureGreeting = useCallback((id: string) => {
-    if (connectedAI || activeIdentity?.id !== id || threads[id]?.messages.length || timers.current.has(id)) return;
+    if (activeIdentity?.id !== id || timers.current.has(id)) return;
+    if (returning.current || (!threads[id]?.messages.length && Date.now() - Date.parse(activeIdentity.createdAt) >= 86400000)) {
+      returning.current = false;
+      const thread = threadsRef.current[id] ?? emptyThread;
+      setThreads(current => ({ ...current, [id]: { ...thread, messages: [...thread.messages, { id: `welcome-back-${crypto.randomUUID()}`, role: "assistant", content: returningMessage(activeIdentity, thread.messages), createdAt: new Date().toISOString() }] } }));
+      return;
+    }
+    if (connectedAI || threads[id]?.messages.length) return;
     setThreads((current) => ({ ...current, [id]: { ...(current[id] ?? emptyThread), typing: true } }));
     queueReply(id, firstMessage(activeIdentity), 900, true);
   }, [activeIdentity, threads, queueReply, connectedAI, setThreads]);

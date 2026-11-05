@@ -1,5 +1,26 @@
 # Future Echo — Project Learnings
 
+## 46. Tab closure, return check-in and sticker controls — 2026-11-05
+
+- Owner withdrew seven-day deletion and explicitly retained Free30/Plus90. The
+  uncommitted seven-day route, schedule and deletion helpers were removed before
+  deployment; no seven-day production deletion ran. A newly generated cleanup
+  token was replaced with an inert value; no Cron endpoint/schedule is shipped.
+- Chat recovery moves from sessionStorage to validated localStorage, migrating
+  the current tab record. Same-owner verification and persisted explicit Connect
+  consent support tab reopening; disconnect/sign-out clears recovery. Server
+  history reports30/90 for cache expiry. Revision comparison prevents a stale
+  tab from silently overwriting another tab's saved chat; conflicts warn rather
+  than claiming a save. This is not E2EE or journal cloud sync.
+- A day-away check-in uses the latest user language, is visibly app-written,
+  adds no memory permission and never sends an engagement notification. Retain
+  original welcome provenance and avoid repeated introductions on each refresh.
+- Dependency-free cutout removes border-connected plain background pixels at
+  bounded resolution; preview supports original/cutout/cancel. It is not general
+  AI segmentation. No photos leave the browser. Object-attached44px Delete and
+  keyboard Delete remove only selected photos/stickers, never original text.
+  Existing30-step undo remains; no extra motion was added following Emil guidance.
+
 ## 45. Ongoing conversation reload correction — 2026-11-05
 
 - Final production09ea59f READY:132 tests/lint/build pass. Actual isolated hosted

@@ -7,6 +7,7 @@ export interface PageEditing {
   selected: string | null;
   onSelect: (id: string) => void;
   onChange: (id: string, transform: PageTransform) => void;
+  onRemove?: (id: string) => void;
 }
 
 export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing, children, className = "", style, layer }: {
@@ -75,6 +76,7 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing
       onPointerCancel={() => finish(true)} onLostPointerCapture={() => finish(true)}
       onKeyDown={(event) => {
         if (!editing) return;
+        if ((event.key === "Delete" || event.key === "Backspace") && event.target === event.currentTarget && editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:"))) { event.preventDefault(); event.stopPropagation(); finish(true); editing.onRemove(id); return; }
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finish(true); return; }
         const step = event.shiftKey ? 5 : 1;
         const delta: Record<string, Partial<PageTransform>> = { ArrowLeft: { x: value.x - step }, ArrowRight: { x: value.x + step },
@@ -84,6 +86,7 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing
       }}>
       {children}
       {editing && selected && <>
+        {editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:")) && <button type="button" className="echo-object-delete" aria-label={`Delete ${label}`} onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={event => { event.stopPropagation(); finish(true); editing.onRemove?.(id); }}>×</button>}
         <button type="button" className="echo-transform-handle rotate" data-handle="rotate" aria-label={`Rotate ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, rotation: value.rotation + 15 })); }}>↻</button>
         <button type="button" className="echo-transform-handle resize" data-handle="resize" aria-label={`Resize ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, scale: value.scale + 0.1 })); }}>↗</button>
       </>}

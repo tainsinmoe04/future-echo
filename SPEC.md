@@ -1,5 +1,26 @@
 # Future Echo — Product and Implementation Specification
 
+## Persistent conversation and editor follow-up — 2026-11-05
+
+Owner clarified that Free30/Plus90 history windows must remain unchanged; the
+intermediate seven-day expiry request is withdrawn. No new deletion job or
+seven-day cutoff is authorized. Retain chat and unsent drafts across tab closure
+in device-local validated storage, verify account ownership before restoring
+account chat and reconnect only an explicitly connected identity/provider.
+Storage is unencrypted and bounded, separate from journal backups and memory
+consent. Recover the old tab cache without losing interrupted request IDs.
+
+After at least a day away, show one brief English/Myanmar return check-in inside
+the opened conversation, not the original introduction again or a notification.
+Label app-written provenance; never claim the model sent it while offline.
+No guilt, pressure or inferred activities. Preserve the latest conversation.
+
+Uploaded stickers may use local plain-background cutout with an explicit preview
+and original-image escape hatch; no image upload, new model dependency or claim
+of universal subject segmentation. Selected photos/stickers have direct Delete
+and keyboard Delete in page/cover arrangement, with existing bounded Undo/Redo.
+Conversation evidence and saved memory permissions remain unchanged.
+
 ## Reload recovery correction — 2026-11-05
 
 Owner reported repeated loss of an ongoing conversation after the earlier

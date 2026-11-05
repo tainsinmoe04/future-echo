@@ -71,11 +71,11 @@ function Conversation() {
         <div role="log" aria-label="Conversation messages" aria-live="polite" aria-relevant="additions text" className="echo-messages">
           {thread.messages.map((message, index) => {
             const previousUser=message.role==="assistant"?thread.messages.slice(0,index).findLast(item=>item.role==="user"):undefined;
-            const options=Boolean(previousUser&&!readOnly&&!settled[message.id]);
+            const options=Boolean(previousUser&&!message.id.startsWith("welcome-")&&!readOnly&&!settled[message.id]);
             return <Fragment key={message.id}>
               <article className={`echo-message ${message.role==="user"?"from-present":"from-future"}${options?" has-options":""}`}>
                 <span className="sr-only">{message.role==="user"?"You":message.safety==="support"?"Support outside the future-self perspective":"Your possible future self"}: </span>
-                {message.id.startsWith("welcome-")&&<small>Welcome · written by Future Echo</small>}{message.safety==="support"&&<small>Stepping out of the future-self perspective</small>}
+                {message.id.startsWith("welcome-")&&<small>{message.id.startsWith("welcome-back-") ? "Check-in · written by Future Echo" : "Welcome · written by Future Echo"}</small>}{message.safety==="support"&&<small>Stepping out of the future-self perspective</small>}
                 <p>{message.content}</p>{message.playlist&&<PlaylistCard playlist={message.playlist} messageId={message.id}/>}
                 {options&&<MessageActions disabled={saving===message.id} onSave={trigger=>{reviewTrigger.current=trigger;setSaving(message.id);}} onLeave={()=>{setSettled(current=>({...current,[message.id]:true}));composer.current?.focus();}}/>}
               </article>
@@ -105,7 +105,7 @@ function Conversation() {
     <EchoDialog open={about} label="About this possible future" onClose={()=>setAbout(false)} className="echo-about-dialog"><section className="echo-about">
       <OrbitIcon/><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p>
       <p className="echo-muted">{trialAI?`Replies send your direction, current message, up to ten recent messages and up to three permitted excerpts to ${trialProvider}. Notes require separate permission. This is not E2EE or professional care.`:liveAIAvailable?`${connectedProvider} processes your direction, messages and up to three separately permitted excerpts. Notes require their own permission; photos and drafts stay here. Account conversations are separate from your local journal. Zero retention and non-training are not established. This is not E2EE or professional care.`:"This preview uses sample replies. No AI provider is connected."}</p>
-      {liveAIAvailable&&!trialAI&&!connectedAI&&<><label className="echo-check-label"><input type="checkbox" checked={connectAdult} onChange={event=>setConnectAdult(event.target.checked)}/>I am 18 or older and want to connect this direction to live AI.</label><p className="echo-muted">After this one-time choice, this browser tab can reconnect the same account and direction until you disconnect or close it.</p><button className="echo-button lilac" disabled={!connectAdult||connectBusy} onClick={()=>void connect()}>{connectBusy?"Connecting…":"Connect and continue"}</button>{connectNotice&&<p role="alert">{connectNotice}</p>}</>}
+      {liveAIAvailable&&!trialAI&&!connectedAI&&<><label className="echo-check-label"><input type="checkbox" checked={connectAdult} onChange={event=>setConnectAdult(event.target.checked)}/>I am 18 or older and want to connect this direction to live AI.</label><p className="echo-muted">After this one-time choice, this device can reconnect the same verified account and direction until you disconnect; closing the tab does not clear your chat.</p><button className="echo-button lilac" disabled={!connectAdult||connectBusy} onClick={()=>void connect()}>{connectBusy?"Connecting…":"Connect and continue"}</button>{connectNotice&&<p role="alert">{connectNotice}</p>}</>}
       <button className="echo-button outline" onClick={()=>setAbout(false)}>Back to our conversation</button>
     </section></EchoDialog>
   </div>;

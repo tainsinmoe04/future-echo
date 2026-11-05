@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { firstMessage, connectedConversation } from "../src/lib/mock-messenger";
+import { firstMessage, returningMessage, connectedConversation } from "../src/lib/mock-messenger";
 import {parseLiveConnectionConsent} from "../src/lib/live-connection";
 import { activeIdentityVersion } from "../src/lib/mock-data";
 
@@ -9,7 +9,13 @@ test("connecting preserves exactly one app-written welcome without promoting pre
  const sample={...welcome,id:"preview-reply",content:"Example, not live"};
  const live={...welcome,id:"actual-reply",content:"Actual reply"};
  assert.deepEqual(connectedConversation([live],[welcome,sample],activeIdentityVersion),[welcome,live]);
- assert.equal(connectedConversation([],[],activeIdentityVersion)[0].id.startsWith("welcome-"),true);
+ assert.equal(connectedConversation([],[],{ ...activeIdentityVersion, createdAt: new Date().toISOString() })[0].id.startsWith("welcome-"),true);
+ assert.equal(connectedConversation([],[],activeIdentityVersion).length,0);
+});
+test("return check-in follows the latest user language and is not another introduction",()=>{
+ assert.match(returningMessage(activeIdentityVersion),/How are you doing today/);
+ assert.match(returningMessage(activeIdentityVersion,[{id:"user",role:"user",content:"ဒီနေ့ပင်ပန်းတယ်",createdAt:new Date().toISOString()}]),/ဒီနေ့ရော အဆင်ပြေလား/);
+ assert.equal(returningMessage(activeIdentityVersion).includes("It's you"),false);
 });
 test("tab reconnection consent is narrowly scoped and never accepts journal content",()=>{
  const consent={identityId:"direction-v1",userId:"11111111-1111-4111-8111-111111111111",provider:"SEA-LION"};

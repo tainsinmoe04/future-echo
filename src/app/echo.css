@@ -596,3 +596,9 @@
 .echo-message-options-panel button { display: block; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; border-radius: 9px; }
 .echo-message-options-panel button:hover { background: #373040; }
 @media (max-width: 639px) { .echo-public > header .button-secondary { display: none; } }
+.echo-object-delete { position:absolute;left:-22px;top:-22px;width:44px;height:44px;min-width:44px;border:1px solid #e8b9bd;border-radius:50%;background:#28181d;color:#fff;font-size:28px;line-height:1;z-index:4;transform:scale(var(--handle-scale,1));touch-action:manipulation; }
+.journal-cutout-preview { padding:16px;border:1px solid var(--echo-line,#34333d);border-radius:16px;margin-top:20px; }
+.journal-cutout-images { display:flex;gap:16px;flex-wrap:wrap; }
+.journal-cutout-images figure { width:120px;margin:0;background:repeating-conic-gradient(#bcb6c6 0% 25%,#ece8f0 0% 50%) 0/16px 16px;border-radius:10px;overflow:hidden; }
+.journal-cutout-images figure>.echo-sticker { display:block;width:120px;height:120px;object-fit:contain; }
+.journal-cutout-images figcaption { padding:6px;background:#17151e;color:#f4f0f9;font-size:12px;text-align:center; }

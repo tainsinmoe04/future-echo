@@ -59,10 +59,19 @@ export function firstMessage(identity: FutureSelfIdentityVersion) {
   return `Hey. It's you, a little farther along.\n\nA little strange to meet yourself here, isn't it? How was your day?`;
 }
 
+export function returningMessage(identity: FutureSelfIdentityVersion, messages: readonly ConversationMessage[] = []) {
+  const language = messages.findLast(message => message.role === "user")?.content ?? identity.definition;
+  return /[\u1000-\u109f\uaa60-\uaa7f]/u.test(language)
+    ? "ဟေး၊ ဒီနေ့ရော အဆင်ပြေလား။ ဘာတွေဖြစ်ခဲ့လဲ ပြောပြချင်လား။"
+    : "Hey. How are you doing today? What has your day been like?";
+}
+
 /** Keep app-written provenance; never upload preview messages into live history. */
 export function connectedConversation(history: readonly ConversationMessage[], local: readonly ConversationMessage[], identity: FutureSelfIdentityVersion): ConversationMessage[] {
-  const welcome=local.find(message=>message.id.startsWith("welcome-"))??{id:`welcome-${identity.id}`,role:"assistant" as const,content:firstMessage(identity),createdAt:new Date().toISOString()};
-  return [welcome,...history.filter(message=>!message.id.startsWith("welcome-"))];
+  const recent = local.filter(message => Date.parse(message.createdAt) > Date.now() - 90 * 86400000);
+  const welcome=recent.find(message=>message.id.startsWith("welcome-")&&!message.id.startsWith("welcome-back-"));
+  const initial = welcome ? [welcome] : Date.now() - Date.parse(identity.createdAt) < 86400000 ? [{id:`welcome-${identity.id}`,role:"assistant" as const,content:firstMessage(identity),createdAt:new Date().toISOString()}] : [];
+  return [...initial,...[...history.filter(message=>!message.id.startsWith("welcome-")),...recent.filter(message=>message.id.startsWith("welcome-back-"))].sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt))];
 }
 
 /** Deterministic preview responses. Never sends content to a model or provider. */

@@ -100,7 +100,7 @@ Gemini model metadata GET returned HTTP 400 FAILED_PRECONDITION with "User locat
 - Gemini structured replies with schema validation, bounded context, short-reply/safety instructions, provider timeout/error states and no fabricated fallback. Blocked output leaves the persona. Prompt instructions are **not** a completed safety evaluation.
 - On request, named song/artist playlists with fixed YouTube/Spotify **search links**, explicit save/reopen/remove and local backup support. No catalog verification, lyrics, player, autoplay, external music account or Spotify playlist creation. Playlists do not add constellation stars or become memory context.
 - Atomic reservation/finalization and request idempotency, eight attempts/minute, Free 50 / Plus 200 successful-or-pending replies/UTC month. Failed/expired leases are not successful replies. Plan is server-owned, with no payment or client entitlement control.
-- Free 30-day / Plus 90-day history filtering. Physical expiry cleanup function is provided but **not scheduled**. Saved playlists survive chat expiry.
+- Free 30-day / Plus 90-day history filtering is unchanged. Physical expiry cleanup function is provided but **not scheduled**. Saved playlists survive chat expiry. Device recovery now survives tab closure; no seven-day deletion or new cleanup job is enabled.
 
 ## Data boundary
 
