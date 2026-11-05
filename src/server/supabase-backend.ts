@@ -20,6 +20,7 @@ export class SupabaseBackend {
   }
   async rest(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): Promise<unknown> {
     if (!this.config.serviceKey) throw new ApiError(503, "database_setup", "The server database is not configured yet.");
+    if (!/^[A-Za-z0-9_.-]+$/.test(this.config.serviceKey)) throw new ApiError(503,"database_key_format","The server database key has invalid characters. Re-copy the actual Supabase secret/service-role key into SUPABASE_SERVICE_ROLE_KEY, not the masked display or a quoted env line.");
     // Modern server keys are opaque API keys, not JWT bearer tokens.
     // Legacy service_role JWTs still need their existing Authorization header.
     const headers = new Headers({ "Content-Type": "application/json", ...options.headers });

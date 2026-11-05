@@ -14,6 +14,12 @@ import { serializeJournalBackup, parseJournalBackup } from "../src/lib/journal-b
 import { DEFAULT_PREFERENCES } from "../src/lib/scrapbook";
 const playlist = { title: "A little room", description: "Songs for tonight", songs: [{ title: "Holocene", artist: "Bon Iver" }] };
 const context = buildAIContext({ currentMessage: "Recommend songs", recentMessages: [], activeIdentityVersion, relevantSavedMoments: [] });
+test("invalid server key characters fail safely before header construction or network access",async()=>{
+ for(const key of ["sb_secret_masked••••","secret\ninside","KEY=value","\"quoted\""]){
+  let calls=0;const db=new SupabaseBackend(backendConfig({SUPABASE_SERVICE_ROLE_KEY:key}),async()=>{calls++;return Response.json([]);});
+  await assert.rejects(db.rest("fe_profiles"),(error:unknown)=>error instanceof ApiError&&error.code==="database_key_format"&&!error.message.includes(key));assert.equal(calls,0);
+ }
+});
 test("saved playlists survive validated backup without becoming memory", () => {
   const saved = { ...playlist, id: "playlist-1", identityVersionId: activeIdentityVersion.id, sourceMessageId: "message-1", savedAt: "2026-10-15T00:00:00.000Z" };
   const snapshot = { version: 1 as const, identityVersions: [activeIdentityVersion], moments: [], preferences: DEFAULT_PREFERENCES, playlists: [saved] };
