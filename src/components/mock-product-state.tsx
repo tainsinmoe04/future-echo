@@ -153,7 +153,9 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     requests.current.clear();
     timers.current.forEach(clearTimeout);
     timers.current.clear();
-    setThreads((current) => Object.fromEntries(Object.entries(current).map(([id, thread]) => [id, { ...thread, typing: false }])));
+    setThreads((current) => Object.fromEntries(Object.entries(current).map(([id, thread]) => [id, { ...thread, typing: false,
+      draft: thread.draft || (thread.typing ? attempts.current.get(id)?.content ?? thread.messages.findLast(message => message.role === "user")?.content ?? "" : ""),
+    }])));
   }, [setThreads]);
 
   const connectAI = useCallback(async () => {
@@ -211,12 +213,12 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     try{sessionStorage.removeItem(LIVE_CONNECTION_KEY);}catch{}
     setPendingLiveIdentity(null);
     cancelReplies(); setConnectedAI(false);
-    await updateAccountContext({}, "DELETE");
     attempts.current.clear();
     recoveryOwner.current = null;
     setConnectionError("");
     setThreads({});
     try { sessionStorage.removeItem(CHAT_RECOVERY_KEY); } catch {}
+    await updateAccountContext({}, "DELETE");
   }, [cancelReplies, updateAccountContext, setThreads]);
   const loadPastConversation = useCallback(async (id: string) => {
     if (!connectedAI || !identityVersions.some((identity) => identity.id === id && identity.status === "past")) return;

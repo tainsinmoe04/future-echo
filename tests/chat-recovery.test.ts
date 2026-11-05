@@ -17,6 +17,14 @@ test("recovery preserves newer draft rather than replacing it with interrupted t
   const parsed = parseChatRecovery(JSON.stringify({ ...value, threads: { direction: { ...value.threads.direction, draft: "My newer thought" } } }), now)!;
   assert.equal(recoveredThreads(parsed).direction.draft, "My newer thought");
 });
+test("unload cancellation cannot erase pending words after typing has already stopped", () => {
+  const parsed = parseChatRecovery(JSON.stringify({ ...value, threads: { direction: { ...value.threads.direction, typing: false } } }), now)!;
+  assert.equal(recoveredThreads(parsed).direction.draft, message.content);
+});
+test("an already completed request does not restore an old draft", () => {
+  const parsed = parseChatRecovery(JSON.stringify({ ...value, threads: { direction: { messages: [message, { ...message, id: value.attempts.direction.requestId, role: "assistant", content: "A completed reply" }], draft: "", typing: false } } }), now)!;
+  assert.equal(recoveredThreads(parsed).direction.draft, "");
+});
 test("live RPC nullable playlist is normalized without losing conversation", () => {
   const live = { ...value, threads: { direction: { messages: [{ ...message, role: "assistant", playlist: null, safety: "normal" }], draft: "Unsent", typing: false } } };
   const parsed = parseChatRecovery(JSON.stringify(live), now);

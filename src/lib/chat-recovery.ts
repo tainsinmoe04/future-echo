@@ -34,6 +34,8 @@ export function parseChatRecovery(raw: string | null, now = Date.now()): ChatRec
 export function recoveredThreads(value: ChatRecovery): Record<string, MessengerThread> {
   return Object.fromEntries(Object.entries(value.threads).map(([key, thread]) => [key, {
     ...thread, messages: thread.messages.filter(message => message.id.startsWith("welcome-") || Date.parse(message.createdAt) > Date.now() - 30 * 86400000), typing: false,
-    draft: thread.draft || (thread.typing ? value.attempts[key]?.content ?? thread.messages.findLast(message => message.role === "user")?.content ?? "" : ""),
+    draft: thread.draft || (value.attempts[key] && !thread.messages.some(message => message.role === "assistant" && message.id === value.attempts[key].requestId)
+      ? value.attempts[key].content
+      : thread.typing ? thread.messages.findLast(message => message.role === "user")?.content ?? "" : ""),
   }]));
 }
