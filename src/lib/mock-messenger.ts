@@ -59,6 +59,12 @@ export function firstMessage(identity: FutureSelfIdentityVersion) {
   return `Hey. It's you, a little farther along.\n\nA little strange to meet yourself here, isn't it? How was your day?`;
 }
 
+/** Keep app-written provenance; never upload preview messages into live history. */
+export function connectedConversation(history: readonly ConversationMessage[], local: readonly ConversationMessage[], identity: FutureSelfIdentityVersion): ConversationMessage[] {
+  const welcome=local.find(message=>message.id.startsWith("welcome-"))??{id:`welcome-${identity.id}`,role:"assistant" as const,content:firstMessage(identity),createdAt:new Date().toISOString()};
+  return [welcome,...history.filter(message=>!message.id.startsWith("welcome-"))];
+}
+
 /** Deterministic preview responses. Never sends content to a model or provider. */
 export function previewReply(message: string) {
   const text = message.toLowerCase();

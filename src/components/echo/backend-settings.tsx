@@ -11,7 +11,7 @@ export function BackendSettings() {
   async function change(action: "connect" | "disconnect" | "logout") {
     setBusy(true); setNotice("");
     try {
-      if (action === "connect") { if (!adultConfirmed) throw new Error("Confirm you are 18 or older before connecting."); await backendRequest("/api/auth/attest-adult",{adultConfirmed:true}); await connectAI(); }
+      if (action === "connect") { if (!adultConfirmed) throw new Error("Confirm you are 18 or older before connecting."); await connectAI(); }
       else if (action === "logout") {
         let clearingFailed = false;
         try { await disconnectAI(); } catch { clearingFailed = true; }

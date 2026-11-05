@@ -1,5 +1,18 @@
 # Future Echo — Product and Implementation Specification
 
+## Explicit live onboarding and reload restoration — 2026-11-05
+
+Owner requested direct first-use live connection, preservation of the app-written
+welcome, authenticated conversation restoration after reload, and reply actions
+inside a discreet three-dot disclosure. Review must explicitly disclose cloud
+processing before the live activation action; device-only continuation remains.
+Tab-scoped reconnect consent binds user, identity and provider, never journal
+backup data. Restore only after verifying the same account; disconnect clears it.
+This restores existing account history, not implicit Saved Moments or long-term
+memory. Device-only preview chat remains session-only. Omitted life topics must
+not become invented decisions or achievements. Provider failures remain visible
+with explicit retry and no fallback or fabricated finished reply.
+
 ## Owner-authorized hosted SEA-LION — 2026-11-05
 
 Owner explicitly requested usable live AI on the deployed website. Enable fixed

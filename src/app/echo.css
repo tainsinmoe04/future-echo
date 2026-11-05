@@ -587,4 +587,12 @@
 .echo-demo > p { margin-bottom: 18px; }.echo-demo > header { display: grid; gap: 5px; margin-bottom: 28px; }.echo-demo > header span { font-size: 11px; color: #bbb2cd; }
 .echo-demo > button, .echo-demo > a { margin-top: 22px; }.echo-demo .echo-form-actions { margin-top: 24px; }.echo-demo .echo-paper { min-height: 0; margin: 16px 0; padding-bottom: 34px; }.echo-demo .paper-heading h1 { font-size: 24px; }
 .echo-direction-form input { min-height: 44px; width: 100%; background: #17151f; color: #eee8f6; padding: 12px; border: 1px solid #776586; border-radius: 12px; }
+.echo-message.has-options { position: relative; max-width: calc(100% - 48px); }
+.echo-message-options { position: absolute; right: -45px; bottom: 0; color: #c3bbd0; font-size: 14px; letter-spacing: normal; }
+.echo-message-options summary { list-style: none; width: 44px; min-height: 44px; display: grid; place-items: center; cursor: pointer; font-size: 26px; border-radius: 50%; }
+.echo-message-options summary::-webkit-details-marker { display: none; }
+.echo-message-options summary:hover { background: #25212e; }
+.echo-message-options-panel { position: absolute; right: 0; top: 100%; width: 180px; z-index: 30; background: #211d29; color: #f4eff9; border: 1px solid #62586e; border-radius: 14px; padding: 5px; box-shadow: 0 12px 30px #0008; }
+.echo-message-options-panel button { display: block; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; border-radius: 9px; }
+.echo-message-options-panel button:hover { background: #373040; }
 @media (max-width: 639px) { .echo-public > header .button-secondary { display: none; } }

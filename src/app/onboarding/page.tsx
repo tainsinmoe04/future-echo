@@ -12,7 +12,7 @@ import { JournalStorageStatus } from "@/components/echo/journal-storage-status";
 const presets = [6, 12, 36, 60];
 export default function Onboarding() {
   const router = useRouter();
-  const { activeIdentity, createIdentityVersion, journalSnapshot, updateJournal } = useMockProductState();
+  const { activeIdentity, createIdentityVersion, journalSnapshot, updateJournal, liveAIAvailable, trialAI, connectedProvider } = useMockProductState();
   const [initial] = useState(journalSnapshot.onboardingDraft);
   const finished = useRef(false);
   const [today] = useState(() => localDate());
@@ -31,6 +31,11 @@ export default function Onboarding() {
   const horizon = custom ? horizonMonthsAhead(custom, today) >= 6
     ? { targetMonth: custom, label: formatHorizonLabel(custom) } : null : horizonFromMonths(months, today);
   const canContinue = step === 0 ? Boolean(definition.trim()) : step === 1 ? Boolean(horizon) : adult && (!activeIdentity || replace);
+  function activate(connectLiveAI:boolean) {
+    if(!canContinue||!horizon)return;
+    createIdentityVersion({definition,horizon,reason,anchor,newJourney:initial?.newJourney,principles:anchor.trim()?[anchor.trim()]:[],connectLiveAI});
+    finished.current=true;updateJournal(current=>({...current,onboardingDraft:undefined}));router.push("/now");
+  }
 
   return <main className="echo-ui echo-stage"><section className="echo-onboarding">
     <header className="echo-space-header"><Link href="/now" className="echo-icon-button" aria-label="Back to conversation"><BackIcon /></Link><span>Future Echo</span><OrbitIcon /></header>
@@ -40,10 +45,7 @@ export default function Onboarding() {
       if (!canContinue) return;
       if (step < 2) { setStep(step + 1); return; }
       if (!horizon) return;
-      createIdentityVersion({ definition, horizon, reason, anchor, newJourney: initial?.newJourney, principles: anchor.trim() ? [anchor.trim()] : [] });
-      finished.current = true;
-      updateJournal((current) => ({ ...current, onboardingDraft: undefined }));
-      router.push("/now");
+      activate(liveAIAvailable&&!trialAI);
     }}>
       <h1>{step === 0 ? "Who are you becoming?" : step === 1 ? "A little farther along." : "One possible future. Yours."}</h1>
       <p className="onboarding-intro">{step === 0 ? "Start with a direction that feels like yours. It can change as you do." : step === 1 ? "Choose where this imagined perspective is speaking from. At least six months gives you a little distance." : "A voice shaped by what matters to you, with room for doubt and changing your mind."}</p>
@@ -54,8 +56,10 @@ export default function Onboarding() {
       </div>}
       {step === 1 && <div className="echo-onboarding-fields"><div className="echo-horizon-options">{presets.map((value) => <button type="button" key={value} aria-pressed={!custom && months === value} onClick={() => { setMonths(value); setCustom(""); }}><strong>{value < 12 ? value : value / 12}</strong><span>{value < 12 ? "months" : value === 12 ? "year" : "years"}</span></button>)}</div><label>Or choose a month and year<input type="month" value={custom} min={addMonths(today, 6).slice(0, 7)} onChange={(event) => setCustom(event.target.value)} aria-invalid={Boolean(custom && !horizon)} /></label>{custom && !horizon && <p className="echo-error">Choose a horizon at least six months from now.</p>}</div>}
       {step === 2 && <div className="echo-onboarding-review"><div className="onboarding-future"><OrbitIcon /><div><span>{horizon?.targetMonth.slice(0, 4)} · Your Future Self</span><p>{definition}</p></div></div>{reason && <p><strong>Why I began</strong>{reason}</p>}{anchor && <p><strong>What I’m holding on to</strong>{anchor}</p>}<p>An imagined possible future, not a prediction. Warm, honest, calm. It cannot know what will happen or decide your path for you.</p><label className="echo-check-label"><input type="checkbox" checked={adult} onChange={(event) => setAdult(event.target.checked)} />I am 18 or older.</label>{activeIdentity && <label className="echo-check-label"><input type="checkbox" checked={replace} onChange={(event) => setReplace(event.target.checked)} />Close my current version and begin this one. My earlier conversations and moments stay readable and do not transfer into the new chat.</label>}</div>}
-      <div className="echo-form-actions">{step > 0 && <button type="button" className="echo-button outline" onClick={() => setStep(step - 1)}>Back</button>}<button type="submit" className="echo-button lilac" disabled={!canContinue}>{step === 2 ? "Meet your Future Self" : "Continue"}</button></div>
-      <JournalStorageStatus /><p className="echo-preview-note">Setup draft stays on this device. Activation never connects AI automatically.</p>{initial && <p className="echo-muted">Your unfinished direction is here. Age and replacement confirmation must be chosen again.</p>}
+      {step===2&&liveAIAvailable&&!trialAI&&<p className="echo-muted">Choosing Meet with live AI connects this direction to {connectedProvider} after sign-in. Your direction, messages and up to three separately permitted excerpts are processed in the cloud; notes need their own permission. Photos and drafts stay here. This is not E2EE; zero retention and non-training are not established. This browser tab can reconnect the same account and direction until you disconnect or close it.</p>}
+      <div className="echo-form-actions">{step > 0 && <button type="button" className="echo-button outline" onClick={() => setStep(step - 1)}>Back</button>}<button type="submit" className="echo-button lilac" disabled={!canContinue}>{step === 2 ? liveAIAvailable&&!trialAI ? "Meet your Future Self · live AI" : "Meet your Future Self" : "Continue"}</button></div>
+      {step===2&&liveAIAvailable&&!trialAI&&<button type="button" className="echo-text-button" disabled={!canContinue} onClick={()=>activate(false)}>Continue on this device without AI</button>}
+      <JournalStorageStatus /><p className="echo-preview-note">Setup drafts stay on this device. Live connection requires sign-in and the explicit choice above.</p>{initial && <p className="echo-muted">Your unfinished direction is here. Age and replacement confirmation must be chosen again.</p>}
     </form>
   </section></main>;
 }

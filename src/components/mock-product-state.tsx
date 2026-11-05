@@ -7,7 +7,8 @@ import { contextSyncPayload } from "@/server/context-sync";
 import { localReplyPayload } from "@/lib/local-ai-input";
 import type { SavedPlaylist } from "@/lib/playlist";
 import { activeIdentityVersion } from "@/lib/mock-data";
-import { firstMessage, previewReply, type MessengerThread } from "@/lib/mock-messenger";
+import { firstMessage, previewReply, connectedConversation, type MessengerThread } from "@/lib/mock-messenger";
+import { LIVE_CONNECTION_KEY, parseLiveConnectionConsent } from "@/lib/live-connection";
 import { changeMomentConsent, keepMoment } from "@/lib/personal-space";
 import { DEFAULT_PREFERENCES, type SpacePreferences } from "@/lib/scrapbook";
 import { MAX_IDENTITY_LENGTH, MAX_MESSAGE_LENGTH } from "@/lib/redaction";
@@ -16,6 +17,7 @@ import { serializeJournalBackup } from "@/lib/journal-backup";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
 
 export interface CreateIdentityInput {
+  connectLiveAI?: boolean;
   newJourney?: boolean;
   definition: string;
   horizon: { targetMonth: string; label: string };
@@ -84,6 +86,8 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   const [threads, setThreads] = useState<Record<string, MessengerThread>>({});
   const [connectedAI, setConnectedAI] = useState(false);
   const [connectionError, setConnectionError] = useState("");
+  const [pendingLiveIdentity,setPendingLiveIdentity]=useState<string|null>(null);
+  const automaticAttempt=useRef("");
   const connectionEpoch = useRef(0);
   const requests = useRef(new Set<string>());
   const attempts = useRef(new Map<string, { content: string; requestId: string }>());
@@ -114,6 +118,11 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     if (!activeIdentity) throw new Error("Choose a direction first.");
     cancelReplies();
     const epoch = connectionEpoch.current;
+    const session=await backendRequest<{user:{id:string}|null}>("/api/auth/session");
+    if (!session.user) throw new Error("Sign in to connect live AI. Your direction stays on this device.");
+    if(epoch!==connectionEpoch.current) throw new Error("Your direction changed. Connect the current one.");
+    try{sessionStorage.setItem(LIVE_CONNECTION_KEY,JSON.stringify({identityId:activeIdentity.id,userId:session.user.id,provider:connectedProvider}));}catch{/* A tab without storage can still explicitly connect. */}
+    await backendRequest("/api/auth/attest-adult",{adultConfirmed:true});
     await updateAccountContext(contextSyncPayload(activeIdentity, moments));
     const [history, saved] = await Promise.all([
       backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(activeIdentity.id)}`),
@@ -123,12 +132,30 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       await updateAccountContext({ archiveIdentityId: activeIdentity.id }, "POST");
       throw new Error("Your direction changed. Connect it again when ready.");
     }
-    setThreads((current) => ({ ...current, [activeIdentity.id]: { draft: current[activeIdentity.id]?.draft ?? "", typing: false, messages: history.messages } }));
+    setThreads((current) => ({ ...current, [activeIdentity.id]: { draft: current[activeIdentity.id]?.draft ?? "", typing: false, messages: connectedConversation(history.messages,current[activeIdentity.id]?.messages??[],activeIdentity) } }));
     journal.update((current) => ({ ...current, playlists: [...(current.playlists ?? []).filter((p) => !saved.playlists.some((s) => s.id === p.id)), ...saved.playlists.filter((p) => current.identityVersions.some((i) => i.id === p.identityVersionId))] }));
     attempts.current.delete(activeIdentity.id);
     setConnectionError(""); setConnectedAI(true);
-  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI]);
+  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI, connectedProvider]);
+  useEffect(()=>{
+    if(!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
+    const key=`${connectedProvider}:${activeIdentity.id}`;
+    if(automaticAttempt.current===key)return;
+    let consent=null;try{consent=parseLiveConnectionConsent(sessionStorage.getItem(LIVE_CONNECTION_KEY));}catch{}
+    const requested=pendingLiveIdentity===activeIdentity.id;
+    if(!requested&&(!consent||consent.identityId!==activeIdentity.id||consent.provider!==connectedProvider))return;
+    let current=true;
+    void Promise.resolve().then(async()=>{
+      if(!current)return;automaticAttempt.current=key;
+      if(!requested){const session=await backendRequest<{user:{id:string}|null}>("/api/auth/session");if(!current||session.user?.id!==consent?.userId)return;}
+      if(!current)return;
+      await connectAI();
+    }).catch(error=>{if(current)setConnectionError(error instanceof Error?error.message:"Live connection could not be restored.");});
+    return()=>{current=false;};
+  },[liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI]);
   const disconnectAI = useCallback(async () => {
+    try{sessionStorage.removeItem(LIVE_CONNECTION_KEY);}catch{}
+    setPendingLiveIdentity(null);
     cancelReplies(); setConnectedAI(false);
     await updateAccountContext({}, "DELETE");
     attempts.current.clear();
@@ -176,7 +203,8 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
           anchor: input.anchor?.trim() || undefined, principles: input.principles ?? [], createdAt: stamp },
       ];
     });
-  }, [cancelReplies, setIdentityVersions, connectedAI, activeIdentity, updateAccountContext]);
+    if(input.connectLiveAI)setPendingLiveIdentity(journal.getSnapshot().snapshot.identityVersions.find(identity=>identity.status==="active")?.id??null);
+  }, [cancelReplies, setIdentityVersions, connectedAI, activeIdentity, updateAccountContext, journal]);
 
   const editActiveIdentityDefinition = useCallback((definition: string) => {
     if (!activeIdentity || definition.trim() === activeIdentity.definition) return;
@@ -262,7 +290,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, messages: [...current[id].messages, result.message] } }));
       } catch (error) {
         if (epoch !== connectionEpoch.current) return;
-        if (!trialAI && error instanceof BackendRequestError && error.code !== "pending_request") attempts.current.delete(id);
+        if (!trialAI && error instanceof BackendRequestError && error.code !== "pending_request") attempts.current.set(id,{content,requestId:crypto.randomUUID()});
         setConnectionError(error instanceof Error ? error.message : "Your reply could not arrive.");
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, draft: current[id].draft || content } }));
       } finally { if (epoch === connectionEpoch.current) requests.current.delete(id); }

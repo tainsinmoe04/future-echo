@@ -39,9 +39,10 @@ test("earlier exchanges support Myanmar redaction and reversible separate memory
   await begin(page);
   const composer = page.getByRole("textbox", { name: "Message your future self", exact: true });
   await composer.fill("ဒီနေ့စာမေးပွဲအောင်တယ်ဒါပေမယ့်စိတ်ပင်ပန်းတယ်"); await page.getByRole("button", { name: "Send message", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save this moment", exact: true })).toHaveCount(1);
+  await expect(page.getByLabel("Message options", { exact: true })).toHaveCount(1);
   await composer.fill("I feel tired tonight"); await page.getByRole("button", { name: "Send message", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save this moment", exact: true })).toHaveCount(2);
+  await expect(page.getByLabel("Message options", { exact: true })).toHaveCount(2);
+  await page.getByLabel("Message options", { exact: true }).first().click();
   await page.getByRole("button", { name: "Save this moment", exact: true }).first().click();
   await page.getByLabel("Your words · redact only").fill("ဒီနေ့စာမေးပွဲအောင်တယ်");
   await page.getByLabel("A name for this moment").fill("Words from earlier");

@@ -17,7 +17,7 @@ export async function requestSeaLionReply(context: AIContext, key: string, fetch
       body: JSON.stringify({ model: SEALION_TRIAL_MODEL, messages: futureSelfMessages(context), stream: false,
         response_format: { type: "json_object" }, chat_template_kwargs: { enable_thinking: false }, max_tokens: 1200, temperature: 0.65 }),
     });
-  } catch { throw new ApiError(503, "sealion_unavailable", "SEA-LION could not be reached in time. No other provider was tried."); }
+  } catch (error) { const timeout=error instanceof Error&&["TimeoutError","AbortError"].includes(error.name); throw new ApiError(503, timeout?"sealion_timeout":"sealion_unavailable", timeout?"SEA-LION took too long to reply. Your message is kept; retry when ready. No other provider was tried.":"SEA-LION could not be reached. Your message is kept; retry when ready. No other provider was tried."); }
   if (!response.ok) throw new ApiError(response.status === 429 ? 429 : 503, response.status === 429 ? "sealion_limit" : "sealion_error", response.status === 429 ? "SEA-LION is at its trial request limit. Try again later." : "SEA-LION could not complete this request. Your words remain here; no other provider was tried.");
   let body: unknown;
   try { body = await response.json(); } catch { throw new ApiError(502, "invalid_reply", "SEA-LION returned an unreadable reply."); }
