@@ -2,6 +2,12 @@
 
 ## 46. Tab closure, return check-in and sticker controls — 2026-11-05
 
+- Final release07ae986 READY. Real hosted temporary-account tab close/reopen,
+  automatic same-owner reconnect, draft/pending/history restoration, English200,
+  reload and immediate interrupted-send recovery passed; account/test rows then
+  deleted after marker verification.137 tests, SQL/RLS, lint/build/security and
+  nine responsive Chrome regressions pass. Seven-day deletion was not deployed.
+
 - Owner withdrew seven-day deletion and explicitly retained Free30/Plus90. The
   uncommitted seven-day route, schedule and deletion helpers were removed before
   deployment; no seven-day production deletion ran. A newly generated cleanup

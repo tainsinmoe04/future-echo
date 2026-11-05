@@ -2,6 +2,14 @@
 
 ## Persistent chat and sticker controls — 2026-11-05
 
+- Release07ae986 production dpl_2ZLmVYNokqeY7AWeFPxbkyxzVSNY READY. Actual
+  isolated hosted account verified tab close/new tab → same-account live reconnect
+  with pending conversation and newer draft preserved, real English200, reload,
+  immediate post-Send reload and Free retentionDays30. QA account/test rows were
+  marker-verified and deleted. No Myanmar provider-quality claim from this run.
+  Final current-source npm test137, SQL/RLS tests, lint/build/security pass;
+  all9 final responsive regression checks pass. No seven-day cleanup deployed.
+
 - Owner clarified: retain Free30/Plus90; seven-day deletion is withdrawn. No new
   deletion route/schedule is shipped and no seven-day production cleanup ran.
 - Device-local validated chat/draft recovery survives tab closure; existing tab
