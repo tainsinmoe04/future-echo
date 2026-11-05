@@ -40,6 +40,7 @@ export async function GET(request: Request, { params }: Params) {
   } catch (error) { return apiFailure(error); }
 }
 export async function POST(request: Request, { params }: Params) {
+  let stage = "origin";
   try {
     const config = backendConfig(); requireOrigin(request, config.origin); const db = new SupabaseBackend(config), action = (await params).action;
     if (action === "attest-adult") {
@@ -60,8 +61,15 @@ export async function POST(request: Request, { params }: Params) {
     if (!["login", "signup"].includes(action)) throw new ApiError(404, "not_found", "Unknown account action.");
     const input = await readJson(request, 4096);
     if (!object(input) || !exact(input, ["email", "password", "name", "adultConfirmed"]) || typeof input.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email) || input.email.length > 254 || typeof input.password !== "string" || input.password.length < 8 || input.password.length > 256 || input.adultConfirmed !== true || (input.name !== undefined && (typeof input.name !== "string" || input.name.length > 120))) throw new ApiError(400, "account_input", "Enter a valid email and password (at least 8 characters), and confirm you are 18 or older.");
+    stage = "upstream-auth";
     const value = await db.auth(action === "login" ? "token?grant_type=password" : "signup", { email: input.email.trim(), password: input.password, ...(action === "signup" ? { data: { display_name: input.name ?? "", adult_confirmed: true } } : {}) });
+    stage = "adult-attestation";
     if (object(value.user) && typeof value.user.id === "string" && config.serviceKey) await db.rpc("fe_attest_adult", { p_user: value.user.id });
+    stage = "session-cookie";
     return sessionResponse(value, new URL(config.origin).protocol === "https:", action === "signup");
-  } catch (error) { return apiFailure(error); }
+  } catch (error) {
+    // Never log passwords, tokens, email, upstream bodies, messages or stacks.
+    if (!(error instanceof ApiError)) console.error("auth_unexpected_failure", { stage, kind: error instanceof SyntaxError ? "SyntaxError" : error instanceof TypeError ? "TypeError" : error instanceof RangeError ? "RangeError" : "Error" });
+    return apiFailure(error);
+  }
 }
