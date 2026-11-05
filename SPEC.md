@@ -1,5 +1,17 @@
 # Future Echo — Product and Implementation Specification
 
+## Owner-authorized hosted SEA-LION — 2026-11-05
+
+Owner explicitly requested usable live AI on the deployed website. Enable fixed
+SEA-LION Qwen v4.5 through authenticated /api/ai, not the loopback trial route.
+Reuse server-owned bounded context, Supabase owner isolation, adult attestation,
+reservation/idempotency, plan quota/rate limits and explicit Connect consent.
+No automatic journal upload, provider fallback, client secrets or sample reply
+substitution. Disclose AI Singapore processing and unresolved retention/training;
+limited English/Myanmar testing is not full safety or production certification.
+Keys are server-only Vercel secrets. This supersedes inactive /api/ai only when
+the hosted provider flag, account/storage config and keys are explicitly enabled.
+
 ## GitHub/Vercel and Google sign-in authorization — 2026-11-05
 
 Owner explicitly requested backup of current work to the existing GitHub repo,

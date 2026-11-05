@@ -1,5 +1,10 @@
 # Future Echo — Project Learnings
 
+## 43. Hosted SEA-LION request — 2026-11-05
+
+- Owner explicitly authorized live AI on Vercel. Reused account-backed /api/ai and existing reservation/owner/context/consent limits instead of exposing localhost trial. Provider selection is explicit and fails closed for unknown values; Dots/private trial remains separate and no fallback is added.
+- Hosted availability is passed to the UI as booleans/provider label only. Without explicit connection, sending is blocked with a Connect action rather than silently returning samples. Settings names SEA-LION and explains cloud context/retention uncertainty and account history separately from the local journal.
+
 ## 42. Bare REST signup confirmation response — 2026-11-05
 
 - Owner reported invalid-session error on hosted signup. Found a reproducible parser compatibility defect: GoTrue REST can return a bare User on confirmation-required signup, while the app accepted only an SDK-like nested user. Official auth-js _sessionResponse uses data.user ?? data. This is a verified parser defect consistent with the report, not inspection of the owner's private response.

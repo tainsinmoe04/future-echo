@@ -3,6 +3,7 @@ import type { ConversationMessage, FutureSelfIdentityVersion, JourneyMoment } fr
 import { buildAIContext } from "./ai-context-builder";
 import { ApiError, exact, identifier, object } from "./backend-http";
 import { requestFutureReply } from "./future-self-provider";
+import { requestSeaLionReply } from "./sealion-provider";
 import { isPlaylist, requestsMusic } from "../lib/playlist";
 import { SupabaseBackend } from "./supabase-backend";
 export function parseChatInput(value: unknown): { identityId: string; message: string; requestId: string } {
@@ -14,7 +15,7 @@ export function messageFromRow(value: unknown): ConversationMessage {
   if (value.playlist != null && !isPlaylist(value.playlist)) throw new ApiError(502, "playlist", "A stored playlist could not be read safely.");
   return { id: value.id, role: value.role as "user" | "assistant", content: value.content, createdAt: value.created_at, ...(isPlaylist(value.playlist) ? { playlist: value.playlist } : {}), safety: value.safety === "support" ? "support" : "normal" };
 }
-export async function createReply(db: SupabaseBackend, userId: string, input: ReturnType<typeof parseChatInput>, provider = requestFutureReply) {
+export async function createReply(db: SupabaseBackend, userId: string, input: ReturnType<typeof parseChatInput>, provider?: typeof requestFutureReply) {
   const user = encodeURIComponent(userId), identity = encodeURIComponent(input.identityId);
   const directions = await db.rest(`fe_directions?user_id=eq.${user}&id=eq.${identity}&active=eq.true&select=definition&limit=1`);
   if (!Array.isArray(directions) || !directions[0]?.definition) throw new ApiError(409, "direction", "Connect your current direction in Settings first.");
@@ -34,7 +35,7 @@ export async function createReply(db: SupabaseBackend, userId: string, input: Re
       return score(b) - score(a) || b.occurredAt.localeCompare(a.occurredAt);
     });
     const context = buildAIContext({ currentMessage: input.message, recentMessages: rows.map(messageFromRow).reverse(), activeIdentityVersion: directions[0].definition as FutureSelfIdentityVersion, relevantSavedMoments: saved });
-    const reply = await provider(context, { key: db.config.geminiKey, model: db.config.model });
+    const reply = provider ? await provider(context, { key: db.config.geminiKey, model: db.config.model }) : db.config.provider === "sealion" ? await requestSeaLionReply(context, db.config.seaLionKey ?? "") : await requestFutureReply(context, { key: db.config.geminiKey, model: db.config.model });
     if (!requestsMusic(input.message)) reply.playlist = null;
     const result = await db.rpc("fe_finish_reply", { p_user: userId, p_request: input.requestId, p_message: input.message, p_reply: reply });
     if (!object(result)) throw new ApiError(503, "save_reply", "The reply could not be saved."); return result;

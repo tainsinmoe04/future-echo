@@ -1,4 +1,4 @@
-export interface BackendConfig { origin: string; supabaseUrl: string; supabaseKey: string; serviceKey: string; geminiKey: string; model: string; aiEnabled: boolean }
+export interface BackendConfig { origin: string; supabaseUrl: string; supabaseKey: string; serviceKey: string; geminiKey: string; model: string; aiEnabled: boolean; provider?: "gemini" | "sealion" | "invalid"; seaLionKey?: string }
 function safeOrigin(value: string, production: boolean): string {
   try {
     const url = new URL(value);
@@ -16,7 +16,8 @@ export function backendConfig(env: Readonly<Record<string, string | undefined>> 
   // endpoint or mint insecure production cookies. Local journal remains usable.
   const supabaseUrl = origin ? safeOrigin(env.SUPABASE_URL ?? "", production) : "";
   return { origin, supabaseUrl,
+    provider: env.FUTURE_ECHO_AI_PROVIDER === undefined || env.FUTURE_ECHO_AI_PROVIDER === "gemini" ? "gemini" : env.FUTURE_ECHO_AI_PROVIDER === "sealion" ? "sealion" : "invalid", seaLionKey: env.SEA_LION_API_KEY ?? "",
     supabaseKey: env.SUPABASE_PUBLISHABLE_KEY ?? "", serviceKey: env.SUPABASE_SERVICE_ROLE_KEY ?? "", geminiKey: env.GEMINI_API_KEY ?? "", model: env.GEMINI_MODEL ?? "", aiEnabled: env.FUTURE_ECHO_AI_ENABLED === "true" };
 }
 export const authConfigured = (c: BackendConfig) => Boolean(c.supabaseUrl && c.supabaseKey);
-export const aiConfigured = (c: BackendConfig) => authConfigured(c) && Boolean(c.serviceKey && c.geminiKey && c.model && c.aiEnabled);
+export const aiConfigured = (c: BackendConfig) => authConfigured(c) && Boolean(c.serviceKey && c.aiEnabled && (c.provider === "sealion" ? c.seaLionKey : c.provider === "invalid" ? false : c.geminiKey && c.model));

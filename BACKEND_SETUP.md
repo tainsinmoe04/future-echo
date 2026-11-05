@@ -1,5 +1,20 @@
 # Supabase + Gemini — implementation checkpoint
 
+## Hosted SEA-LION — 2026-11-05
+
+Owner authorized live website AI. Production now selects
+FUTURE_ECHO_AI_PROVIDER=sealion with FUTURE_ECHO_AI_ENABLED=true,
+SEA_LION_API_KEY and existing account/storage configuration. Production-only
+secrets remain in Vercel. Local trial flags stay false on hosted deployments.
+The account API verifies the user and uses database reply reservations, quotas,
+idempotency and bounded consented context before invoking fixed Qwen SEA-LION.
+No provider fallback. Google/email login alone does not connect/upload a journal.
+Open Your Space > Settings, confirm adult consent and explicitly connect the
+direction. Unconnected live mode blocks sends rather than fabricating a reply.
+Canonical public origin: https://future-echo-sandy.vercel.app (the long team
+deployment alias is Vercel-protected). Provider privacy/quality remains limited;
+this does not establish E2EE, zero retention, native fluency or public-beta safety.
+
 ## Google and Vercel setup — 2026-11-05
 
 Google login is implemented but defaults off. In Google Cloud create a Web OAuth

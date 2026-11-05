@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { authConfigured, backendConfig } from "../src/server/backend-config";
+import { aiConfigured, authConfigured, backendConfig } from "../src/server/backend-config";
+
+test("hosted SEA-LION requires explicit enable, authenticated storage and its own key",()=>{
+ const env={NODE_ENV:"production",APP_ORIGIN:"https://echo.example",SUPABASE_URL:"https://project.supabase.co",SUPABASE_PUBLISHABLE_KEY:"fictional-public",SUPABASE_SERVICE_ROLE_KEY:"fictional-service",FUTURE_ECHO_AI_PROVIDER:"sealion",SEA_LION_API_KEY:"fictional-provider",FUTURE_ECHO_AI_ENABLED:"true"};
+ assert.equal(aiConfigured(backendConfig(env)),true);
+ for(const patch of [{FUTURE_ECHO_AI_ENABLED:"false"},{SEA_LION_API_KEY:""},{SUPABASE_SERVICE_ROLE_KEY:""},{FUTURE_ECHO_AI_PROVIDER:"unknown"}]) assert.equal(aiConfigured(backendConfig({...env,...patch})),false);
+ assert.equal(aiConfigured(backendConfig({...env,FUTURE_ECHO_AI_PROVIDER:"gemini"})),false);
+});
 
 test("production accounts require explicit HTTPS application and database origins", () => {
   const valid = { NODE_ENV: "production", APP_ORIGIN: "https://echo.example", SUPABASE_URL: "https://project.supabase.co/", SUPABASE_PUBLISHABLE_KEY: "test-public" };

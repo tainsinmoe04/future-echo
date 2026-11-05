@@ -3,6 +3,7 @@ import { apiFailure, apiJson, readJson, requireOrigin } from "@/server/backend-h
 import { SupabaseBackend } from "@/server/supabase-backend";
 import { createReply, parseChatInput } from "@/server/chat-service";
 export const runtime = "nodejs";
+export const maxDuration = 60;
 export async function POST(request: Request) {
   const config = backendConfig();
   if (!aiConfigured(config)) return apiJson({ error: "Connected AI is not configured. Local preview remains available.", code: "setup_required" }, 501);

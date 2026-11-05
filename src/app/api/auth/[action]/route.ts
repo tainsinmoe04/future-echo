@@ -42,6 +42,11 @@ export async function GET(request: Request, { params }: Params) {
 export async function POST(request: Request, { params }: Params) {
   try {
     const config = backendConfig(); requireOrigin(request, config.origin); const db = new SupabaseBackend(config), action = (await params).action;
+    if (action === "attest-adult") {
+      const input = await readJson(request,512);
+      if (!object(input) || !exact(input,["adultConfirmed"]) || input.adultConfirmed!==true) throw new ApiError(400,"adult_required","Confirm you are 18 or older before connecting live AI.");
+      const user=await db.user(request); await db.rpc("fe_attest_adult",{p_user:user.id}); return apiJson({confirmed:true});
+    }
     if (action === "google") {
       if (process.env.FUTURE_ECHO_GOOGLE_AUTH !== "true") throw new ApiError(503,"google_setup","Google sign-in needs provider setup. Email login or the device-only journal remain available.");
       const input = await readJson(request,1024);
