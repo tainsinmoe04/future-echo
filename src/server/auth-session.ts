@@ -8,8 +8,12 @@ export interface AuthSession {
 
 /** Validate transport shape only. API access still requires network user verification. */
 export function parseAuthSession(value: Record<string, unknown>, allowConfirmation = false): AuthSession | undefined {
-  if (value.access_token === undefined && value.refresh_token === undefined && allowConfirmation &&
-      object(value.user) && typeof value.user.id === "string" && /^[0-9a-f-]{36}$/i.test(value.user.id)) return undefined;
+  // GoTrue REST signup may return a bare User, not the SDK's { user } wrapper.
+  // Only signup may accept this no-session response; never mint session cookies.
+  const pendingUser = object(value.user) ? value.user : value;
+  if (value.access_token == null && value.refresh_token == null && allowConfirmation &&
+      typeof pendingUser.id === "string" && /^[0-9a-f-]{36}$/i.test(pendingUser.id) &&
+      (object(value.user) || pendingUser.aud === "authenticated")) return undefined;
   const access = value.access_token, refresh = value.refresh_token, expires = value.expires_in === undefined ? 3600 : value.expires_in;
   // Leave room for cookie attributes below browsers' usual per-cookie size limit.
   if (typeof access !== "string" || access.length > 3800 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(access) ||

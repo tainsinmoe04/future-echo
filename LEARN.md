@@ -1,5 +1,11 @@
 # Future Echo — Project Learnings
 
+## 42. Bare REST signup confirmation response — 2026-11-05
+
+- Owner reported invalid-session error on hosted signup. Found a reproducible parser compatibility defect: GoTrue REST can return a bare User on confirmation-required signup, while the app accepted only an SDK-like nested user. Official auth-js _sessionResponse uses data.user ?? data. This is a verified parser defect consistent with the report, not inspection of the owner's private response.
+- Signup-only parsing now accepts a UUID-bearing bare authenticated User with no access/refresh tokens, or nested confirmation response. Returns confirmation notice without cookies; login/refresh remain strict. Empty/one-sided/malformed tokens still fail. No account created or user password/token inspected during diagnosis.
+- Production canonical origin is https://future-echo-sandy.vercel.app; long Vercel team alias is protected. Google authorization preflight reached accounts.google.com; complete real account callback remains user verification. Hosted AI remains disabled.
+
 ## 41. Requested hosting/account preparation — 2026-11-05
 
 - Owner authorized pushing current work to the existing GitHub repository and creating a Git-linked Vercel project. Do not upload private env files or enable loopback trial modes on a public host.

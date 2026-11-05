@@ -38,6 +38,17 @@ test("malformed auth sessions cannot create cookies or pretend email confirmatio
   assert.throws(() => parseAuthSession({ ...pending, access_token: "" }, true), invalid);
 });
 
+test("REST signup bare User means pending confirmation, never a login session", () => {
+  const user={id:"11111111-1111-4111-8111-111111111111",aud:"authenticated",email:"fictional@example.invalid",email_confirmed_at:null};
+  assert.equal(parseAuthSession(user,true),undefined);
+  assert.equal(parseAuthSession({user,access_token:null,refresh_token:null},true),undefined);
+  assert.throws(()=>parseAuthSession(user),invalid);
+  assert.throws(()=>parseAuthSession({id:user.id},true),invalid);
+  assert.throws(()=>parseAuthSession({...user,access_token:""},true),invalid);
+  assert.throws(()=>parseAuthSession({...user,access_token:valid.access_token},true),invalid);
+  assert.throws(()=>parseAuthSession({...user,refresh_token:valid.refresh_token},true),invalid);
+});
+
 test("logout distinguishes local removal from confirmed upstream revocation without raw errors", async () => {
   assert.deepEqual(await logoutOutcome(async () => ({})), { signedOut: true, serverRevocationConfirmed: true });
   for (const outcome of [
