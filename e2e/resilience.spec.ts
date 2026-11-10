@@ -27,6 +27,24 @@ async function evidence(page: Page, name: string) {
   if (process.env.ECHO_QA_DIR) await page.screenshot({ path: path.join(process.env.ECHO_QA_DIR, `${name}-${test.info().project.name}.png`) });
 }
 
+test("settings section navigation is keyboard accessible and preferences remain saved", async ({ page }) => {
+  await settings(page);
+  await page.getByRole("link", { name: "Your data", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#settings-data")).toBeFocused();
+  await page.getByRole("link", { name: "Appearance", exact: true }).click();
+  await expect(page.locator("#settings-appearance")).toBeFocused();
+  await page.getByRole("radio", { name: "Larger", exact: true }).check();
+  await expect(page.locator("[data-echo-reading]")).toHaveAttribute("data-echo-reading", "large");
+  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Space settings", exact: true }).click();
+  await expect(page.getByRole("radio", { name: "Larger", exact: true })).toBeChecked();
+  await page.getByRole("button", { name: "Back to Your Space", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Space settings", exact: true })).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("invalid and larger valid backups require review; recovery is independently removable", async ({ page }) => {
   await settings(page);
   const original = await backup(page);

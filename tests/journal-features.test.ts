@@ -8,7 +8,28 @@ import { activeIdentityVersion, pastIdentityVersion } from "../src/lib/mock-data
 import { DEFAULT_PREFERENCES } from "../src/lib/scrapbook";
 import { parseJournalBackup, serializeJournalBackup } from "../src/lib/journal-backup";
 import { keepMoment } from "../src/lib/personal-space";
+import { applyJournalTemplate, JOURNAL_TEMPLATES } from "../src/lib/journal-templates";
 const fixture = (): JournalSnapshot => structuredClone({ version: 1, moments: sampleMoments, identityVersions: [pastIdentityVersion, activeIdentityVersion], preferences: DEFAULT_PREFERENCES });
+
+test("romantic templates preserve evidence and consent through validated backup", () => {
+  for (const template of JOURNAL_TEMPLATES) {
+    const snapshot = fixture(), original = snapshot.moments[0], before = structuredClone(original);
+    const styled = applyJournalTemplate(original, template.id);
+    assert.deepEqual(original, before);
+    assert.deepEqual(styled, { ...before, paper: template.id, noteFont: "book" });
+    snapshot.moments = [styled, ...snapshot.moments.slice(1)];
+    const year = styled.occurredAt.slice(0, 4);
+    snapshot.books = { [year]: { ...defaultBook(year), theme: template.id, placements: [
+      { id: "ribbon", name: "ribbon-key", x: 50, y: 50, size: 18, rotation: 0 },
+      { id: "frame", name: "antique-frame", x: 50, y: 50, size: 18, rotation: 0 },
+      { id: "lace", name: "lace-trim", x: 50, y: 50, size: 18, rotation: 0 },
+    ] } };
+    assert.equal(isJournalSnapshot(snapshot), true);
+    const restored = parseJournalBackup(serializeJournalBackup(snapshot)).snapshot;
+    assert.deepEqual(restored.moments, snapshot.moments);
+    assert.deepEqual(restored.books, snapshot.books);
+  }
+});
 
 test("music accepts only explicit HTTPS destinations without credentials or deceptive subdomains", () => {
   for (const url of ["https://open.spotify.com/track/x", "https://youtu.be/test", "https://artist.bandcamp.com/track/a"]) assert.equal(safeMusicUrl(url), true);

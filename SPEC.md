@@ -1,5 +1,14 @@
 # Future Echo — Product and Implementation Specification
 
+## Shared monochrome interface — 2026-11-10
+
+The owner explicitly extended the refresh beyond the journal to Settings, conversation, personal space, Future Self, onboarding, authentication and public-page chrome, and selected black/white over yellow accents. Use charcoal surfaces, soft-white actions and neutral-grey secondary text; retain distinct present/future message surfaces. Do not recolor saved photographs, paper or covers. Preserve readable error/warning states, keyboard focus, reduced-motion preferences, consent disclosures and existing persistence. This is visual authorization, not permission to alter providers, account configuration or deploy.
+
+## Optional romantic journal visual treatments — 2026-11-09
+
+The owner authorized a new visual direction based on lace, antique keepsakes and ring-bound collage references. The first implementation is limited to optional journal page/cover templates (Lace & letters, Midnight keepsake, Poetry journal) and three additional built-in raster decorations. Existing templates remain supported; earlier saved designs must not be migrated automatically. Selecting a template must preserve words, photos, dates, identity-version provenance and consent. New presentation fields must pass the same local persistence and backup validation as earlier themes. Decoration manipulation uses existing keyboard, touch/mouse, Undo/Redo and removal controls. This increment does not authorize provider changes, modify the messenger, or assert that the broad all-route/presentation redesign is complete.
+
+
 ## Persistent conversation and editor follow-up — 2026-11-05
 
 Owner clarified that Free30/Plus90 history windows must remain unchanged; the

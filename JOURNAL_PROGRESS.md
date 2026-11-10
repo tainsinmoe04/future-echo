@@ -1,5 +1,21 @@
 # Future Echo journal implementation checkpoint
 
+## Shared monochrome UI — 2026-11-10 (local, not deployed)
+
+- Owner requested the refresh across the app, then selected black/white instead of yellow. Added a shared neutral interface layer covering Landing, login/signup, onboarding, conversation, personal-space controls, Settings and Future Self. Existing journal paper/cover/photo colors and saved records remain unchanged.
+- Settings now has Appearance, Connection, Your direction and Your data navigation, responsive desktop/mobile layouts, native radio hit targets and preserved privacy/backup controls. Conversation drawer Settings expands appropriately on desktop. No provider configuration, keys, data migration or service changes.
+- Verification: 138 unit tests, ESLint, production build and whitespace check passed. Auth/journal/resilience Playwright suite: 48/48 passed across 1440×1000, 390×844 and 320×740 Chrome viewports. Separate rendered checks cover all routes, Settings drawer and focus return, keyboard section navigation, reading controls, onboarding, draft reload, direction edit cancellation, reduced motion, no page errors and no document overflow. Screenshots captured after hydration in the active Codex visualization folder (`interface-*.png`).
+- Browser connector failed with a Statsig timeout; isolated Chrome/Playwright fallback used. Live AI temporarily disabled only for the QA server process; no env files changed. Tests use fictional isolated data and stubbed auth, not a real provider/auth certification. Physical-device/Safari checks and deployment remain pending. Known parent-lockfile warning remains non-blocking.
+
+## Optional romantic journal templates — 2026-11-09 (local, not deployed)
+
+- Owner requested a broader UI refresh using black/ivory lace, antique keepsakes and ring-bound collage references. This first increment adds three optional page/cover treatments: Lace & letters, Midnight keepsake and Poetry journal. It is not a completed all-route or presentation redesign.
+- New generated local raster artwork: ivory lace, black ribbon/silver key and antique oval frame (`public/journal/`). These are original generated decorations inspired by the supplied references, not extracted artwork. The three decorations use the existing move/resize/rotate/delete controls.
+- Template changes only set presentation fields; no seeded memories, edits to saved evidence, consent grants, account/provider changes or migration of existing designs. All legacy papers/covers remain available. Page and cover templates use existing draft autosave and Undo/Redo; new values round-trip through validated backups.
+- Validation: 138 unit tests, ESLint, production build and git diff whitespace check pass. New Playwright regression passes on desktop/mobile/small-mobile (3/3), including keyboard selection, Undo/Redo and cover persistence. Separate isolated Chrome checks at 1440×1000, 390×844 and 320×740 pass: all three page choices, preserved text, decoration keyboard rotation/movement, saved page, cover reload, reduced motion and no document overflow/page errors. Screenshots are outside the repo under the active Codex visualization directory. Physical phones/Safari are not verified.
+- Existing non-blocking parent-lockfile build warning remains. Broad app chrome, presentation/icon redesign and deployment remain pending; this increment does not alter the messenger or production AI setup. User image attachments remain untracked and untouched.
+
+
 ## Persistent chat and sticker controls — 2026-11-05
 
 - Release07ae986 production dpl_2ZLmVYNokqeY7AWeFPxbkyxzVSNY READY. Actual

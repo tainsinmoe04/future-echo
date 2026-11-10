@@ -1,0 +1,54 @@
+/* Optional journal treatments. Existing pages and the messenger are unchanged. */
+.journal-template-disclosure { margin: 8px 0 20px; border-block: 1px solid #343338; }
+.journal-template-disclosure > summary { padding: 16px 0; cursor: pointer; font-size: 14px; }
+.journal-template-disclosure > summary > span { float: right; color: #b8b2a9; font-size: 12px; }
+.journal-template-picker { padding: 18px 0; color: #eeeae2; }
+.journal-template-heading h3 { font-size: 17px; font-weight: 500; margin: 0 0 6px; }
+.journal-template-heading p,.journal-template-caption { color: #b8b2a9; font-size: 12px; line-height: 1.6; }
+.journal-template-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 18px 0 12px; }
+.journal-template-grid > button { min-width: 0; padding: 6px; text-align: left; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.journal-template-grid > button[aria-pressed="true"] { border-color: #d5c5a7; background: #ffffff08; }
+.journal-template-grid > button[aria-pressed="true"] > strong::after { content: " · Selected"; color: #dfcfb4; }
+.journal-template-grid > button:focus-visible { outline: 2px solid #e8dbc3; outline-offset: 4px; }
+.journal-template-grid > button > strong { display: block; font-size: 12px; font-weight: 500; margin: 12px 0 5px; line-height: 1.5; }
+.journal-template-grid > button > span:last-child { display: block; font-size: 11px; line-height: 1.55; color: #b8b2a9; }
+.journal-template-thumb { position: relative; isolation: isolate; display: flex; align-items: end; justify-content: center; aspect-ratio: 3/4; padding: 14px 10px; border-radius: 2px 6px 6px 2px; overflow: hidden; box-shadow: inset 5px 0 6px #0003,0 6px 12px #0003; }
+.journal-template-name { position: relative; z-index: 1; font: italic 17px/1.15 Georgia,serif; text-align: center; max-width: 9ch; }
+.theme-lace { background: #20201f !important; color: #f6f0e4 !important; }
+.theme-nocturne { background: #1a2120 !important; color: #e5d6b7 !important; }
+.theme-poetry { background: #eee6d5 !important; color: #27231f !important; }
+.journal-template-thumb.theme-lace::before,.journal-cover.theme-lace::before { content: ""; position: absolute; inset: 0 0 auto; height: 34%; background: url('/journal/ivory-lace.png') center / 120% auto no-repeat; pointer-events: none; opacity: .95; }
+.journal-template-ornament { position: absolute; top: 12%; left: 15%; width: 70%; height: 59%; background: url('/journal/ribbon-key.png') center / contain no-repeat; pointer-events: none; }
+.theme-nocturne .journal-template-ornament { background-image: url('/journal/antique-frame.png'); }
+.theme-poetry .journal-template-ornament { background-image: url('/journal/antique-frame.png'); opacity: .85; }
+.journal-cover:is(.theme-lace,.theme-nocturne,.theme-poetry) { border: 1px solid #ffffff25; box-shadow: inset 8px 0 8px #0004, 0 12px 25px #0004; }
+.journal-cover.theme-nocturne { outline: 1px solid #a7976c80; outline-offset: -13px; }
+.journal-cover.without-cover-photo:is(.theme-lace,.theme-nocturne,.theme-poetry)::after { content: ""; position: absolute; bottom: 18px; right: 24px; width: 116px; height: 130px; background: url('/journal/ribbon-key.png') center / contain no-repeat; pointer-events: none; }
+.journal-cover.without-cover-photo.theme-nocturne::after { background-image: url('/journal/antique-frame.png'); }
+.journal-cover.without-cover-photo.theme-poetry::after { background-image: url('/journal/antique-frame.png'); opacity: .8; }
+.journal-cover:is(.theme-lace,.theme-nocturne,.theme-poetry) .journal-cover-title { font-family: Georgia,'Times New Roman',serif; font-weight: 400; line-height: 1.15; letter-spacing: -.035em; }
+.journal-cover.theme-lace .journal-cover-title { margin-top: 48px; }
+.journal-cover.theme-nocturne .journal-cover-photo { border-radius: 50%; border: 7px ridge #b1a58a; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne) { background-image: none; border-radius: 2px 7px 7px 2px; padding-top: 70px; padding-bottom: 64px; box-shadow: inset 5px 0 9px #0002,0 16px 40px #0003; }
+.echo-paper:is(.paper-lace,.paper-poetry) { background-color: #f0e9da; color: #29251f; }
+.echo-paper.paper-nocturne { color-scheme: dark; background-color: #202421; color: #eee7d8; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::before,.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::after { content: ""; position: absolute; z-index: -1; left: 0; right: 0; height: 62px; background: url('/journal/ivory-lace.png') center / 100% auto no-repeat; pointer-events: none; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::before { top: 0; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::after { bottom: 0; transform: rotate(180deg); }
+.echo-paper:is(.paper-lace,.paper-poetry)::before,.echo-paper:is(.paper-lace,.paper-poetry)::after { filter: sepia(.22) brightness(.85); opacity: .7; }
+.echo-paper.paper-poetry::before,.echo-paper.paper-poetry::after { background-color: #24211e; filter: none; opacity: 1; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne) .paper-heading h1 { color: inherit; font-family: Georgia,'Times New Roman',serif; font-weight: 400; font-size: clamp(27px,4vw,38px); line-height: 1.18; letter-spacing: -.025em; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne) .paper-original { font-size: 17px; line-height: 1.8; color: inherit; background: transparent; padding: 0; margin-left: 0; box-shadow: none; }
+.paper-nocturne :is(.paper-heading p,.paper-text h2,.paper-note h2,.paper-reply h2,.paper-footnote) { color: #c9c0ac; }
+.paper-nocturne :is(input,textarea) { color: #eee7d8; }
+.paper-nocturne .paper-writing { background: #ffffff08; border-color: #8d8577; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne) .paper-title-input { color: inherit!important; font-family: Georgia,'Times New Roman',serif; font-weight: 400!important; }
+.paper-nocturne :is(.paper-heading time,.paper-date,.paper-date-label,.paper-label) { color: #c9c0ac; }
+.paper-nocturne .paper-reply p { color: #eee7d8; }
+.paper-nocturne :is(input,textarea)::placeholder { color: #c0b8a9; opacity: 1; }
+.paper-nocturne .paper-reply { color: #e3dccb; background: #ffffff08; border-color: #b6a98b55; }
+.paper-nocturne .paper-polaroid { color: #302a24; }
+.paper-poetry .paper-polaroid { background: #e7dcc7; border-color: #e7dcc7; box-shadow: 0 6px 12px #3b2e2326; }
+@media (hover:hover) and (pointer:fine) { .journal-template-grid > button:hover { border-color: #8e8270; background: #ffffff06; } }
+@media (max-width:380px) { .journal-template-grid { gap: 4px; } .journal-template-name { font-size: 14px; } .journal-template-grid > button { padding: 4px; } }
+@media (prefers-reduced-motion:reduce) { .journal-template-grid > button { transition: none; } }

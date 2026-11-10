@@ -72,7 +72,7 @@ function moment(v: unknown): v is JourneyMoment {
   if (!optional(v.calendarDate, (d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && date(`${d}T00:00:00.000Z`))) return false;
   if (!optional(v.pageLayers, layers)) return false;
   if (!optional(v.music, (m) => object(m) && keys(m, ["title", "url"]) && text(m.title, 120, 1) && safeMusicUrl(m.url))
-    || !optional(v.paper, (p) => ["plain", "ruled", "grid", "blush"].includes(p as string))) return false;
+    || !optional(v.paper, (p) => ["plain", "ruled", "grid", "blush", "lace", "nocturne", "poetry"].includes(p as string))) return false;
   if (!optional(v.pageTransforms, (layout) => object(layout) && Object.keys(layout).length <= 32 && Object.entries(layout).every(([key, t]) =>
     /^(words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(key) && object(t) && keys(t, ["x", "y", "scale", "rotation"])
     && range(t.x, -100, 100) && range(t.y, -100, 100) && range(t.scale, 0.5, 2) && range(t.rotation, -180, 180)))) return false;

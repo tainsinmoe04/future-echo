@@ -47,7 +47,7 @@ export interface SavedMoment {
 export interface JourneyMoment extends SavedMoment {
   pageLayers?: readonly string[];
   music?: { title: string; url: string };
-  paper?: "plain" | "ruled" | "grid" | "blush";
+  paper?: "plain" | "ruled" | "grid" | "blush" | "lace" | "nocturne" | "poetry";
   pageTransforms?: Readonly<Record<string, PageTransform>>;
   revisitAt: ISODateTime;
   kind?: "conversation" | "personal";
@@ -65,7 +65,7 @@ export interface PageTransform {
   rotation: number;
 }
 
-export type StickerName = "flower" | "shoes" | "hearts" | "star" | "daisy" | "moon" | "sparkle" | "leaf" | "cherry" | "bow" | "stamp" | "ticket" | "tape-butter" | "tape-lilac" | "tape-grid" | "tape-rose" | "clip-silver" | "clip-gold" | "clip-heart" | "custom" | "custom-tape";
+export type StickerName = "flower" | "shoes" | "hearts" | "star" | "daisy" | "moon" | "sparkle" | "leaf" | "cherry" | "bow" | "stamp" | "ticket" | "tape-butter" | "tape-lilac" | "tape-grid" | "tape-rose" | "clip-silver" | "clip-gold" | "clip-heart" | "ribbon-key" | "antique-frame" | "lace-trim" | "custom" | "custom-tape";
 
 export type NoteFont = "clean" | "soft" | "handwritten" | "book";
 

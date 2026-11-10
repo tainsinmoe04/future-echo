@@ -20,6 +20,34 @@ async function begin(page: Page) {
 }
 async function noOverflow(page: Page) { expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
 
+test("journal templates are optional, undoable and survive saving without changing words", async ({ page }) => {
+  await begin(page); await page.goto("/memory");
+  await page.getByRole("button", { name: "Add a moment", exact: true }).click();
+  const words = "A small moment. Mine to keep.";
+  await page.getByRole("textbox", { name: "My words", exact: true }).fill(words);
+  const picker = page.locator(".journal-template-disclosure");
+  if (await picker.getAttribute("open") === null) await picker.locator("summary").click();
+  const choose = page.getByRole("button", { name: /Midnight keepsake/ });
+  await choose.focus(); await choose.press("Enter");
+  await expect(page.locator(".paper-nocturne")).toBeVisible();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.locator(".paper-plain")).toBeVisible();
+  await page.getByRole("button", { name: "Redo", exact: true }).click();
+  await expect(page.locator(".paper-nocturne")).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "My words", exact: true })).toHaveValue(words);
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
+  await expect(page.locator(".paper-original")).toHaveText(words);
+  await noOverflow(page); await evidence(page, "romantic-journal");
+  await page.goto("/memory");
+  await page.getByRole("button", { name: /Customize \d{4} book/ }).first().click();
+  await page.getByRole("button", { name: /Poetry journal/ }).click();
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
+  await page.reload(); await expect(page.locator(".journal-cover.theme-poetry")).toBeVisible();
+  await noOverflow(page);
+});
+
 test("fresh personal space is empty, demo is isolated, and setup survives refresh", async ({ page }) => {
   await page.goto("/"); await expect(page).toHaveTitle("Future Echo"); await noOverflow(page);
   await evidence(page, "updated-landing");

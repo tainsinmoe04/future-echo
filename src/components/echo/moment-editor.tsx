@@ -17,6 +17,8 @@ import { FontPicker } from "./font-picker";
 import { MomentPaper } from "./moment-paper";
 import { DecorationPicker } from "./decoration-picker";
 import { JournalStorageStatus } from "./journal-storage-status";
+import { TemplatePicker } from "./template-picker";
+import { applyJournalTemplate } from "@/lib/journal-templates";
 
 export function MomentEditor({ moment, draftId, onClose, onSaved }: { moment?: JourneyMoment; draftId?: string; onClose: () => void; onSaved: (id: string) => void }) {
   const { activeIdentity, preferences, journalSnapshot, updateJournal } = useMockProductState();
@@ -32,6 +34,7 @@ export function MomentEditor({ moment, draftId, onClose, onSaved }: { moment?: J
   type HistoryEntry = { value: JourneyMoment; musicTitle: string; musicUrl: string };
   const [history, setHistory] = useState<HistoryEntry[]>([]); const [future, setFuture] = useState<HistoryEntry[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(!initial.originalExcerpt && !initial.paper);
   const [framing, setFraming] = useState<string>();
   const [mode, setMode] = useState<"write" | "arrange" | "fonts" | "extras">("write");
   const [context, setContext] = useState(false); const [noteContext, setNoteContext] = useState(false);
@@ -86,6 +89,7 @@ export function MomentEditor({ moment, draftId, onClose, onSaved }: { moment?: J
     <header className="echo-space-header"><button className="echo-icon-button" aria-label="Keep draft and go back" disabled={mediaBusy} onClick={onClose}><BackIcon /></button><h2>{moment ? "Make it yours" : "A page of your own"}</h2><button className="echo-button lilac compact" onClick={save} disabled={mediaBusy || !value.originalExcerpt.trim()}>Done</button></header>
     <div className="journal-editor-history"><button className="echo-text-button" disabled={!history.length} onClick={() => { const previous = history.at(-1); if (previous) { setFuture([...future, currentEntry()]); applyEntry(previous); setHistory(history.slice(0, -1)); } }}>Undo</button><button className="echo-text-button" disabled={!future.length} onClick={() => { const next = future.at(-1); if (next) { setHistory([...history, currentEntry()]); applyEntry(next); setFuture(future.slice(0, -1)); } }}>Redo</button><span>Draft stays private</span></div>
     <div ref={body} className={`echo-editor-body ${mode === "arrange" ? "echo-layout-preview" : ""}`}>
+      {mode === "write" && <details className="journal-template-disclosure" open={templatesOpen} onToggle={(event) => setTemplatesOpen(event.currentTarget.open)}><summary>Page templates <span>{value.paper ?? "Original paper"}</span></summary><TemplatePicker selected={value.paper} onSelect={(template) => { const next = applyJournalTemplate(value, template); change({ paper: next.paper, noteFont: next.noteFont }); }} /></details>}
       {mode === "fonts" && <div className="echo-editor-options"><FontPicker value={value.noteFont ?? "handwritten"} onChange={(noteFont) => change({ noteFont })} /><p className="echo-muted">Notes and captions use your chosen style. Original conversation text keeps its readable type.</p></div>}
       {mode === "arrange" && <div className="echo-placement-tools compact-placement"><div className="compact-placement-heading"><h3>Arrange</h3><span>Drag · pinch · rotate ↻</span></div><details className="compact-decoration-picker"><summary>Add decorations <span>{placements.length}/12</span></summary><DecorationPicker onBusyChange={setMediaBusy} count={placements.length} onAdd={(item) => { change({ stickerPlacements: [...placements, item] }); setSelected(`sticker:${item.id}`); }} /></details>
         {selection && <button className="echo-text-button danger" onClick={() => { change({ stickerPlacements: placements.filter((p) => p.id !== selection.id), pageTransforms: Object.fromEntries(Object.entries(value.pageTransforms ?? {}).filter(([id]) => id !== selected)) }); setSelected(null); }}>Remove sticker</button>}

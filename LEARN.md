@@ -1,5 +1,20 @@
 # Future Echo — Project Learnings
 
+## 48. Shared chrome and monochrome preference — 2026-11-10
+
+- Owner rejected yellow as the primary accent and requested all app surfaces, not only journal. Neutral charcoal/soft white is the shared control language; optional lace, keepsake and paper artwork stays independent and existing saved designs are preserved.
+- Settings has section navigation, comfortable native radio controls, bilingual font previews and retained truthful connection/storage/consent details. Desktop supports wider Settings both as a page and inside the conversation drawer; mobile keeps a compact horizontal section navigation.
+- UI UX Pro Max informed hierarchy/contrast and Emil informed immediate keyboard behavior and reduced-motion handling. Marketing hero, badge and dashboard recommendations were not applied to the intimate messenger. The generated warm-accent concept was a proposal, not a rendered screenshot, and is superseded by the owner's monochrome choice.
+- No provider keys, persistent backend settings or deployed services are changed by this refresh. Physical-phone/Safari testing remains separate from emulated Chrome viewport checks.
+
+## 47. Owner-directed romantic journal refresh — 2026-11-09
+
+- New reference direction: ivory lace, dark keepsake covers, antique metallic details and cream ring-bound collage. Treat these as optional journal treatments, not permission to overwrite users' existing books or immutable conversation evidence. A clean control layer should remain distinct from tactile page decoration.
+- First local increment: three new cover/page themes plus three generated movable decorations. Existing themes are preserved. Choosing a template changes paper/font or cover theme only; it never populates fictional memories or changes AI consent. Cover template selection switches an existing photograph to inset mode so the chosen cover can be seen; full-cover mode remains an explicit available option.
+- Emil guidance informed immediate, keyboard-accessible selection with reduced-motion support; UI UX Pro Max informed restrained spacing and legibility. GPT Taste's anti-generic visual principles were used, but its mandatory marketing hero/grid/GSAP patterns were not applied to this frequent-use editor because SPEC and the owner's journal direction take precedence.
+- Generated assets in `public/journal/` are original AI-generated artwork, not copies of the reference images. The concept mockup shown earlier is not a screenshot of the implementation. Actual local screenshots and automated checks are recorded in JOURNAL_PROGRESS.md. No deployment or whole-app redesign completion is claimed.
+
+
 ## 46. Tab closure, return check-in and sticker controls — 2026-11-05
 
 - Final release07ae986 READY. Real hosted temporary-account tab close/reopen,
