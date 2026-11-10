@@ -19,7 +19,7 @@ export function AuthShell({ mode }: { mode: "login" | "signup" }) {
     const adult=formRef.current?.elements.namedItem("adult") as HTMLInputElement|null;
     if (!adult?.checked) { adult?.reportValidity(); adult?.focus(); return; }
     submitting.current=true; setBusy(true); setNotice(undefined);
-    try { const result=await backendRequest<{url:string}>("/api/auth/google",{adultConfirmed:true,signup}); window.location.assign(result.url); }
+    try { const result=await backendRequest<{url:string}>("/api/auth/google",{adultConfirmed:true,signup}); sessionStorage.setItem("future-echo-account-start", "yes"); window.location.assign(result.url); }
     catch(error) { setNotice({text:error instanceof Error?error.message:"Google sign-in is unavailable.",error:true}); submitting.current=false;setBusy(false); }
   }
 
@@ -34,6 +34,7 @@ export function AuthShell({ mode }: { mode: "login" | "signup" }) {
         ...(signup ? { name: data.get("name") } : {}), adultConfirmed: data.get("adult") === "on",
       });
       if (result.signedIn) {
+        sessionStorage.setItem("future-echo-account-start", "yes");
         form.reset();
         router.push(signup ? "/onboarding" : "/now");
       } else setNotice({ text: result.message ?? "Check your email before signing in.", error: false });
@@ -58,6 +59,7 @@ export function AuthShell({ mode }: { mode: "login" | "signup" }) {
           <div className="auth-input-wrap"><Lock aria-hidden="true" /><input id="auth-password" name="password" type={show ? "text" : "password"} required minLength={8} maxLength={256} autoComplete={signup ? "new-password" : "current-password"} aria-describedby={signup ? "auth-password-help" : undefined} className="auth-input auth-input-password" placeholder={signup ? "Create a password" : "Enter your password"} /><button type="button" className="auth-password-toggle" aria-label={show ? "Hide password" : "Show password"} aria-pressed={show} onClick={() => setShow(current => !current)}><Eye aria-hidden="true" /></button></div>
           {signup && <p id="auth-password-help" className="auth-field-help">At least 8 characters.</p>}
           <label className="auth-adult"><input name="adult" type="checkbox" required /><span>I am 18 or older.<small>This beta is for adults.</small></span></label>
+          <p className="auth-field-help">Continuing prepares your AI conversation automatically once you choose your Future Self. Your messages and direction are processed by our AI service. Saved moments are shared only with your separate permission; photos and journal drafts stay on this device. This is not end-to-end encrypted. You can disconnect in Settings.</p>
           <button type="submit" className="auth-submit" disabled={busy}>{busy ? signup ? "Creating your account…" : "Signing in…" : signup ? "Create account" : "Log in"}</button>
           <button type="button" className="auth-submit" disabled={busy} onClick={()=>void google()}>Continue with Google</button>
         </fieldset>

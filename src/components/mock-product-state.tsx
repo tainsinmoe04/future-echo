@@ -98,6 +98,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   const [pendingLiveIdentity,setPendingLiveIdentity]=useState<string|null>(null);
   const automaticAttempt=useRef("");
   const connectionEpoch = useRef(0);
+  const connectionFlight = useRef<{ id: string; promise: Promise<void> } | null>(null);
   const requests = useRef(new Set<string>());
   const attempts = useRef(new Map<string, { content: string; requestId: string }>());
   const setThreads = useCallback((change: Record<string, MessengerThread> | ((current: Record<string, MessengerThread>) => Record<string, MessengerThread>)) => {
@@ -180,7 +181,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     }])));
   }, [setThreads]);
 
-  const connectAI = useCallback(async () => {
+  const establishConnection = useCallback(async () => {
     if (trialAI) throw new Error("The private trial does not connect to cloud accounts.");
     if (!activeIdentity) throw new Error("Choose a direction first.");
     cancelReplies();
@@ -199,7 +200,6 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       backendRequest<{ playlists: SavedPlaylist[] }>("/api/playlists"),
     ]);
     if (epoch !== connectionEpoch.current) {
-      await updateAccountContext({ archiveIdentityId: activeIdentity.id }, "POST");
       throw new Error("Your direction changed. Connect it again when ready.");
     }
     const interrupted = attempts.current.get(activeIdentity.id);
@@ -216,12 +216,22 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     if (completed || !interrupted) attempts.current.delete(activeIdentity.id);
     setConnectionError(""); setConnectedAI(true);
   }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI, connectedProvider, setThreads]);
+  const connectAI = useCallback(() => {
+    const id = `${connectedProvider}:${activeIdentity?.id ?? "none"}`;
+    if (connectionFlight.current?.id === id) return connectionFlight.current.promise;
+    const promise = establishConnection().finally(() => {
+      if (connectionFlight.current?.promise === promise) connectionFlight.current = null;
+    });
+    connectionFlight.current = { id, promise };
+    return promise;
+  }, [activeIdentity?.id, connectedProvider, establishConnection]);
   useEffect(()=>{
     if(!chatReady||!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
     const key=`${connectedProvider}:${activeIdentity.id}`;
     if(automaticAttempt.current===key)return;
     let consent=null;try{consent=parseLiveConnectionConsent(localStorage.getItem(LIVE_CONNECTION_KEY) ?? sessionStorage.getItem(LIVE_CONNECTION_KEY));}catch{}
-    const requested=pendingLiveIdentity===activeIdentity.id;
+    let accountStart=false;try{accountStart=sessionStorage.getItem("future-echo-account-start")==="yes";}catch{}
+    const requested=pendingLiveIdentity===activeIdentity.id||accountStart;
     if(!requested&&(!consent||consent.identityId!==activeIdentity.id||consent.provider!==connectedProvider))return;
     let current=true;
     void Promise.resolve().then(async()=>{
@@ -229,6 +239,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       if(!requested){const session=await backendRequest<{user:{id:string}|null}>("/api/auth/session");if(!current||session.user?.id!==consent?.userId)return;}
       if(!current)return;
       await connectAI();
+      try{sessionStorage.removeItem("future-echo-account-start");}catch{}
     }).catch(error=>{if(current)setConnectionError(error instanceof Error?error.message:"Live connection could not be restored.");});
     return()=>{current=false;};
   },[chatReady,liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI]);
