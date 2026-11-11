@@ -2,17 +2,17 @@
 .echo-settings { min-width:0; overflow:hidden; }
 .echo-settings .echo-space-header { flex-shrink:0; }
 .echo-settings .settings-workspace { min-width:0; overflow:hidden; }
-.echo-settings .settings-navigation { display:flex; flex-direction:column; overflow-y:auto; padding:20px; gap:0; }
-.settings-menu-intro { padding:8px 0 24px; }
-.settings-menu-intro h2 { font-size:22px; margin-bottom:8px; }
-.settings-menu-intro p { font-size:13px; color:#b5b6b8; }
-.settings-navigation button { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 12px; min-height:72px; text-align:left; background:transparent; border:0; border-bottom:1px solid #303236; border-radius:0; }
+.echo-settings .settings-navigation { display:flex; flex-direction:column; min-height:0; overflow-y:auto; overflow-x:hidden; padding:20px; gap:0; }
+.settings-menu-intro { flex:none; padding:8px 0 24px; }
+.settings-menu-intro h2 { font-size:22px; line-height:1.4; margin-bottom:8px; }
+.settings-menu-intro p { font-size:13px; line-height:1.6; color:#b5b6b8; }
+.settings-navigation button { display:flex; flex:none; align-items:center; justify-content:space-between; gap:16px; padding:18px 12px; min-height:72px; text-align:left; white-space:normal; background:transparent; border:0; border-bottom:1px solid #303236; border-radius:0; }
 .settings-navigation button strong,.settings-navigation button small { display:block; }
 .settings-row-icon { flex:none; width:22px; height:22px; color:#d9dadd; }
-.settings-row-copy { flex:1; min-width:0; }
+.settings-row-copy { display:grid; gap:6px; flex:1; min-width:0; overflow-wrap:anywhere; }
 .settings-row-chevron { flex:none; width:16px; height:16px; transform:rotate(180deg); color:#92969b; }
-.settings-navigation button strong { font-size:14px; font-weight:600; }
-.settings-navigation button small { font-size:12px; color:#b5b6b8; margin-top:6px; line-height:1.5; }
+.settings-navigation button strong { font-size:14px; line-height:1.5; font-weight:600; }
+.settings-navigation button small { font-size:12px; color:#b5b6b8; margin:0; line-height:1.6; }
 .settings-navigation button[aria-current] { background:#ffffff0a; }
 .settings-value-row { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; margin:22px 0; font-size:14px; }
 .echo-settings [hidden] { display:none!important; }

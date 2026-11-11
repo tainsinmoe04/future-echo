@@ -1,5 +1,11 @@
 # Future Echo — Project Learnings
 
+## 49. Settings menu text overlap — 2026-11-11
+
+- At short desktop/tablet heights, the flex navigation compressed its menu buttons to 72px while wrapped titles and descriptions needed more space. Text extended beyond row borders and into neighbouring rows. Reproduced on the hosted application at 1440×600.
+- Menu rows and the introduction no longer shrink; the navigation scrolls within its available height. A grid gap and explicit line heights separate each title from its description, with wrapping retained on narrow screens. No account, AI, journal data or permission behavior changed.
+- Lint and production build pass. Isolated Chromium checks at 1440×600, 768×600, 390×844 and 320×480 verify row geometry, section navigation, larger reading preference and focus return, with no page errors or horizontal overflow. Physical devices and Safari remain untested.
+
 ## 48. Shared chrome and monochrome preference — 2026-11-10
 
 - Owner rejected yellow as the primary accent and requested all app surfaces, not only journal. Neutral charcoal/soft white is the shared control language; optional lace, keepsake and paper artwork stays independent and existing saved designs are preserved.
