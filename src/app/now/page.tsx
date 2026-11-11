@@ -7,7 +7,10 @@ import { useMockProductState } from "@/components/mock-product-state";
 import { EchoDialog } from "@/components/echo/dialog";
 import { PersonalSpace } from "@/components/echo/personal-space";
 import { SaveReview } from "@/components/echo/save-review";
-import { BackIcon, ClipIcon, OrbitIcon, PlusIcon, SendIcon } from "@/components/echo/icons";
+import { BackIcon, OrbitIcon, PlusIcon, SendIcon } from "@/components/echo/icons";
+import { MomentEditor } from "@/components/echo/moment-editor";
+import { PhotoPicker } from "@/components/echo/photo-picker";
+import type { MomentPhoto } from "@/lib/domain";
 import { MessageActions } from "@/components/echo/message-actions";
 import { MAX_MESSAGE_LENGTH } from "@/lib/redaction";
 import { horizonDistance } from "@/lib/personal-space";
@@ -25,6 +28,7 @@ function Conversation() {
   const readOnly = Boolean(pastIdentity);
   const thread = identity ? threads[identity.id] ?? emptyThread : emptyThread;
   const [space, setSpace] = useState<{ momentId?: string; create?: boolean } | null>(null);
+  const [photoMoment, setPhotoMoment] = useState<{ draftId: string; photos: readonly MomentPhoto[] } | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [settled, setSettled] = useState<Record<string, string | true>>({});
   const [about, setAbout] = useState(false);
@@ -92,7 +96,7 @@ function Conversation() {
         {connectionError&&connectedAI&&thread.draft&&<button className="echo-text-button" disabled={thread.typing} onClick={submit}>Try sending again</button>}
         <div className="echo-composer-above"><span>{trialAI ? `${trialProvider} · private cloud trial` : connectedAI ? `Connected · ${connectedProvider} · imagined perspective` : liveAIAvailable ? <button className="echo-text-button" onClick={() => setAbout(true)}>Connect live AI</button> : "Local preview · replies are examples"}</span><button className="echo-add-button" aria-label="Add a personal moment" onClick={() => setSpace({ create: true })}><PlusIcon /></button></div>
         <form className="echo-composer" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-          <button type="button" className="echo-icon-button" aria-label="Add a moment with photos" onClick={() => setSpace({ create: true })}><ClipIcon /></button>
+          <PhotoPicker composer photos={[]} onChange={(photos) => setPhotoMoment({ draftId: `photo-${crypto.randomUUID()}`, photos })} />
           <label htmlFor="echo-message" className="sr-only">Message your future self</label>
           <textarea id="echo-message" ref={composer} rows={1} placeholder="Message your future self…" value={thread.draft} maxLength={MAX_MESSAGE_LENGTH}
             onChange={(event) => { setThreadDraft(identity.id, event.target.value); event.target.style.height = "auto"; event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`; }}
@@ -102,6 +106,7 @@ function Conversation() {
       </footer>}
     </main>
     <EchoDialog open={Boolean(space)} label="Your Space" onClose={() => setSpace(null)} className="echo-space-drawer"><PersonalSpace onClose={() => setSpace(null)} initialMomentId={space?.momentId} initialCreate={space?.create} /></EchoDialog>
+    <EchoDialog open={Boolean(photoMoment)} label="Add photos to a journal moment" onClose={() => setPhotoMoment(null)} className="echo-space-drawer">{photoMoment && <MomentEditor draftId={photoMoment.draftId} initialPhotos={photoMoment.photos} onClose={() => setPhotoMoment(null)} onSaved={() => setPhotoMoment(null)} />}</EchoDialog>
     <EchoDialog open={about} label="About this possible future" onClose={()=>setAbout(false)} className="echo-about-dialog"><section className="echo-about">
       <OrbitIcon/><h2>A perspective you chose.</h2><p>{identity.definition}</p><p>This is an imagined possible future, not a prediction or a person contacting you across time. You can change direction. Nothing here can know what will happen.</p>
       <p className="echo-muted">{trialAI?`Replies send your direction, current message, up to ten recent messages and up to three permitted excerpts to ${trialProvider}. Notes require separate permission. This is not E2EE or professional care.`:liveAIAvailable?`${connectedProvider} processes your direction, messages and up to three separately permitted excerpts. Notes require their own permission; photos and drafts stay here. Account conversations are separate from your local journal. Zero retention and non-training are not established. This is not E2EE or professional care.`:"This preview uses sample replies. No AI provider is connected."}</p>

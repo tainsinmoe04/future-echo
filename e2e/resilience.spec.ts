@@ -154,7 +154,7 @@ test("unsupported stored documents block hydration and are never replaced with a
   await settings(page);
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open("future-echo-journal-v1", 1);
+      const request = indexedDB.open("future-echo-journal-v2:guest", 1);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result, tx = db.transaction("documents", "readwrite");
@@ -170,7 +170,7 @@ test("unsupported stored documents block hydration and are never replaced with a
   await page.getByRole("button", { name: "Retry opening journal", exact: true }).click();
   await expect(page.getByRole("button", { name: "Space settings", exact: true })).toHaveCount(0);
   const stored = await page.evaluate(async () => new Promise<unknown>((resolve, reject) => {
-    const request = indexedDB.open("future-echo-journal-v1", 1);
+    const request = indexedDB.open("future-echo-journal-v2:guest", 1);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const db = request.result, tx = db.transaction("documents", "readonly"), read = tx.objectStore("documents").get("journal");

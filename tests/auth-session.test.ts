@@ -61,3 +61,16 @@ test("logout distinguishes local removal from confirmed upstream revocation with
     assert.equal(JSON.stringify(outcome).includes("private backend failure"), false);
   }
 });
+
+test("email signup maps known service failures without disclosing account existence or upstream text", async () => {
+  const config = backendConfig({ SUPABASE_URL: "https://example.supabase.co", SUPABASE_PUBLISHABLE_KEY: "fictional-public-key" });
+  for (const [errorCode, status, expectedStatus, expectedCode] of [
+    ["email_address_not_authorized", 403, 503, "email_signup_unavailable"],
+    ["over_email_send_rate_limit", 429, 429, "confirmation_rate_limit"],
+    ["unexpected_failure", 500, 503, "auth_unavailable"],
+    ["email_exists", 422, 401, "authentication"],
+  ] as const) {
+    const db = new SupabaseBackend(config, async () => Response.json({ error_code: errorCode, msg: "private upstream detail" }, { status }));
+    await assert.rejects(db.auth("signup", {}), (error) => error instanceof ApiError && error.status === expectedStatus && error.code === expectedCode && !error.message.includes("private upstream detail"));
+  }
+});

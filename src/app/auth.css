@@ -26,6 +26,8 @@
 .auth-adult small { display: block; color: #aaa3b7; font-size: 12px; }
 .auth-submit { width: 100%; min-height: 52px; padding: 13px 20px; border: 0; border-radius: 999px; background: #c8c6ff; color: #1c1830; font-size: 15px; font-weight: 700; }
 .auth-submit:hover:not(:disabled) { background: #d7d5ff; }
+.auth-google { display:flex; align-items:center; justify-content:center; gap:12px; }
+.auth-google svg { flex:none; }
 .auth-feedback { margin: 18px 0 0; padding: 14px 16px; border-radius: 12px; border: 1px solid #4b445c; color: #e0d8ef; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
 .auth-feedback.is-error { border-color: #73514f; color: #ffc7bd; }
 .auth-switch { margin: 24px 0 0; text-align: center; color: #b4adc2; font-size: 13px; line-height: 1.8; }

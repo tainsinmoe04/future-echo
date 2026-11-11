@@ -2,12 +2,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { backendRequest } from "@/lib/backend-client";
+import { notifyAccountSessionChanged } from "@/lib/account-scope";
 import { useMockProductState } from "../mock-product-state";
 export function BackendSettings() {
-  const { trialAI, trialProvider, connectedProvider, connectedAI, connectAI, disconnectAI } = useMockProductState();
+  const { account, trialAI, trialProvider, connectedProvider, connectedAI, connectAI, disconnectAI } = useMockProductState();
   const [ready, setReady] = useState(false), [email, setEmail] = useState<string>(), [busy, setBusy] = useState(false), [notice, setNotice] = useState("");
   const [adultConfirmed,setAdultConfirmed]=useState(false);
-  useEffect(() => { if (trialAI) return; let current = true; Promise.all([backendRequest<{ aiConfigured: boolean }>("/api/backend/status"), backendRequest<{ user: { email: string } | null }>("/api/auth/session")]).then(([status, session]) => { if (current) { setReady(status.aiConfigured); setEmail(session.user?.email); } }).catch((error) => { if (current) setNotice(error.message); }); return () => { current = false; }; }, [trialAI]);
+  useEffect(() => { if (trialAI) return; let current = true; Promise.all([backendRequest<{ aiConfigured: boolean }>("/api/backend/status"), backendRequest<{ user: { id: string; email: string } | null }>("/api/auth/session")]).then(([status, session]) => { if (current) { setReady(status.aiConfigured); setEmail(session.user?.id === account ? session.user?.email : undefined); } }).catch((error) => { if (current) setNotice(error.message); }); return () => { current = false; }; }, [account, trialAI]);
   async function change(action: "connect" | "disconnect" | "logout") {
     setBusy(true); setNotice("");
     try {
@@ -15,11 +16,13 @@ export function BackendSettings() {
       else if (action === "logout") {
         let clearingFailed = false;
         try { await disconnectAI(); } catch { clearingFailed = true; }
-        const result = await backendRequest<{ serverRevocationConfirmed?: boolean }>("/api/auth/logout", {}); setEmail(undefined);
+        const result = await backendRequest<{ serverRevocationConfirmed?: boolean }>("/api/auth/logout", {}, "POST", false, 60000, account ?? undefined); setEmail(undefined);
         const notices = ["Signed out on this browser."];
         if (result.serverRevocationConfirmed !== true) notices.push("Server session revocation could not be confirmed. A previously copied session may remain valid until it expires.");
         if (clearingFailed) notices.push("Removal of shared memory text could not be confirmed. Sign in again to clear it when account storage is available.");
         setNotice(notices.join(" "));
+        try { sessionStorage.removeItem("future-echo-account-start"); } catch { /* Session invalidation still happens. */ }
+        notifyAccountSessionChanged();
       } else await disconnectAI();
     }
     catch (error) { setNotice(error instanceof Error ? error.message : "Account services could not be reached."); } finally { setBusy(false); }

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { ConversationMessage, FutureSelfIdentityVersion, JourneyMoment } from "@/lib/domain";
 import { backendRequest, BackendRequestError } from "@/lib/backend-client";
 import { contextSyncPayload } from "@/server/context-sync";
@@ -14,6 +15,8 @@ import { changeMomentConsent, keepMoment } from "@/lib/personal-space";
 import { DEFAULT_PREFERENCES, type SpacePreferences } from "@/lib/scrapbook";
 import { MAX_IDENTITY_LENGTH, MAX_MESSAGE_LENGTH } from "@/lib/redaction";
 import { createJournalSession } from "@/lib/journal-session";
+import { createJournalStorage } from "@/lib/journal-storage";
+import { ACCOUNT_SCOPE_EVENT, ACCOUNT_SCOPE_STORAGE_EVENT, accountStorageSuffix, notifyAccountSessionChanged, readAccountScope } from "@/lib/account-scope";
 import { serializeJournalBackup } from "@/lib/journal-backup";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
 
@@ -28,6 +31,7 @@ export interface CreateIdentityInput {
 }
 
 interface MockProductStateValue {
+  account: string | null;
   trialAI: boolean;
   trialProvider: "SEA-LION" | "OpenRouter";
   liveAIAvailable: boolean;
@@ -69,8 +73,65 @@ const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 const initialJournal: JournalSnapshot = { version: 1, preferences: DEFAULT_PREFERENCES,
   identityVersions: [], moments: [] };
 
-export function MockProductStateProvider({ children, trialAI = false, trialProvider = "OpenRouter", liveAIAvailable = false, connectedProvider = "Gemini" }: { children: React.ReactNode; trialAI?: boolean; trialProvider?: "SEA-LION" | "OpenRouter"; liveAIAvailable?: boolean; connectedProvider?: "SEA-LION" | "Gemini" }) {
-  const [journal] = useState(() => createJournalSession(initialJournal));
+type ProviderProps = { children: React.ReactNode; trialAI?: boolean; trialProvider?: "SEA-LION" | "OpenRouter"; liveAIAvailable?: boolean; connectedProvider?: "SEA-LION" | "Gemini" };
+
+export function MockProductStateProvider(props: ProviderProps) {
+  const pathname = usePathname();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("google") !== "success") return;
+    url.searchParams.delete("google");
+    window.history.replaceState(window.history.state, "", url);
+    notifyAccountSessionChanged();
+  }, [pathname]);
+  if (!["/onboarding", "/now", "/memory", "/future-self"].includes(pathname)) return props.children;
+  return <PrivateJournalGate {...props} />;
+}
+
+function PrivateJournalGate(props: ProviderProps) {
+  const router = useRouter();
+  const [scope, setScope] = useState<string | null | undefined>(undefined);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let active = true, sequence = 0;
+    function verify(lock: boolean) {
+      const generation = ++sequence;
+      if (lock) setScope(undefined);
+      setFailed(false);
+      void backendRequest<unknown>("/api/auth/session").then(readAccountScope).then((account) => {
+        if (active && sequence === generation) setScope(account);
+      }).catch(() => {
+        if (active && sequence === generation) { setScope(undefined); setFailed(true); }
+      });
+    }
+    const changed = () => verify(true);
+    const storage = (event: StorageEvent) => { if (event.key === ACCOUNT_SCOPE_STORAGE_EVENT) changed(); };
+    const focus = () => { if (document.visibilityState === "visible") verify(true); };
+    verify(true);
+    window.addEventListener(ACCOUNT_SCOPE_EVENT, changed);
+    window.addEventListener("storage", storage);
+    window.addEventListener("focus", focus);
+    window.addEventListener("pageshow", focus);
+    document.addEventListener("visibilitychange", focus);
+    return () => {
+      active = false;
+      window.removeEventListener(ACCOUNT_SCOPE_EVENT, changed);
+      window.removeEventListener("storage", storage);
+      window.removeEventListener("focus", focus);
+      window.removeEventListener("pageshow", focus);
+      document.removeEventListener("visibilitychange", focus);
+    };
+  }, [retry]);
+  if (scope === undefined) return <main style={{ minHeight: "100dvh", padding: "12vh 24px" }}><h1>Future Echo</h1>{failed ? <><p role="alert">Your session could not be verified. Local journals remain locked and unchanged.</p><button onClick={() => setRetry(value => value + 1)}>Try again</button><p><button onClick={() => { void backendRequest("/api/auth/logout", {}).then(() => { notifyAccountSessionChanged(); router.push("/login"); }).catch(() => setFailed(true)); }}>Sign out to sign in again</button></p></> : <p role="status">Checking your session…</p>}</main>;
+  return <ScopedProductStateProvider key={accountStorageSuffix(scope)} account={scope} {...props} />;
+}
+
+function ScopedProductStateProvider({ children, account, trialAI = false, trialProvider = "OpenRouter", liveAIAvailable = false, connectedProvider = "Gemini" }: ProviderProps & { account: string | null }) {
+  const suffix = accountStorageSuffix(account);
+  const recoveryKey = `${CHAT_RECOVERY_KEY}:${suffix}`;
+  const consentKey = `${LIVE_CONNECTION_KEY}:${suffix}`;
+  const [journal] = useState(() => createJournalSession(initialJournal, createJournalStorage(`future-echo-journal-v2:${suffix}`)));
   const local = useSyncExternalStore(journal.subscribe, journal.getSnapshot, journal.getSnapshot);
   const { preferences, identityVersions, moments } = local.snapshot;
   const setIdentityVersions = useCallback((change: (items: readonly FutureSelfIdentityVersion[]) => readonly FutureSelfIdentityVersion[]) => journal.update((current) => ({ ...current, identityVersions: change(current.identityVersions) })), [journal]);
@@ -86,7 +147,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
   }, [local.ready, local.status]);
   const [threads, publishThreads] = useState<Record<string, MessengerThread>>({});
   const threadsRef = useRef<Record<string, MessengerThread>>({});
-  const recoveryOwner = useRef<string | null>(null);
+  const recoveryOwner = useRef<string | null>(account);
   const recoveryWritable = useRef(false);
   const recoveryRevision = useRef<string | null>(null);
   const returning = useRef(false);
@@ -106,31 +167,27 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     threadsRef.current = next;
     try {
       if (!recoveryWritable.current) throw new Error("recovery locked");
-      if (localStorage.getItem(CHAT_RECOVERY_KEY) !== recoveryRevision.current) throw new Error("Another tab changed this chat; reload before continuing.");
+      if (localStorage.getItem(recoveryKey) !== recoveryRevision.current) throw new Error("Another tab changed this chat; reload before continuing.");
       const bounded = Object.fromEntries(Object.entries(next).slice(-20).map(([key, thread]) => [key, { ...thread, messages: thread.messages.filter(message => Date.parse(message.createdAt) > Date.now() - retentionDays.current * 86400000).slice(-500) }]));
       const value = JSON.stringify({ version: 1, owner: recoveryOwner.current, savedAt: Date.now(), retentionDays: retentionDays.current, threads: bounded, attempts: Object.fromEntries([...attempts.current].filter(([key]) => Object.hasOwn(bounded, key))) });
       if (value.length > 2_000_000) throw new Error("chat capacity");
-      localStorage.setItem(CHAT_RECOVERY_KEY, value);
+      localStorage.setItem(recoveryKey, value);
       recoveryRevision.current = value;
       setChatStorageError("");
     } catch { setChatStorageError("Chat could not be saved, or another tab changed it. Keep this tab open and copy unsaved words before reloading."); }
     publishThreads(next);
-  }, []);
+  }, [recoveryKey]);
   useEffect(() => {
     let current = true;
     void (async () => {
       try {
-        const stored = localStorage.getItem(CHAT_RECOVERY_KEY);
+        const stored = localStorage.getItem(recoveryKey);
         recoveryRevision.current = stored;
-        const recovery = parseChatRecovery(stored ?? sessionStorage.getItem(CHAT_RECOVERY_KEY));
-        if (recovery?.owner) {
-          const session = await backendRequest<{ user: { id: string } | null }>("/api/auth/session");
-          if (!current) return;
-          if (session.user?.id !== recovery.owner) { localStorage.removeItem(CHAT_RECOVERY_KEY); sessionStorage.removeItem(CHAT_RECOVERY_KEY); recoveryRevision.current = null; recoveryWritable.current = true; return; }
-        }
+        const recovery = parseChatRecovery(stored ?? sessionStorage.getItem(recoveryKey));
+        if (recovery && recovery.owner !== account) throw new Error("Chat owner mismatch.");
         if (!current) return;
         recoveryWritable.current = true;
-        if (!recovery) { localStorage.removeItem(CHAT_RECOVERY_KEY); sessionStorage.removeItem(CHAT_RECOVERY_KEY); recoveryRevision.current = null; return; }
+        if (!recovery) { localStorage.removeItem(recoveryKey); sessionStorage.removeItem(recoveryKey); recoveryRevision.current = null; return; }
         returning.current = Date.now() - recovery.savedAt >= 86400000;
         recoveryOwner.current = recovery.owner;
         retentionDays.current = recovery.retentionDays ?? 30;
@@ -138,19 +195,21 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
         const restored = recoveredThreads(recovery);
         threadsRef.current = restored;
         setThreads(restored);
-        sessionStorage.removeItem(CHAT_RECOVERY_KEY);
+        sessionStorage.removeItem(recoveryKey);
         if (Object.values(recovery.threads).some(thread => thread.typing)) setConnectionError("Your interrupted conversation was recovered. Check the latest messages before choosing to send again; no message was automatically resent.");
       } catch { if (current) setChatStorageError("Chat recovery could not be opened. It has not been overwritten; reconnect the same account and reload to try again."); }
       finally { if (current) setChatReady(true); }
     })();
     return () => { current = false; };
-  }, [setThreads]);
+  }, [account, recoveryKey, setThreads]);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; connectionEpoch.current += 1; }; }, []);
   const contextQueue = useRef<Promise<unknown>>(Promise.resolve());
   const updateAccountContext = useCallback((body: unknown, method = "PUT") => {
-    const pending = contextQueue.current.catch(() => {}).then(() => backendRequest("/api/context", body, method));
+    const pending = contextQueue.current.catch(() => {}).then(() => { if (!account || !mounted.current) throw new Error("Account session changed."); return backendRequest("/api/context", body, method, true, 60000, account); });
     contextQueue.current = pending;
     return pending;
-  }, []);
+  }, [account]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const activeIdentity = identityVersions.find((identity) => identity.status === "active") ?? null;
 
@@ -187,17 +246,17 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     cancelReplies();
     const epoch = connectionEpoch.current;
     const session=await backendRequest<{user:{id:string}|null}>("/api/auth/session");
-    if (!session.user) throw new Error("Sign in to connect live AI. Your direction stays on this device.");
+    if (!account || session.user?.id !== account) throw new Error("Sign in with the active account to continue.");
     if(epoch!==connectionEpoch.current) throw new Error("Your direction changed. Connect the current one.");
     if (recoveryOwner.current && recoveryOwner.current !== session.user.id) { attempts.current.clear(); setThreads({}); }
     recoveryOwner.current = session.user.id;
     recoveryWritable.current = true;
-    try{localStorage.setItem(LIVE_CONNECTION_KEY,JSON.stringify({identityId:activeIdentity.id,userId:session.user.id,provider:connectedProvider}));}catch{/* A browser without storage can still explicitly connect. */}
-    await backendRequest("/api/auth/attest-adult",{adultConfirmed:true});
+    try{localStorage.setItem(consentKey,JSON.stringify({identityId:activeIdentity.id,userId:session.user.id,provider:connectedProvider}));}catch{/* A browser without storage can still explicitly connect. */}
+    await backendRequest("/api/auth/attest-adult",{adultConfirmed:true}, "POST", true, 60000, account);
     await updateAccountContext(contextSyncPayload(activeIdentity, moments));
     const [history, saved] = await Promise.all([
-      backendRequest<{ messages: ConversationMessage[]; retentionDays?: 30 | 90 }>(`/api/conversations/${encodeURIComponent(activeIdentity.id)}`),
-      backendRequest<{ playlists: SavedPlaylist[] }>("/api/playlists"),
+      backendRequest<{ messages: ConversationMessage[]; retentionDays?: 30 | 90 }>(`/api/conversations/${encodeURIComponent(activeIdentity.id)}`, undefined, "GET", true, 60000, account),
+      backendRequest<{ playlists: SavedPlaylist[] }>("/api/playlists", undefined, "GET", true, 60000, account),
     ]);
     if (epoch !== connectionEpoch.current) {
       throw new Error("Your direction changed. Connect it again when ready.");
@@ -215,7 +274,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     journal.update((current) => ({ ...current, playlists: [...(current.playlists ?? []).filter((p) => !saved.playlists.some((s) => s.id === p.id)), ...saved.playlists.filter((p) => current.identityVersions.some((i) => i.id === p.identityVersionId))] }));
     if (completed || !interrupted) attempts.current.delete(activeIdentity.id);
     setConnectionError(""); setConnectedAI(true);
-  }, [activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI, connectedProvider, setThreads]);
+  }, [account, consentKey, activeIdentity, moments, cancelReplies, journal, updateAccountContext, trialAI, connectedProvider, setThreads]);
   const connectAI = useCallback(() => {
     const id = `${connectedProvider}:${activeIdentity?.id ?? "none"}`;
     if (connectionFlight.current?.id === id) return connectionFlight.current.promise;
@@ -229,7 +288,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
     if(!chatReady||!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
     const key=`${connectedProvider}:${activeIdentity.id}`;
     if(automaticAttempt.current===key)return;
-    let consent=null;try{consent=parseLiveConnectionConsent(localStorage.getItem(LIVE_CONNECTION_KEY) ?? sessionStorage.getItem(LIVE_CONNECTION_KEY));}catch{}
+    let consent=null;try{consent=parseLiveConnectionConsent(localStorage.getItem(consentKey) ?? sessionStorage.getItem(consentKey));}catch{}
     let accountStart=false;try{accountStart=sessionStorage.getItem("future-echo-account-start")==="yes";}catch{}
     const requested=pendingLiveIdentity===activeIdentity.id||accountStart;
     if(!requested&&(!consent||consent.identityId!==activeIdentity.id||consent.provider!==connectedProvider))return;
@@ -242,25 +301,25 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
       try{sessionStorage.removeItem("future-echo-account-start");}catch{}
     }).catch(error=>{if(current)setConnectionError(error instanceof Error?error.message:"Live connection could not be restored.");});
     return()=>{current=false;};
-  },[chatReady,liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI]);
+  },[chatReady,liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI,consentKey]);
   const disconnectAI = useCallback(async () => {
-    try{sessionStorage.removeItem(LIVE_CONNECTION_KEY);localStorage.removeItem(LIVE_CONNECTION_KEY);}catch{}
+    try{sessionStorage.removeItem(consentKey);localStorage.removeItem(consentKey);}catch{}
     setPendingLiveIdentity(null);
     cancelReplies(); setConnectedAI(false);
     attempts.current.clear();
-    recoveryOwner.current = null;
+    recoveryOwner.current = account;
     setConnectionError("");
     setThreads({});
-    try { sessionStorage.removeItem(CHAT_RECOVERY_KEY); localStorage.removeItem(CHAT_RECOVERY_KEY); recoveryRevision.current = null; } catch {}
+    try { sessionStorage.removeItem(recoveryKey); localStorage.removeItem(recoveryKey); recoveryRevision.current = null; } catch {}
     await updateAccountContext({}, "DELETE");
-  }, [cancelReplies, updateAccountContext, setThreads]);
+  }, [account, consentKey, recoveryKey, cancelReplies, updateAccountContext, setThreads]);
   const loadPastConversation = useCallback(async (id: string) => {
     if (!connectedAI || !identityVersions.some((identity) => identity.id === id && identity.status === "past")) return;
     const epoch = connectionEpoch.current;
-    try { const history = await backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(id)}`);
+    try { const history = await backendRequest<{ messages: ConversationMessage[] }>(`/api/conversations/${encodeURIComponent(id)}`, undefined, "GET", true, 60000, account ?? undefined);
       if (epoch === connectionEpoch.current) setThreads((current) => ({ ...current, [id]: { draft: "", typing: false, messages: history.messages } }));
     } catch (error) { if (epoch === connectionEpoch.current) setConnectionError(error instanceof Error ? error.message : "Earlier conversation could not be loaded."); }
-  }, [connectedAI, identityVersions, setThreads]);
+  }, [account, connectedAI, identityVersions, setThreads]);
   const restoreConnectedJournal = useCallback(async (snapshot: JournalSnapshot) => {
     cancelReplies();
     if (connectedAI) await disconnectAI();
@@ -385,7 +444,7 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
         }
         await updateAccountContext(contextSyncPayload(activeIdentity, moments));
         if (epoch !== connectionEpoch.current) return;
-        const result = await backendRequest<{ message: ConversationMessage }>("/api/ai", { identityId: id, message: content, requestId });
+        const result = await backendRequest<{ message: ConversationMessage }>("/api/ai", { identityId: id, message: content, requestId }, "POST", true, 60000, account ?? undefined);
         if (epoch !== connectionEpoch.current) return;
         attempts.current.delete(id);
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, messages: [...current[id].messages, result.message] } }));
@@ -396,14 +455,14 @@ export function MockProductStateProvider({ children, trialAI = false, trialProvi
         setThreads((current) => ({ ...current, [id]: { ...current[id], typing: false, draft: current[id].draft || content } }));
       } finally { if (epoch === connectionEpoch.current) requests.current.delete(id); }
     })();
-  }, [activeIdentity, queueReply, connectedAI, moments, updateAccountContext, trialAI, threads, liveAIAvailable, setThreads]);
+  }, [account, activeIdentity, queueReply, connectedAI, moments, updateAccountContext, trialAI, threads, liveAIAvailable, setThreads]);
 
-  const value = useMemo(() => ({ trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError: chatStorageError || connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
+  const value = useMemo(() => ({ account, trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError: chatStorageError || connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
     journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal, readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
     storageStatus: local.status, storageError: local.error, retryStorage: journal.retry, exportJournal,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting,
-  }), [trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError, chatStorageError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
+  }), [account, trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError, chatStorageError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
     archiveActiveIdentity, activateMockIdentity, saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting, local.snapshot, local.status, local.error, journal, exportJournal, restoreConnectedJournal]);
 
   if (!local.ready || !chatReady) return <main style={{ minHeight: "100dvh", background: "#0b0b10", color: "#eeeaf5", padding: "12vh 24px" }}><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;

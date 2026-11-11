@@ -1,5 +1,6 @@
 import { ApiError, cookieValue, object } from "./backend-http";
 import { authConfigured, type BackendConfig } from "./backend-config";
+import { EXPECTED_ACCOUNT_HEADER } from "../lib/account-scope";
 
 export class SupabaseBackend {
   constructor(readonly config: BackendConfig, private fetcher: typeof fetch = fetch) {}
@@ -8,7 +9,21 @@ export class SupabaseBackend {
     let response: Response;
     try { response = await this.fetcher(`${this.config.supabaseUrl}/auth/v1/${path}`, { method: body === undefined ? "GET" : "POST", headers: { apikey: this.config.supabaseKey, "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), cache: "no-store", signal: AbortSignal.timeout(12000) }); }
     catch { throw new ApiError(503, "auth_unavailable", "Account services are temporarily unavailable."); }
-    if (!response.ok) throw new ApiError(response.status === 429 ? 429 : 401, "authentication", response.status === 429 ? "Please wait before trying again." : "Sign-in could not be verified. Check your details or sign in again.");
+    if (!response.ok) {
+      // Only public, known flow-level failures get specific copy. Never expose
+      // upstream messages or differentiate missing accounts from bad credentials.
+      if (path === "signup" || path === "token?grant_type=password") {
+        let code: unknown;
+        try { const value: unknown = await response.json(); if (object(value)) code = value.error_code; } catch { /* Unstructured upstream error. */ }
+        if (path === "signup" && (code === "over_email_send_rate_limit" || code === "over_request_rate_limit"))
+          throw new ApiError(429, "confirmation_rate_limit", "Please wait before requesting another confirmation email.");
+        if (path === "signup" && (code === "email_address_not_authorized" || code === "email_provider_disabled" || code === "signup_disabled"))
+          throw new ApiError(503, "email_signup_unavailable", "Email signup is unavailable right now. If you already use Google with Future Echo, continue with Google.");
+        if (response.status >= 500)
+          throw new ApiError(503, "auth_unavailable", "Account services are temporarily unavailable. Please try again later.");
+      }
+      throw new ApiError(response.status === 429 ? 429 : 401, "authentication", response.status === 429 ? "Please wait before trying again." : "Sign-in could not be verified. Check your details or sign in again.");
+    }
     if (path === "logout" && response.status === 204) return {};
     const value: unknown = await response.json(); if (!object(value)) throw new ApiError(502, "auth_response", "Account services returned an invalid response."); return value;
   }
@@ -16,6 +31,8 @@ export class SupabaseBackend {
     const token = cookieValue(request, "fe-access"); if (!token || !/^[A-Za-z0-9_.-]{20,8192}$/.test(token)) throw new ApiError(401, "sign_in", "Sign in to use connected AI.");
     const user = await this.auth("user", undefined, token);
     if (typeof user.id !== "string" || !/^[0-9a-f-]{36}$/i.test(user.id)) throw new ApiError(401, "sign_in", "Sign in again to continue.");
+    const expectedAccount = request.headers.get(EXPECTED_ACCOUNT_HEADER);
+    if (expectedAccount !== null && expectedAccount !== user.id.toLowerCase()) throw new ApiError(409, "account_changed", "The active account changed. Reopen Future Echo before continuing.");
     return { id: user.id, email: typeof user.email === "string" ? user.email : "" };
   }
   async rest(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): Promise<unknown> {

@@ -1,5 +1,33 @@
 # Future Echo
 
+## Current release — 2026-11-11
+
+Live application: https://future-echo-sandy.vercel.app/
+
+The current application includes configuration-gated Supabase account access,
+Google sign-in and explicitly consented hosted SEA-LION conversations. The older
+implementation checkpoints below are historical; their statements that AI is
+paused, Google is unavailable or all conversations reset are superseded.
+
+- Home has English/Myanmar switching, monochrome branding, a brief logo entrance
+  and a non-repeating layered starfield. Slow rotation and independent brightness
+  changes replace the rejected tiled-dot wallpaper. Reduced motion disables movement.
+- Desktop lower sections use a split composition; the mobile hero reserves the
+  first viewport. The starfield is CSS, not video, and uses no external media request.
+- Local journals are scoped to the verified account. Legacy unowned data is
+  preserved separately, never silently assigned to a different signed-in user.
+- Google branding and confirmation-required email signup handling are included.
+  Actual email delivery and password sign-in still require hosted verification.
+- The conversation attachment control opens photo selection; journal templates
+  remain in the journal editor, not the chat composer.
+- Original conversation evidence and separate memory/note consent are preserved.
+  Browser journals and backups are not encrypted or automatically cloud-synced.
+
+Release notes and known verification limits: [RELEASE_NOTES.md](./RELEASE_NOTES.md).
+Use WSL-native Node 24 for this repository; Windows npm cannot build its UNC path.
+
+## Historical implementation checkpoints
+
 Future Echo is a dark, quiet reflective product for speaking with one imagined possible future perspective. It is not prediction, therapy, or a productivity tracker. Its journal is browser-local. Account/backend integration is gated separately; AI work and public release are currently paused. A hosted schema was explicitly applied on October 17, but that does not establish live account or public-release readiness. See [BACKEND_SETUP.md](./BACKEND_SETUP.md), [SECURITY.md](./SECURITY.md) and [JOURNAL_PROGRESS.md](./JOURNAL_PROGRESS.md) for dated evidence and remaining gates. Never copy private environment files into an issue or commit.
 
 ### Non-AI production preparation

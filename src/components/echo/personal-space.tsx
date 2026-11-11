@@ -45,7 +45,7 @@ export function PersonalSpace({ onClose, initialMomentId, initialCreate = false 
   const points = stars.map((item) => ({ ...constellationPosition(item.id), id: item.id, title: item.title ?? "A moment worth keeping" }));
 
   if (designing) return <BookDesigner year={designing} onClose={() => setDesigning(undefined)} />;
-  if (adding) return <MomentEditor draftId={draftId} moment={draftId ? moments.find((m) => m.id === draftId) : undefined} onClose={() => { setAdding(false); setDraftId(undefined); }} onSaved={(id) => { setAdding(false); setDraftId(undefined); setSelected(id); }} />;
+  if (adding) return <MomentEditor draftId={draftId} hideTemplates={initialCreate} moment={draftId ? moments.find((m) => m.id === draftId) : undefined} onClose={() => { setAdding(false); setDraftId(undefined); }} onSaved={(id) => { setAdding(false); setDraftId(undefined); setSelected(id); }} />;
   if (moment) return <MemoryBook key={moment.id} moment={moment} entries={ordered} onSelect={setSelected} onClose={() => setSelected(undefined)} />;
   if (settings) return <SpaceSettings onClose={() => { returnSettingsFocus.current = true; setSettings(false); }} />;
 

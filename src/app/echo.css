@@ -137,6 +137,9 @@
 .echo-add-button { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 50%; background: #faf9fc; color: #13131b; }
 .echo-composer { display: flex; align-items: flex-end; gap: 3px; padding: 8px; border-radius: 30px; background: #faf9fc; color: #14141b; box-shadow: 0 4px 30px #0006; }
 .echo-composer .echo-icon-button { height: 42px; width: 39px; }
+.echo-composer:has(.echo-composer-photos) { position:relative; }
+.echo-composer-photos { flex:none; }
+.echo-composer-photos > .echo-error { position:absolute; inset:auto 0 calc(100% + 8px); margin:0; padding:10px 14px; border-radius:10px; background:#18191c; }
 .echo-composer textarea { min-width: 0; flex: 1; border: 0; outline: 0; padding: 11px 4px; min-height: 43px; max-height: 140px; background: transparent; color: #17171d; font-size: 14px; line-height: 22px; resize: none; border-radius: 4px; }
 .echo-composer textarea::placeholder { color: #777887; opacity: 1; }
 .echo-composer textarea:focus-visible { outline: none; }

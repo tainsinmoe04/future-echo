@@ -20,6 +20,23 @@ async function begin(page: Page) {
 }
 async function noOverflow(page: Page) { expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
 
+test("conversation paperclip opens the native picker without opening template samples", async ({ page }) => {
+  await begin(page);
+  const chooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Add a moment with photos", exact: true }).click();
+  const chooser = await chooserPromise;
+  const editor = page.getByRole("dialog", { name: "Add photos to a journal moment" });
+  await expect(editor).toBeHidden();
+  await chooser.setFiles(path.resolve("public/scrapbook/study.png"));
+  await expect(editor).toBeVisible();
+  await expect(editor.getByRole("img", { name: "Photo in this moment" })).toBeVisible();
+  await expect(editor.locator(".journal-template-disclosure")).toHaveCount(0);
+  await editor.getByRole("textbox", { name: "My words", exact: true }).fill("A new photo, not a sample.");
+  await editor.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(editor).toBeHidden();
+  await noOverflow(page);
+});
+
 test("journal templates are optional, undoable and survive saving without changing words", async ({ page }) => {
   await begin(page); await page.goto("/memory");
   await page.getByRole("button", { name: "Add a moment", exact: true }).click();
@@ -51,9 +68,8 @@ test("journal templates are optional, undoable and survive saving without changi
 test("fresh personal space is empty, demo is isolated, and setup survives refresh", async ({ page }) => {
   await page.goto("/"); await expect(page).toHaveTitle("Future Echo"); await noOverflow(page);
   await evidence(page, "updated-landing");
-  await page.getByRole("button", { name: "Send this example", exact: true }).click();
-  await page.getByRole("button", { name: "Save this moment", exact: true }).click();
-  await expect(page.getByText("This is only a preview. Your own space starts empty.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "A fictional exchange", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save this moment", exact: true })).toHaveCount(0);
   await page.goto("/memory"); await expect(page.getByText("Your first page can be anything.", { exact: true })).toBeVisible();
   await expect(page.locator(".constellation-star")).toHaveCount(0); await evidence(page, "empty-personal-space");
   await page.goto("/onboarding"); await page.getByLabel("One possible version of me is…").fill("A direction still taking shape");

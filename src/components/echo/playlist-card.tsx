@@ -4,7 +4,7 @@ import { useMockProductState } from "../mock-product-state";
 import { backendRequest } from "@/lib/backend-client";
 import { songSearchUrl, type PlaylistSuggestion, type SavedPlaylist } from "@/lib/playlist";
 export function PlaylistCard({ playlist, messageId, saved: existing }: { playlist: PlaylistSuggestion; messageId: string; saved?: SavedPlaylist }) {
-  const { journalSnapshot, updateJournal, connectedAI, trialAI, activeIdentity } = useMockProductState();
+  const { account, journalSnapshot, updateJournal, connectedAI, trialAI, activeIdentity } = useMockProductState();
   const saved = existing ?? journalSnapshot.playlists?.find((p) => p.sourceMessageId === messageId);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   async function change() {
@@ -18,11 +18,12 @@ export function PlaylistCard({ playlist, messageId, saved: existing }: { playlis
         }
         return;
       }
+      if (!account) throw new Error("Sign in to manage account playlists.");
       if (saved) {
-        await backendRequest("/api/playlists", { id: saved.id }, "DELETE");
+        await backendRequest("/api/playlists", { id: saved.id }, "DELETE", true, 60000, account);
         updateJournal((current) => ({ ...current, playlists: current.playlists?.filter((p) => p.id !== saved.id) }));
       } else {
-        const result = await backendRequest<{ playlist: SavedPlaylist }>("/api/playlists", { messageId });
+        const result = await backendRequest<{ playlist: SavedPlaylist }>("/api/playlists", { messageId }, "POST", true, 60000, account);
         updateJournal((current) => ({ ...current, playlists: [...(current.playlists ?? []).filter((p) => p.id !== result.playlist.id), result.playlist] }));
       }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Playlist could not be saved."); } finally { setBusy(false); }
