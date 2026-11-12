@@ -1,5 +1,11 @@
 # Future Echo — Project Learnings
 
+## 53. Google-first account entry and larger decorations — 2026-11-12
+
+- Owner prioritized Google on both account routes. The first visible action is Continue with Google; the email form is an accessible disclosure with disabled controls while closed. Required adult confirmation, Google branding, disclosures, errors and the existing email-confirmation flow remain. This is not evidence that production email delivery works or fails, and no provider settings changed.
+- The previous global scale clamp at 2 blocked larger decorations even when the book had room. Gesture normalization now permits larger values; the editing ceiling is calculated from the rotated object and actual canvas dimensions. Keyboard and keyboard-activated resize/rotate controls use the same boundary calculation as pointer/pinch manipulation. Snapshot validation permits these larger saved layouts with a finite serialization guard well beyond the available canvas.
+- Validation: 143 unit tests, lint and production build pass. Thirty responsive browser cases cover primary Google presentation, optional email/native validation, larger pointer resizing, rotated bounds, Undo/Redo, saved layouts, text movement and touch gestures. Account responses are intercepted fictional fixtures; these checks do not verify real email delivery or complete a real Google sign-in. The earlier exact decimal string assertion now compares rendered movement numerically to accommodate boundary arithmetic. Physical-device/Safari checks remain separate.
+
 ## 52. Nonblocking session refresh and larger photo imports — 2026-11-12
 
 - Owner follow-up rejected the full-screen verification interruption after each app/file-picker return, including pasting the three onboarding fields. Focus/visibility/pageshow now refresh in the background and share an in-flight request. Initial and explicit account changes still lock; changed results remount by scoped key and errors lock. This deliberately supersedes section 51's pending-focus hidden/inert presentation, while retaining its same-owner editor continuity.

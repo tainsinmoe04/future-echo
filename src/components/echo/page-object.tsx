@@ -21,6 +21,16 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation 
   const [preview, setPreview] = useState<PageTransform | null>(null);
   const current = preview ?? value;
   const selected = editing?.selected === id;
+  const changeWithinPage = (next: PageTransform) => {
+    const element = node.current, rect = page.current?.getBoundingClientRect();
+    if (!element || !rect) return;
+    const bounds = element.getBoundingClientRect();
+    const center = { x: bounds.left + bounds.width / 2 - rect.left - current.x / 100 * rect.width,
+      y: bounds.top + bounds.height / 2 - rect.top - current.y / 100 * rect.height };
+    const bounded = boundTransform({ ...next, rotation: next.rotation + baseRotation }, center,
+      element.offsetWidth, element.offsetHeight, rect.width, rect.height);
+    editing?.onChange(id, { ...bounded, rotation: turn(bounded.rotation - baseRotation) });
+  };
   const finish = (cancel: boolean) => {
     const active = session.current;
     if (!active) return;
@@ -83,13 +93,13 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation 
         const delta: Record<string, Partial<PageTransform>> = { ArrowLeft: { x: value.x - step }, ArrowRight: { x: value.x + step },
           ArrowUp: { y: value.y - step }, ArrowDown: { y: value.y + step }, "+": { scale: value.scale + 0.1 }, "=": { scale: value.scale + 0.1 },
           "-": { scale: value.scale - 0.1 }, "[": { rotation: value.rotation - 5 }, "]": { rotation: value.rotation + 5 } };
-        if (delta[event.key]) { event.preventDefault(); event.stopPropagation(); editing.onChange(id, normalizeTransform({ ...value, ...delta[event.key] })); }
+        if (delta[event.key]) { event.preventDefault(); event.stopPropagation(); changeWithinPage(normalizeTransform({ ...value, ...delta[event.key] })); }
       }}>
       {children}
       {editing && selected && <>
         {editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:")) && <button type="button" className="echo-object-delete" aria-label={`Delete ${label}`} onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={event => { event.stopPropagation(); finish(true); editing.onRemove?.(id); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg></button>}
-        <button type="button" className="echo-transform-handle rotate" data-handle="rotate" aria-label={`Rotate ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, rotation: value.rotation + 15 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9a7 7 0 1 0 0 7M19 4v5h-5" /></svg></button>
-        <button type="button" className="echo-transform-handle resize" data-handle="resize" aria-label={`Resize ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, scale: value.scale + 0.1 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14v4h4M14 6h4v4M6 18 18 6" /></svg></button>
+        <button type="button" className="echo-transform-handle rotate" data-handle="rotate" aria-label={`Rotate ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) changeWithinPage(normalizeTransform({ ...value, rotation: value.rotation + 15 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9a7 7 0 1 0 0 7M19 4v5h-5" /></svg></button>
+        <button type="button" className="echo-transform-handle resize" data-handle="resize" aria-label={`Resize ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) changeWithinPage(normalizeTransform({ ...value, scale: value.scale + 0.1 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14v4h4M14 6h4v4M6 18 18 6" /></svg></button>
       </>}
     </div>
   </div>;

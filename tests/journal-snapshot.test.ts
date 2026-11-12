@@ -67,5 +67,6 @@ test("page transforms are bounded presentation data with an explicit key vocabul
   const next = { ...source, moments: [{ ...source.moments[0], pageTransforms: layout }] };
   assert.equal(isJournalSnapshot(next), true);
   assert.equal(isJournalSnapshot({ ...next, moments: [{ ...next.moments[0], pageTransforms: { arbitrary: layout.words } }] }), false);
-  assert.equal(isJournalSnapshot({ ...next, moments: [{ ...next.moments[0], pageTransforms: { words: { ...layout.words, scale: 10 } } }] }), false);
+  assert.equal(isJournalSnapshot({ ...next, moments: [{ ...next.moments[0], pageTransforms: { words: { ...layout.words, scale: 10 } } }] }), true);
+  assert.equal(isJournalSnapshot({ ...next, moments: [{ ...next.moments[0], pageTransforms: { words: { ...layout.words, scale: 101 } } }] }), false);
 });

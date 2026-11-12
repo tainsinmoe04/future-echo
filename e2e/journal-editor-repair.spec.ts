@@ -99,6 +99,6 @@ test("cover template preview matches editable artwork and every text layer persi
 
 test("page title, date, words and note are independently movable", async ({page})=>{
   await begin(page);await page.getByRole("textbox",{name:"My Note · optional",exact:true}).fill("A note beside my words.");await page.getByRole("button",{name:"Arrange",exact:true}).click();
-  for(const name of ["Page title","Page date","My words","My Note"]){const object=page.getByRole("group",{name,exact:true});await object.focus();await object.press("ArrowRight");await object.press("ArrowDown");await expect(object).toHaveAttribute("style",/0\.01/);}
+  for(const name of ["Page title","Page date","My words","My Note"]){const object=page.getByRole("group",{name,exact:true});await object.focus();await object.press("ArrowRight");await object.press("ArrowDown");const moved=await object.evaluate(el=>{const m=new DOMMatrix(getComputedStyle(el).transform),paper=el.closest<HTMLElement>(".echo-paper")!;return {x:m.e/paper.clientWidth,y:m.f/paper.clientHeight};});expect(moved.x).toBeCloseTo(0.01,4);expect(moved.y).toBeCloseTo(0.01,4);}
   await page.getByRole("button",{name:"Done",exact:true}).click();await expect(page.getByText("Saved on this device",{exact:true})).toBeVisible();await expect(page.locator(".paper-original")).toHaveText("These are my words, kept exactly as written.");
 });

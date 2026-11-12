@@ -5,6 +5,7 @@ import { isSavedPlaylist, type SavedPlaylist } from "./playlist";
 import { MAX_JOURNAL_LENGTH, MAX_JOURNAL_NOTE_LENGTH } from "./redaction";
 import { momentDay } from "./local-date";
 import { HORIZON_CHOICES } from "./journal-tools";
+import { MAX_TRANSFORM_SCALE } from "./page-transform";
 
 /** Local document: confirmed records and separately unconsented drafts. Chat stays session-only. */
 export interface JournalSnapshot {
@@ -75,7 +76,7 @@ function moment(v: unknown): v is JourneyMoment {
     || !optional(v.paper, (p) => ["plain", "ruled", "grid", "blush", "lace", "nocturne", "poetry"].includes(p as string))) return false;
   if (!optional(v.pageTransforms, (layout) => object(layout) && Object.keys(layout).length <= 32 && Object.entries(layout).every(([key, t]) =>
     /^(title|date|year|subtitle|words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(key) && object(t) && keys(t, ["x", "y", "scale", "rotation"])
-    && range(t.x, -100, 100) && range(t.y, -100, 100) && range(t.scale, 0.5, 2) && range(t.rotation, -180, 180)))) return false;
+    && range(t.x, -100, 100) && range(t.y, -100, 100) && range(t.scale, 0.5, MAX_TRANSFORM_SCALE) && range(t.rotation, -180, 180)))) return false;
   if (!(id(v.id) && id(v.identityVersionId) && date(v.occurredAt) && date(v.revisitAt)
     && optional(v.deletedAt, date) && text(v.originalExcerpt, v.kind === "personal" ? MAX_JOURNAL_LENGTH : 2000, 1)
     && optional(v.title, (s) => text(s, 200)) && optional(v.relatedAiReply, (s) => text(s, 4000))

@@ -210,3 +210,12 @@ body::before { display:none; }
 .journal-cover-preview .journal-cover-spine { left:4%; width:1%; }
 
 .editable-cover-template .cover-template-lace { aspect-ratio:3/1; }
+
+/* Google is the primary entry on both account routes. */
+.auth-google { min-height:56px; font-size:16px; }
+.auth-google + .auth-field-help { margin-top:18px; line-height:1.75; }
+.auth-email-option { margin-top:24px; border-top:1px solid #303236; }
+.auth-email-option > summary { cursor:pointer; min-height:48px; padding:14px 0; color:#b5b6b8; font-size:13px; }
+.auth-email-option > fieldset { padding-top:12px; }
+.auth-email-option .auth-submit { margin-top:20px; background:transparent; border:1px solid #4b4f54; color:#eeeeee; }
+.auth-email-option .auth-submit:hover:not(:disabled) { background:#252729; }

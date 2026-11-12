@@ -1,6 +1,8 @@
 import type { PageTransform } from "./domain";
 
 export const DEFAULT_TRANSFORM: PageTransform = { x: 0, y: 0, scale: 1, rotation: 0 };
+// Serialization guard only. The actual editing limit is the available page area.
+export const MAX_TRANSFORM_SCALE = 100;
 export interface Point { x: number; y: number }
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const finite = (n: number, fallback: number) => Number.isFinite(n) ? n : fallback;
@@ -20,7 +22,7 @@ export function boundTransform(value: PageTransform, center: Point, objectWidth:
 }
 export function normalizeTransform(v: PageTransform): PageTransform {
   return { x: clamp(finite(v.x, 0), -100, 100), y: clamp(finite(v.y, 0), -100, 100),
-    scale: clamp(finite(v.scale, 1), 0.5, 2), rotation: turn(finite(v.rotation, 0)) };
+    scale: clamp(finite(v.scale, 1), 0.5, MAX_TRANSFORM_SCALE), rotation: turn(finite(v.rotation, 0)) };
 }
 
 export function gestureTransform(start: PageTransform, before: readonly Point[], after: readonly Point[], width: number, height: number): PageTransform {

@@ -1,5 +1,11 @@
 # Future Echo — Product and Implementation Specification
 
+## Google-first entry and page-bounded sticker sizing — 2026-11-12
+
+The owner requested making Google the primary login/create-account action while email confirmation delivery remains unverified. Present Google first, retain required adult confirmation and account/AI disclosures, and put the existing email form behind a deliberate secondary choice. This changes visual priority, not provider configuration or claims about actual email delivery.
+
+Remove the two-times sticker magnification ceiling. Direct resize, pinch, keyboard resize/rotation and movement must use the available page/cover geometry to keep the whole transformed object inside its boundary. Retain Undo/Redo, saved layouts, backup validation and original-word/consent boundaries. Existing saved decorations must not be reset. Deploy to the current authorized production app.
+
 ## Uninterrupted return and automatic image sizing — 2026-11-12
 
 The owner reports that hiding the editor behind “Checking your session” on each window return interrupts copy/paste, onboarding and sticker uploads. Ordinary focus/visibility/pageshow verification must now run in the background without hiding, making inert or remounting the verified editor. Coalesce simultaneous return events. Initial hydration and explicit account-change/sign-out events still lock immediately; changed verification results remount by owner key, and errors fail closed. This supersedes the pending-focus presentation lock below. Existing local content can remain visible while a routine background check is pending.

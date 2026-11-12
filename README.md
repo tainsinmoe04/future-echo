@@ -16,12 +16,14 @@ paused, Google is unavailable or all conversations reset are superseded.
   first viewport. The starfield is CSS, not video, and uses no external media request.
 - Local journals are scoped to the verified account. Legacy unowned data is
   preserved separately, never silently assigned to a different signed-in user.
-- Google branding and confirmation-required email signup handling are included.
+- Google is the primary login/signup action; email access is available under
+  “Use email instead.” Adult confirmation remains required.
   Actual email delivery and password sign-in still require hosted verification.
 - The conversation composer is text-only. Photos and templates remain available
   in the journal editor through Your Space.
 - Journal templates preview their actual cover artwork; cover text and decorations
-  move independently. Compact controls stay upright, and native sticker selection
+  move independently. Stickers can grow beyond twice their original size up to
+  the book boundary. Compact controls stay upright, and native sticker selection
   preserves the editor. Routine session refresh runs in the background so
   returning to paste or choose an image does not interrupt editing. Large JPG,
   PNG and WebP uploads resize automatically on the device before local storage.

@@ -20,3 +20,15 @@ test("rotated objects stay within the page when resized or moved to an edge", ()
   assert.ok(100 + value.x * 3.2 - half >= 11.99);
   assert.ok(200 + value.y * 7 + half <= 688.01);
 });
+
+test("stickers grow past two times until their rotated bounds fill the page", () => {
+  const enlarged = gestureTransform(DEFAULT_TRANSFORM, [{ x: 0, y: 0 }, { x: 20, y: 0 }], [{ x: 0, y: 0 }, { x: 120, y: 0 }], 340, 440);
+  assert.equal(enlarged.scale, 6);
+  const fitted = boundTransform({ ...enlarged, rotation: 30 }, { x: 170, y: 220 }, 50, 50, 340, 440);
+  assert.ok(fitted.scale > 2);
+  const extent = (Math.cos(Math.PI / 6) + Math.sin(Math.PI / 6)) * 50 * fitted.scale;
+  assert.ok(extent <= 316.01);
+  assert.ok(extent >= 315.99);
+  const larger = boundTransform({ ...fitted, scale: 80 }, { x: 170, y: 220 }, 50, 50, 340, 440);
+  assert.equal(larger.scale, fitted.scale);
+});

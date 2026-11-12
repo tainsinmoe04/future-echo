@@ -24,6 +24,7 @@ function GoogleMark() {
 export function AuthShell({ mode }: { mode: "login" | "signup" }) {
   const signup = mode === "signup", router = useRouter();
   const [show, setShow] = useState(false), [busy, setBusy] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const [notice, setNotice] = useState<{ text: string; error: boolean }>();
   const submitting = useRef(false), feedback = useRef<HTMLParagraphElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -67,20 +68,25 @@ export function AuthShell({ mode }: { mode: "login" | "signup" }) {
     <section className="auth-content" aria-labelledby="auth-heading">
       <div className="auth-heading">
         <h1 id="auth-heading">{signup ? "A space of your own." : "Welcome back."}</h1>
-        <p>{signup ? "Create your account, then meet one possible future you." : "Come back to your conversation."}</p>
+        <p>{signup ? "Start with your Google account, then meet one possible future you." : "Continue with Google to return to your conversation."}</p>
       </div>
-      <form ref={formRef} className="auth-form" aria-label={signup ? "Create an account" : "Log in"} aria-busy={busy} onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}>
+      <form ref={formRef} className="auth-form" aria-label={signup ? "Create an account" : "Log in"} aria-busy={busy} onSubmit={(event) => { event.preventDefault(); if (emailOpen) void submit(event.currentTarget); else void google(); }}>
         <fieldset disabled={busy}>
+          <label className="auth-adult"><input name="adult" type="checkbox" required /><span>I am 18 or older.<small>This beta is for adults.</small></span></label>
+          <button type="button" className="auth-submit auth-google" disabled={busy} onClick={()=>void google()}><GoogleMark />Continue with Google</button>
+          <p className="auth-field-help">Continuing prepares your AI conversation automatically once you choose your Future Self. Your messages and direction are processed by our AI service. Saved moments are shared only with your separate permission; photos and journal drafts stay on this device. This is not end-to-end encrypted. You can disconnect in Settings.</p>
+          <details className="auth-email-option" open={emailOpen} onToggle={event => setEmailOpen(event.currentTarget.open)}>
+            <summary>Use email instead</summary>
+            <fieldset disabled={busy || !emailOpen}>
           {signup && <label className="auth-label" htmlFor="auth-name">Name <span className="auth-optional">optional</span><input id="auth-name" name="name" className="auth-input" maxLength={120} autoComplete="name" /></label>}
           <label className="auth-label" htmlFor="auth-email">Email</label>
           <div className="auth-input-wrap"><Mail aria-hidden="true" /><input id="auth-email" name="email" type="email" required maxLength={254} autoComplete="email" autoCapitalize="none" spellCheck={false} className="auth-input auth-input-email" placeholder="you@example.com" /></div>
           <label className="auth-label" htmlFor="auth-password">Password</label>
           <div className="auth-input-wrap"><Lock aria-hidden="true" /><input id="auth-password" name="password" type={show ? "text" : "password"} required minLength={8} maxLength={256} autoComplete={signup ? "new-password" : "current-password"} aria-describedby={signup ? "auth-password-help" : undefined} className="auth-input auth-input-password" placeholder={signup ? "Create a password" : "Enter your password"} /><button type="button" className="auth-password-toggle" aria-label={show ? "Hide password" : "Show password"} aria-pressed={show} onClick={() => setShow(current => !current)}><Eye aria-hidden="true" /></button></div>
           {signup && <p id="auth-password-help" className="auth-field-help">At least 8 characters.</p>}
-          <label className="auth-adult"><input name="adult" type="checkbox" required /><span>I am 18 or older.<small>This beta is for adults.</small></span></label>
-          <p className="auth-field-help">Continuing prepares your AI conversation automatically once you choose your Future Self. Your messages and direction are processed by our AI service. Saved moments are shared only with your separate permission; photos and journal drafts stay on this device. This is not end-to-end encrypted. You can disconnect in Settings.</p>
           <button type="submit" className="auth-submit" disabled={busy}>{busy ? signup ? "Creating your account…" : "Signing in…" : signup ? "Create account" : "Log in"}</button>
-          <button type="button" className="auth-submit auth-google" disabled={busy} onClick={()=>void google()}><GoogleMark />Continue with Google</button>
+            </fieldset>
+          </details>
         </fieldset>
         {notice && <p ref={feedback} tabIndex={-1} role={notice.error ? "alert" : "status"} className={`auth-feedback ${notice.error ? "is-error" : ""}`}>{notice.text}</p>}
       </form>

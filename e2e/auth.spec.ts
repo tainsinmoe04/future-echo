@@ -20,6 +20,7 @@ test("login has accessible controls, native validation and truthful errors", asy
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await expect(page).toHaveTitle("Future Echo");
+  await page.getByText("Use email instead", { exact: true }).click();
   const email = page.getByRole("textbox", { name: "Email", exact: true });
   const password = page.getByLabel("Password", { exact: true });
   await page.getByRole("button", { name: "Log in", exact: true }).click();
@@ -49,6 +50,7 @@ test("login has accessible controls, native validation and truthful errors", asy
 test("signup preserves confirmation messaging without pretending to sign in", async ({ page }) => {
   await page.route("**/api/auth/signup", route => route.fulfill({ json: { requiresConfirmation: true, message: "Check your email to confirm your account, then sign in." } }));
   await page.goto("/signup");
+  await page.getByText("Use email instead", { exact: true }).click();
   await page.getByLabel("Name", { exact: false }).fill("Fictional reader");
   await page.getByRole("textbox", { name: "Email", exact: true }).fill("fictional@example.invalid");
   await page.getByLabel("Password", { exact: true }).fill("fictional-password");
@@ -68,6 +70,7 @@ test("successful login navigates without sending journal context and suppresses 
   await page.route("**/api/context", route => { contextCalls++; return route.abort(); });
   await page.route("**/api/auth/login", async route => { calls++; await pending; await route.fulfill({ json: { signedIn: true } }); });
   await page.goto("/login");
+  await page.getByText("Use email instead", { exact: true }).click();
   await page.getByRole("textbox", { name: "Email", exact: true }).fill("fictional@example.invalid");
   const password = page.getByLabel("Password", { exact: true });
   await password.fill("fictional-password");
