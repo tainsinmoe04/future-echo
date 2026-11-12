@@ -76,7 +76,7 @@ test("successful Google return invalidates a previously open account tab", async
   await expect(page.getByText("Your first page can be anything.", { exact: true })).toBeVisible();
 });
 
-test("focus verification preserves a same-owner editor while locking pending and changed sessions", async ({ page }) => {
+test("background verification preserves editing and locks when the account changes", async ({ page }) => {
   let owner=a;
   let pending: (()=>void) | undefined;
   let hold=false;
@@ -90,8 +90,11 @@ test("focus verification preserves a same-owner editor while locking pending and
   await page.getByRole("button",{name:"Arrange",exact:true}).click();
   hold=true;
   await page.evaluate(()=>dispatchEvent(new Event("focus")));
-  await expect(page.getByRole("status").filter({hasText:"Checking your session"})).toBeVisible();
-  await expect(page.getByRole("heading",{name:"Make it yours",exact:true})).toBeHidden();
+  await expect.poll(()=>Boolean(pending)).toBe(true);
+  await expect(page.getByRole("status").filter({hasText:"Checking your session"})).toHaveCount(0);
+  await expect(page.getByRole("heading",{name:"Make it yours",exact:true})).toBeVisible();
+  await page.getByRole("group",{name:"My words",exact:true}).focus();
+  await page.getByRole("group",{name:"My words",exact:true}).press("ArrowRight");
   // Wait for the handler, not an arbitrary network delay.
   await expect.poll(()=>Boolean(pending)).toBe(true);hold=false;pending!();pending=undefined;
   await expect(page.getByRole("heading",{name:"Make it yours",exact:true})).toBeVisible();

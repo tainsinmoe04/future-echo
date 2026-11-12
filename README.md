@@ -22,7 +22,9 @@ paused, Google is unavailable or all conversations reset are superseded.
   in the journal editor through Your Space.
 - Journal templates preview their actual cover artwork; cover text and decorations
   move independently. Compact controls stay upright, and native sticker selection
-  preserves the editor after same-account verification.
+  preserves the editor. Routine session refresh runs in the background so
+  returning to paste or choose an image does not interrupt editing. Large JPG,
+  PNG and WebP uploads resize automatically on the device before local storage.
 - Original conversation evidence and separate memory/note consent are preserved.
   Browser journals and backups are not encrypted or automatically cloud-synced.
 

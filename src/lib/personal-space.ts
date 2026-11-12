@@ -11,14 +11,6 @@ export function changeMomentConsent(moment: JourneyMoment, useInAiContext: boole
 
 export const STICKERS: readonly StickerName[] = DECORATIONS;
 export const MAX_PHOTOS = 4;
-export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-export const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-export function validatePhoto(file: { type: string; size: number }): string | null {
-  if (!ACCEPTED_PHOTO_TYPES.includes(file.type)) return "Choose a JPG, PNG, or WebP photo.";
-  if (file.size > MAX_PHOTO_BYTES) return "Choose a photo smaller than 5 MB.";
-  return null;
-}
 
 export function keepMoment(moments: readonly JourneyMoment[], moment: JourneyMoment) {
   const index = moments.findIndex((item) => item.id === moment.id);

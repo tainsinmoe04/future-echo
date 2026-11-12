@@ -1,5 +1,12 @@
 # Future Echo — Project Learnings
 
+## 52. Nonblocking session refresh and larger photo imports — 2026-11-12
+
+- Owner follow-up rejected the full-screen verification interruption after each app/file-picker return, including pasting the three onboarding fields. Focus/visibility/pageshow now refresh in the background and share an in-flight request. Initial and explicit account changes still lock; changed results remount by scoped key and errors lock. This deliberately supersedes section 51's pending-focus hidden/inert presentation, while retaining its same-owner editor continuity.
+- Shared raster import no longer rejects an incoming file for exceeding 5 MiB. It inspects actual bytes (including empty mobile MIME types), rejects animated/unsupported headers, and prepares large images with a maximum 2048px long edge and a bounded stored encoding. Native image orientation and transparent WebP/PNG output are preserved. Small eligible sources retain their original bytes. Stored/imported backups keep the prior 5 MiB per-image and document budgets; preparation is entirely local.
+- Page-photo selection uses the same normalization as covers/stickers instead of an earlier precheck. Unsupported/corrupt uploads leave the existing cover intact and report an error. No provider, account settings or cloud media uploads were added.
+- Validation: 142 unit tests, lint and production build pass. At 1440×600, 390×844 and 320×740, 24 browser cases pass across account isolation, editor regressions, delayed-session Myanmar input/caret preservation, event coalescing, and a real >5 MiB PNG import with proportional resizing, retained transparency and save/reload. The negative upload case preserves the prior cover. Physical-device/Safari behavior remains unverified.
+
 ## 51. Journal manipulation and native upload repair — 2026-11-12
 
 - Returning from a native file picker triggered the account gate's focus verification, which unmounted the entire scoped provider and destroyed the open editor/cutout state. Same-owner focus checks now hide/inert the mounted scope (including top-layer dialogs) until verified; changed owners remount by key, explicit account changes unmount immediately, and failures still lock. Media stays local.

@@ -85,10 +85,12 @@ test("raster preflight rejects oversized, truncated and animated sources before 
   const view = new DataView(bytes.buffer); view.setUint32(16, 1); view.setUint32(20, 1);
   assert.deepEqual(rasterDimensions(bytes), { width: 1, height: 1 });
   view.setUint32(16, 100000); assert.throws(() => rasterDimensions(bytes), /8192/);
+  assert.deepEqual(rasterDimensions(bytes, false), { width: 100000, height: 1 });
   assert.throws(() => rasterDimensions(new Uint8Array(10)), /header/);
   const animated = new Uint8Array(53); animated.set([137,80,78,71,13,10,26,10]);
   const av = new DataView(animated.buffer); av.setUint32(8, 13); animated.set([73,72,68,82], 12); av.setUint32(16, 1); av.setUint32(20, 1); av.setUint32(33, 8); animated.set([97,99,84,76], 37);
   assert.throws(() => rasterDimensions(animated), /animated PNG/);
+  assert.throws(() => rasterDimensions(animated, false), /animated PNG/);
   const jpeg = new Uint8Array([255,216,255,192,0,8,8,0,2,0,3,1]);
   assert.deepEqual(rasterDimensions(jpeg), { width: 3, height: 2 });
 });

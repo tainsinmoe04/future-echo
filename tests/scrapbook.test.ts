@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { boundSticker, moveSticker, newSticker, normalizeSticker, stickersForMoment } from "../src/lib/scrapbook";
-import { keepMoment, memoryBooks, validatePhoto } from "../src/lib/personal-space";
+import { keepMoment, memoryBooks } from "../src/lib/personal-space";
 import { sampleMoments } from "../src/lib/mock-messenger";
 import { activeIdentityVersion } from "../src/lib/mock-data";
 import { buildAIContext } from "../src/server/ai-context-builder";
@@ -62,9 +62,6 @@ test("saved-note clearing revokes note consent and interpretation cannot be rewr
   assert.equal(keepMoment([moment], { ...moment, aiInterpretation: undefined })[0].aiInterpretation, undefined);
 });
 
-test("books omit deleted moments and photo input rejects unsupported or oversized files", () => {
+test("books omit deleted moments", () => {
   assert.equal(memoryBooks([{ ...sampleMoments[0], deletedAt: "2026-10-14" }]).length, 0);
-  assert.equal(validatePhoto({ type: "image/png", size: 2000 }), null);
-  assert.ok(validatePhoto({ type: "image/svg+xml", size: 2000 }));
-  assert.ok(validatePhoto({ type: "image/png", size: 6 * 1024 * 1024 }));
 });

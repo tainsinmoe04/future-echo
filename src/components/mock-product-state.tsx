@@ -91,26 +91,29 @@ export function MockProductStateProvider(props: ProviderProps) {
 function PrivateJournalGate(props: ProviderProps) {
   const router = useRouter();
   const [scope, setScope] = useState<string | null | undefined>(undefined);
-  const [verifying, setVerifying] = useState(false);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    let active = true, sequence = 0;
+    let active = true, sequence = 0, checking = false;
     function verify(lock: boolean) {
+      // Focus, visibility and pageshow often arrive together after a file picker.
+      // Reuse an in-flight check; explicit account changes always supersede it.
+      if (!lock && checking) return;
       const generation = ++sequence;
+      checking = true;
       if (lock) setScope(undefined);
-      setVerifying(true);
       setFailed(false);
       void backendRequest<unknown>("/api/auth/session").then(readAccountScope).then((account) => {
-        if (active && sequence === generation) { setScope(account); setVerifying(false); }
+        if (active && sequence === generation) { checking = false; setScope(account); }
       }).catch(() => {
-        if (active && sequence === generation) { setScope(undefined); setFailed(true); }
+        if (active && sequence === generation) { checking = false; setScope(undefined); setFailed(true); }
       });
     }
     const changed = () => verify(true);
     const storage = (event: StorageEvent) => { if (event.key === ACCOUNT_SCOPE_STORAGE_EVENT) changed(); };
-    // Returning from a native file picker must not destroy the editor/upload.
-    // Lock its presentation while verifying, and remount only for a new owner.
+    // An ordinary return is a background refresh: retain focus, selection and
+    // uploads. Initial/explicit account checks still lock; changed results
+    // remount by owner key, and failed verification still fails closed.
     const focus = () => { if (document.visibilityState === "visible") verify(false); };
     verify(true);
     window.addEventListener(ACCOUNT_SCOPE_EVENT, changed);
@@ -128,9 +131,9 @@ function PrivateJournalGate(props: ProviderProps) {
     };
   }, [retry]);
   if (scope === undefined) return <main style={{ minHeight: "100dvh", padding: "12vh 24px" }}><h1>Future Echo</h1>{failed ? <><p role="alert">Your session could not be verified. Local journals remain locked and unchanged.</p><button onClick={() => setRetry(value => value + 1)}>Try again</button><p><button onClick={() => { void backendRequest("/api/auth/logout", {}).then(() => { notifyAccountSessionChanged(); router.push("/login"); }).catch(() => setFailed(true)); }}>Sign out to sign in again</button></p></> : <p role="status">Checking your session…</p>}</main>;
-  return <><div className={verifying ? "account-scope-checking" : "account-scope-ready"} inert={verifying} aria-hidden={verifying || undefined}>
+  return <div className="account-scope-ready">
     <ScopedProductStateProvider key={accountStorageSuffix(scope)} account={scope} {...props} />
-  </div>{verifying && <p className="account-scope-status" role="status">Checking your session…</p>}</>;
+  </div>;
 }
 
 function ScopedProductStateProvider({ children, account, trialAI = false, trialProvider = "OpenRouter", liveAIAvailable = false, connectedProvider = "Gemini" }: ProviderProps & { account: string | null }) {

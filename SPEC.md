@@ -1,5 +1,11 @@
 # Future Echo — Product and Implementation Specification
 
+## Uninterrupted return and automatic image sizing — 2026-11-12
+
+The owner reports that hiding the editor behind “Checking your session” on each window return interrupts copy/paste, onboarding and sticker uploads. Ordinary focus/visibility/pageshow verification must now run in the background without hiding, making inert or remounting the verified editor. Coalesce simultaneous return events. Initial hydration and explicit account-change/sign-out events still lock immediately; changed verification results remount by owner key, and errors fail closed. This supersedes the pending-focus presentation lock below. Existing local content can remain visible while a routine background check is pending.
+
+Remove the incoming 5 MiB rejection for supported JPG/PNG/WebP photos and stickers. Prepare oversized images locally with proportional resizing/compression and transparency/orientation handling, without sending them to a provider. Keep stored-media/backup validation and overall local-storage budgets. Unsupported, corrupt or browser-undecodable files must report an error without replacing the current cover or closing the editor. No claim of unlimited browser memory or support for every image format is implied. Publish this repair to the existing authorized live app.
+
 ## Authorized journal editor repair — 2026-11-12
 
 The owner requested live fixes for oversized/reversed object controls, mismatched cover-template previews, immovable template artwork/text and custom-sticker uploads that close the editor. Keep visible controls compact with accessible touch targets and upright icons. Newly selected cover templates must render the same artwork as their previews and expose each decorative/text layer for direct manipulation. Preserve earlier saved designs until a template is explicitly selected. Same-owner focus verification (including native file-picker return) must preserve unfinished editor state while hiding private content pending verification; account changes and verification failure must still lock and unmount the previous scope. Preserve original words, dates, consent, local validation and backup compatibility. The user authorized publishing the repair to the existing Vercel app.

@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import type { MomentPhoto } from "@/lib/domain";
-import { MAX_PHOTOS, validatePhoto } from "@/lib/personal-space";
+import { MAX_PHOTOS } from "@/lib/personal-space";
 import { ClipIcon, PhotoIcon } from "./icons";
 import { readRasterFile } from "@/lib/journal-media";
 
@@ -15,8 +15,6 @@ export function PhotoPicker({ photos, onChange, onBusyChange, composer = false }
       event.target.value = "";
       if (!files.length) return;
       if (files.length + photos.length > MAX_PHOTOS) { setError(`Keep up to ${MAX_PHOTOS} photos in one moment.`); return; }
-      const problem = files.map(validatePhoto).find(Boolean);
-      if (problem) { setError(problem); return; }
       setBusy(true); onBusyChange?.(true); setError("");
       try {
         const additions: MomentPhoto[] = [];
