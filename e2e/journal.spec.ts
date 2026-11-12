@@ -20,20 +20,20 @@ async function begin(page: Page) {
 }
 async function noOverflow(page: Page) { expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
 
-test("conversation paperclip opens the native picker without opening template samples", async ({ page }) => {
+test("conversation is text-only and journal photos remain available in Your Space", async ({ page }) => {
   await begin(page);
-  const chooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "Add a moment with photos", exact: true }).click();
-  const chooser = await chooserPromise;
-  const editor = page.getByRole("dialog", { name: "Add photos to a journal moment" });
-  await expect(editor).toBeHidden();
-  await chooser.setFiles(path.resolve("public/scrapbook/study.png"));
-  await expect(editor).toBeVisible();
+  await expect(page.locator(".echo-composer input[type=file]")).toHaveCount(0);
+  await page.getByRole("textbox", { name: "Message your future self", exact: true }).fill("My words stay in the chat.");
+  await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Add a personal moment", exact: true }).click();
+  const editor = page.getByRole("dialog", { name: "Your Space", exact: true });
+  await editor.getByLabel("Choose photos", { exact: true }).setInputFiles(path.resolve("public/scrapbook/study.png"));
   await expect(editor.getByRole("img", { name: "Photo in this moment" })).toBeVisible();
-  await expect(editor.locator(".journal-template-disclosure")).toHaveCount(0);
   await editor.getByRole("textbox", { name: "My words", exact: true }).fill("A new photo, not a sample.");
   await editor.getByRole("button", { name: "Done", exact: true }).click();
-  await expect(editor).toBeHidden();
+  await page.getByRole("button", { name: "Back to Your Space", exact: true }).click();
+  await page.getByRole("button", { name: "Return to conversation", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Message your future self", exact: true })).toHaveValue("My words stay in the chat.");
   await noOverflow(page);
 });
 

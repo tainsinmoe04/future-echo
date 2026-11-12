@@ -1,5 +1,11 @@
 # Future Echo — Project Learnings
 
+## 50. Remove the chat attachment control — 2026-11-12
+
+- After reporting a missing photo preview, the owner explicitly requested removing the paperclip and said photo sharing with AI was unnecessary. Removed the composer photo picker and its journal-editor dialog. The conversation stays text-only; photo editing remains in Your Space. No image is sent to a provider and no AI, account or storage settings changed.
+- Updated the existing paperclip browser regression to check the text composer, preserved chat draft and journal photo selection through Your Space.
+- Validation: lint and production build pass; all 140 unit tests and repository security checks pass. The updated Chromium regression passes at 1440×600, 390×844 and 320×740, including saving a journal photo and returning to the preserved chat draft.
+
 ## 49. Settings menu text overlap — 2026-11-11
 
 - At short desktop/tablet heights, the flex navigation compressed its menu buttons to 72px while wrapped titles and descriptions needed more space. Text extended beyond row borders and into neighbouring rows. Reproduced on the hosted application at 1440×600.

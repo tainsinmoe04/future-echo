@@ -18,8 +18,8 @@ paused, Google is unavailable or all conversations reset are superseded.
   preserved separately, never silently assigned to a different signed-in user.
 - Google branding and confirmation-required email signup handling are included.
   Actual email delivery and password sign-in still require hosted verification.
-- The conversation attachment control opens photo selection; journal templates
-  remain in the journal editor, not the chat composer.
+- The conversation composer is text-only. Photos and templates remain available
+  in the journal editor through Your Space.
 - Original conversation evidence and separate memory/note consent are preserved.
   Browser journals and backups are not encrypted or automatically cloud-synced.
 
