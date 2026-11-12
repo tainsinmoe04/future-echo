@@ -167,3 +167,50 @@ body::before { display:none; }
 @media (max-width:360px) { .settings-navigation { gap:0; padding-inline:10px; } .settings-navigation a { font-size:11px; padding-inline:9px; } .echo-chat-heading h1 { font-size:17px; } }
 @media (hover:hover) and (pointer:fine) { .settings-navigation a:hover { background:#ffffff08; color:#f2f2f2; } .echo-icon-button:hover { background:#ffffff0d; } }
 @media (prefers-reduced-motion:reduce) { .settings-navigation a { transition:none; } }
+
+/* Keep the same editor mounted during same-owner focus verification. Native
+   top-layer dialogs are hidden too; a changed/failed account still unmounts. */
+.account-scope-ready { display:contents; }
+.account-scope-checking { display:none!important; visibility:hidden; }
+.account-scope-checking dialog { display:none!important; visibility:hidden!important; }
+.account-scope-status { position:fixed; inset:0; z-index:1000; padding:12vh 24px; background:#0b0c0e; }
+
+/* Small visible controls with generous, constant-size touch targets. */
+.echo-ui .echo-page-object :is(.echo-transform-handle,.echo-object-delete),
+.echo-ui .echo-page-object :is(.echo-transform-handle,.echo-object-delete):is(:active,:focus-visible:active) {
+  display:grid; place-items:center; width:44px; height:44px; min-width:44px; min-height:44px;
+  padding:0; border:0; background:transparent; color:#25282a; border-radius:50%;
+  transform:rotate(var(--handle-rotation,0deg)) scale(var(--handle-scale,1)); z-index:8;
+}
+.echo-ui .echo-page-object :is(.echo-transform-handle,.echo-object-delete)::before {
+  content:""; position:absolute; width:26px; height:26px; border:1px solid #a5a9a6; border-radius:50%;
+  background:#fafbf8; box-shadow:0 2px 5px #0002; z-index:-1;
+}
+.echo-ui .echo-page-object :is(.echo-transform-handle,.echo-object-delete) svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.echo-ui .echo-object-delete { top:calc(-22px * var(--handle-scale,1)); left:calc(-22px * var(--handle-scale,1)); }
+.echo-ui .echo-transform-handle.rotate { top:calc(-44px * var(--handle-scale,1)); left:calc(50% - 22px); }
+.echo-ui .echo-transform-handle.resize { right:calc(-22px * var(--handle-scale,1)); bottom:calc(-22px * var(--handle-scale,1)); }
+.echo-ui .echo-page-object.selected > .echo-object-content { outline:1px solid #858f87; outline-offset:3px; }
+.echo-page-object .echo-object-content:focus-visible { outline-color:#65786b; }
+.cover-photo-object .journal-cover-photo { transform:none; }
+.journal-cover-hint { font-size:12px; line-height:1.6; color:#b5b6b8; text-align:center; margin-bottom:16px!important; }
+
+/* The template picker renders the actual cover at the same proportions. */
+.journal-cover.editable-cover-template { container-type:inline-size; height:auto; aspect-ratio:17/22; padding:0; }
+.journal-cover.editable-cover-template::before,.journal-cover.editable-cover-template::after { content:none!important; }
+.journal-cover.editable-cover-template > .echo-page-object { position:absolute; }
+.editable-cover-template .cover-year-object { left:15%; top:7%; width:70%; }
+.editable-cover-template .cover-title-object { left:15%; top:30%; width:70%; }
+.editable-cover-template .cover-subtitle-object { left:15%; top:57%; width:70%; }
+.editable-cover-template .cover-photo-object { left:14%; top:65%; width:35%; height:27%; }
+.editable-cover-template .cover-photo-object .echo-object-content { height:100%; }
+.echo-ui .editable-cover-template .journal-cover-title { font-size:10cqw!important; margin:0; line-height:1.12; }
+.editable-cover-template .journal-cover-year { font-size:3.6cqw; }
+.editable-cover-template .journal-cover-subtitle { font-size:3.8cqw; line-height:1.4; min-height:1.4em; }
+.editable-cover-template .journal-cover-photo { width:100%; height:100%; margin:0; padding:2cqw 2cqw 5cqw; }
+.journal-cover-preview { display:block; pointer-events:none; }
+.journal-cover-preview .journal-cover { width:100%; margin:0; border-radius:3px 7px 7px 3px; }
+.journal-cover-preview .journal-cover.theme-nocturne { outline-offset:-4px; }
+.journal-cover-preview .journal-cover-spine { left:4%; width:1%; }
+
+.editable-cover-template .cover-template-lace { aspect-ratio:3/1; }

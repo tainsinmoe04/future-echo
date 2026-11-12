@@ -3,6 +3,7 @@ import type { JourneyMoment, NoteFont, PageTransform, StickerPlacement, PhotoCro
 export const DECORATIONS = ["flower", "shoes", "hearts", "star", "daisy", "moon", "sparkle", "leaf", "cherry", "bow", "stamp", "ticket", "ribbon-key", "antique-frame", "lace-trim", "tape-butter", "tape-lilac", "tape-grid", "tape-rose", "clip-silver", "clip-gold", "clip-heart"] as const;
 export const COVER_THEMES = ["butter", "cobalt", "rose", "sage", "ink", "gingham", "lace", "nocturne", "poetry"] as const;
 export interface BookStyle {
+  templateVersion?: 1;
   photoCrop?: PhotoCrop;
   layers?: readonly string[];
   photoMode?: "full" | "inset";

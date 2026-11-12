@@ -1,6 +1,6 @@
 # Future Echo
 
-## Current release — 2026-11-11
+## Current release — 2026-11-12
 
 Live application: https://future-echo-sandy.vercel.app/
 
@@ -20,6 +20,9 @@ paused, Google is unavailable or all conversations reset are superseded.
   Actual email delivery and password sign-in still require hosted verification.
 - The conversation composer is text-only. Photos and templates remain available
   in the journal editor through Your Space.
+- Journal templates preview their actual cover artwork; cover text and decorations
+  move independently. Compact controls stay upright, and native sticker selection
+  preserves the editor after same-account verification.
 - Original conversation evidence and separate memory/note consent are preserved.
   Browser journals and backups are not encrypted or automatically cloud-synced.
 

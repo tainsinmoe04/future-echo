@@ -11,7 +11,7 @@ export function normalizeCrop(value: PhotoCrop): PhotoCrop {
   return { x: bound(value.x, 0, 100, 50), y: bound(value.y, 0, 100, 50), zoom: bound(value.zoom, 1, 3, 1), aspect: ["square", "portrait", "landscape", "original"].includes(value.aspect) ? value.aspect : "portrait" };
 }
 export const cropRatio = (crop?: PhotoCrop) => crop?.aspect === "square" ? "1" : crop?.aspect === "landscape" ? "1.5" : crop?.aspect === "original" ? "auto" : ".85";
-export function pageObjectIds(moment: JourneyMoment) { return ["words", ...(moment.relatedAiReply ? ["reply"] : []), ...(moment.myNote ? ["note"] : []), ...(moment.photos ?? []).map((p) => `photo:${p.id}`), ...(moment.stickerPlacements ?? []).map((p) => `sticker:${p.id}`)]; }
+export function pageObjectIds(moment: JourneyMoment) { return ["title", "date", "words", ...(moment.relatedAiReply ? ["reply"] : []), ...(moment.myNote ? ["note"] : []), ...(moment.photos ?? []).map((p) => `photo:${p.id}`), ...(moment.stickerPlacements ?? []).map((p) => `sticker:${p.id}`)]; }
 export function moveLayer(layers: readonly string[], ids: readonly string[], selected: string, direction: "front" | "back") {
   const order = [...new Set([...layers.filter((id) => ids.includes(id)), ...ids])].filter((id) => id !== selected);
   if (!ids.includes(selected)) return order;

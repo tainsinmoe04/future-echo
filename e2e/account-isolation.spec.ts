@@ -75,3 +75,30 @@ test("successful Google return invalidates a previously open account tab", async
   await expect(page.getByText(ownerA, { exact: true })).toHaveCount(0);
   await expect(page.getByText("Your first page can be anything.", { exact: true })).toBeVisible();
 });
+
+test("focus verification preserves a same-owner editor while locking pending and changed sessions", async ({ page }) => {
+  let owner=a;
+  let pending: (()=>void) | undefined;
+  let hold=false;
+  await page.route("**/api/auth/session",async route=>{
+    if(hold) await new Promise<void>(resolve=>{pending=resolve;});
+    await route.fulfill({json:{user:{id:owner,email:"account@example.invalid"}}});
+  });
+  await makePage(page,ownerA);
+  await page.getByRole("button",{name:"Photo, sticker & note",exact:true}).click();
+  await page.getByRole("textbox",{name:"My words",exact:true}).fill("An unfinished same-owner edit");
+  await page.getByRole("button",{name:"Arrange",exact:true}).click();
+  hold=true;
+  await page.evaluate(()=>dispatchEvent(new Event("focus")));
+  await expect(page.getByRole("status").filter({hasText:"Checking your session"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Make it yours",exact:true})).toBeHidden();
+  // Wait for the handler, not an arbitrary network delay.
+  await expect.poll(()=>Boolean(pending)).toBe(true);hold=false;pending!();pending=undefined;
+  await expect(page.getByRole("heading",{name:"Make it yours",exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Arrange",exact:true})).toHaveAttribute("aria-pressed","true");
+  await expect(page.locator(".paper-original")).toHaveText("An unfinished same-owner edit");
+  owner=b;
+  await page.evaluate(()=>dispatchEvent(new Event("focus")));
+  await expect(page.getByText("Your first page can be anything.",{exact:true})).toBeVisible();
+  await expect(page.getByText("An unfinished same-owner edit",{exact:true})).toHaveCount(0);
+});

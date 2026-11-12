@@ -1,5 +1,9 @@
 # Future Echo — Product and Implementation Specification
 
+## Authorized journal editor repair — 2026-11-12
+
+The owner requested live fixes for oversized/reversed object controls, mismatched cover-template previews, immovable template artwork/text and custom-sticker uploads that close the editor. Keep visible controls compact with accessible touch targets and upright icons. Newly selected cover templates must render the same artwork as their previews and expose each decorative/text layer for direct manipulation. Preserve earlier saved designs until a template is explicitly selected. Same-owner focus verification (including native file-picker return) must preserve unfinished editor state while hiding private content pending verification; account changes and verification failure must still lock and unmount the previous scope. Preserve original words, dates, consent, local validation and backup compatibility. The user authorized publishing the repair to the existing Vercel app.
+
 ## Shared monochrome interface — 2026-11-10
 
 The owner explicitly extended the refresh beyond the journal to Settings, conversation, personal space, Future Self, onboarding, authentication and public-page chrome, and selected black/white over yellow accents. Use charcoal surfaces, soft-white actions and neutral-grey secondary text; retain distinct present/future message surfaces. Do not recolor saved photographs, paper or covers. Preserve readable error/warning states, keyboard focus, reduced-motion preferences, consent disclosures and existing persistence. This is visual authorization, not permission to alter providers, account configuration or deploy.

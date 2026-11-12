@@ -41,7 +41,7 @@ export function MomentPaper({ moment, placements = stickersForMoment(moment), ed
       editing.onChange(placements.map((item) => item.id === editing.selected ? boundSticker({ ...item, x: (event.clientX - rect.left) / rect.width * 100, y: (event.clientY - rect.top) / rect.height * 100 }, rect.width, rect.height) : item));
     }}>
     <div className="paper-rings" aria-hidden="true">{[0, 1, 2, 3, 4].map((ring) => <i key={ring} />)}</div>
-    <header className="paper-heading"><h1>{moment.title || "A moment worth keeping"}</h1><time dateTime={moment.occurredAt}>{new Date(`${momentDay(moment)}T12:00:00Z`).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</time></header>
+    <header className="paper-heading"><PageObject page={page} {...objectProps("title", "Page title")}><h1>{moment.title || "A moment worth keeping"}</h1></PageObject><PageObject page={page} {...objectProps("date", "Page date")}><time dateTime={moment.occurredAt}>{new Date(`${momentDay(moment)}T12:00:00Z`).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</time></PageObject></header>
     <div className="paper-photos">{moment.photos?.map((photo) => <PageObject page={page} key={photo.id} {...objectProps(`photo:${photo.id}`, "Photo")}><figure className="paper-polaroid">
       <FramedPhoto src={photo.src} alt={photo.caption || "A photo chosen for this moment"} crop={photo.crop} />
       {photo.caption && <figcaption className="note-styled">{photo.caption}</figcaption>}
@@ -51,7 +51,7 @@ export function MomentPaper({ moment, placements = stickersForMoment(moment), ed
     {moment.myNote && <PageObject page={page} {...objectProps("note", "My Note")}><section className="paper-note"><h2>My Note</h2><p className="note-styled">{moment.myNote}</p></section></PageObject>}
     <p className="paper-footnote">Kept by you · {moment.consent.useInAiContext ? "Saved words allowed in AI context" : "Not shared as AI context"}</p>
     {moment.music && <a className="journal-music-link" href={moment.music.url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer"><span aria-hidden="true">♫</span><span><small>A song for this page · opens music site</small><strong>{moment.music.title}</strong></span><span aria-hidden="true">↗</span></a>}
-    {pageEditing || moment.pageTransforms ? <div className="echo-sticker-layer direct-stickers">{placements.map((item) => <PageObject page={page} key={item.id} {...objectProps(`sticker:${item.id}`, `${item.name} sticker`)} className="direct-sticker" style={{ position: "absolute", left: `${item.x}%`, top: `${item.y}%`, width: `${item.size}%` }}><span style={{ display: "block", width: "100%", height: "100%", transform: `rotate(${item.rotation}deg)` }}><Sticker name={item.name} src={item.src} /></span></PageObject>)}</div>
+    {pageEditing || moment.pageTransforms ? <div className="echo-sticker-layer direct-stickers">{placements.map((item) => <PageObject page={page} key={item.id} {...objectProps(`sticker:${item.id}`, `${item.name} sticker`)} baseRotation={item.rotation} className="direct-sticker" style={{ position: "absolute", left: `${item.x}%`, top: `${item.y}%`, width: `${item.size}%` }}><span style={{ display: "block", width: "100%", height: "100%" }}><Sticker name={item.name} src={item.src} /></span></PageObject>)}</div>
       : <StickerLayer page={page} placements={placements} editing={editing} onPointerStart={() => { suppressPlacementClick.current = true; }} />}
   </article>;
 }

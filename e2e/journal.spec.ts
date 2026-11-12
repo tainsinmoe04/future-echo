@@ -159,16 +159,17 @@ test("direct decoration gestures, layer ordering and six-month revisit preserve 
   await page.getByRole("button", { name: "Tapes", exact: true }).click();
   await page.getByRole("button", { name: "Add tape-lilac sticker", exact: true }).click();
   const sticker = page.getByRole("group", { name: "tape-lilac sticker", exact: true }); await sticker.scrollIntoViewIfNeeded();
+  const initialTransform = await sticker.getAttribute("style");
   const box = await sticker.boundingBox(); expect(box).toBeTruthy();
   if (box && testInfo.project.name !== "desktop") {
     const session = await context.newCDPSession(page), x = box.x + box.width / 2, y = box.y + box.height / 2;
     await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 1, x: x - 12, y }, { id: 2, x: x + 12, y }] });
     await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ id: 1, x: x - 24, y: y - 12 }, { id: 2, x: x + 24, y: y + 12 }] });
     await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await expect(sticker).not.toHaveAttribute("style", /rotate\(0deg\) scale\(1\)/);
+    await expect(sticker).not.toHaveAttribute("style", initialTransform!);
   } else {
     await sticker.focus(); await sticker.press("]"); await sticker.press("+");
-    await expect(sticker).toHaveAttribute("style", /rotate\(5deg\).*scale\(1.1\)/);
+    await expect(sticker).toHaveAttribute("style", /rotate\(13deg\).*scale\(1.1\)/);
   }
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Done", exact: true }).click(); await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();

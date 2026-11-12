@@ -1,5 +1,12 @@
 # Future Echo — Project Learnings
 
+## 51. Journal manipulation and native upload repair — 2026-11-12
+
+- Returning from a native file picker triggered the account gate's focus verification, which unmounted the entire scoped provider and destroyed the open editor/cutout state. Same-owner focus checks now hide/inert the mounted scope (including top-layer dialogs) until verified; changed owners remount by key, explicit account changes unmount immediately, and failures still lock. Media stays local.
+- Controls use 26px visible icons inside 44px touch targets, counter-rotated/scaled against the complete object transform. Sticker base rotation now belongs to the manipulated transform, including cover stickers. No-change pointer gestures no longer consume Undo entries.
+- Cover templates share actual BookCover rendering with their previews and add ordinary editable decorations. Optional templateVersion preserves earlier saved designs. Title, subtitle, year, cover photo and template ornaments can move independently; page title/date join existing words/reply/note manipulation. Template selection preserves personal content/decorations and bounded backup validation. Lace uses its actual 3:1 proportions so its controls stay near the artwork.
+- Validation: 142 unit tests, lint, production build and repository security checks pass. Across 1440×600, 390×844 and 320×740, 21 browser cases cover native chooser/focus/cutout/save/reload, preview/artwork parity, text/decorative layers, pending verification, account switching and direct touch/keyboard gestures. A separate real 2MB raster upload survived focus return. The desktop gesture regression now checks the combined 8° original plus 5° edit rotation; touch checks compare against the actual initial transform. Chromium emulation is not physical iOS/Safari verification.
+
 ## 50. Remove the chat attachment control — 2026-11-12
 
 - After reporting a missing photo preview, the owner explicitly requested removing the paperclip and said photo sharing with AI was unnecessary. Removed the composer photo picker and its journal-editor dialog. The conversation stays text-only; photo editing remains in Your Space. No image is sent to a provider and no AI, account or storage settings changed.

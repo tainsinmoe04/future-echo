@@ -92,3 +92,36 @@ test("raster preflight rejects oversized, truncated and animated sources before 
   const jpeg = new Uint8Array([255,216,255,192,0,8,8,0,2,0,3,1]);
   assert.deepEqual(rasterDimensions(jpeg), { width: 3, height: 2 });
 });
+
+test("editable cover templates retain personal content and round-trip all movable text", async () => {
+  const { applyCoverTemplate } = await import("../src/lib/journal-templates");
+  const snapshot = fixture(), year = snapshot.moments[0].occurredAt.slice(0, 4);
+  const original = { ...defaultBook(year), photo: "/scrapbook/study.png", photoMode: "full" as const,
+    placements: [{ id: "mine", name: "star" as const, x: 30, y: 40, size: 18, rotation: 8 }],
+    transforms: { subtitle: { x: 3, y: 2, scale: 1, rotation: 12 }, year: { x: -2, y: 1, scale: 1, rotation: 0 } } };
+  for (const template of JOURNAL_TEMPLATES) {
+    const cover = applyCoverTemplate(original, template.id);
+    assert.equal(cover.title, original.title); assert.equal(cover.subtitle, original.subtitle);
+    assert.equal(cover.photo, original.photo); assert.equal(cover.photoMode, "inset");
+    assert.deepEqual(cover.placements.find(p => p.id === "mine"), original.placements[0]);
+    assert.deepEqual(cover.transforms.subtitle, original.transforms.subtitle);
+    assert.ok(cover.placements.some(p => p.id.startsWith("template-")));
+    assert.deepEqual(applyCoverTemplate(cover, template.id), cover);
+    snapshot.books = { [year]: cover };
+    snapshot.moments = snapshot.moments.map((m, i) => i ? m : { ...m, pageTransforms: { title: { x: 1, y: 2, scale: 1, rotation: 0 }, date: { x: 2, y: 3, scale: 1, rotation: 0 } } });
+    assert.equal(isJournalSnapshot(snapshot), true);
+    assert.deepEqual(parseJournalBackup(serializeJournalBackup(snapshot)).snapshot.books, snapshot.books);
+  }
+  assert.equal(original.photoMode, "full");
+});
+
+test("changing cover templates never removes personal decorations or exceeds the limit", async () => {
+  const { applyCoverTemplate } = await import("../src/lib/journal-templates");
+  const full = { ...defaultBook("2026"), placements: Array.from({length:12}, (_,i) => ({ id:`mine-${i}`, name:"star" as const, x:50, y:50, size:18, rotation:0 })) };
+  assert.deepEqual(applyCoverTemplate(full, "lace").placements, full.placements);
+  const lace = applyCoverTemplate(defaultBook("2026"), "lace");
+  const poetry = applyCoverTemplate(lace, "poetry");
+  assert.ok(!poetry.placements.some(p => p.name === "lace-trim"));
+  assert.equal(poetry.transforms["sticker:template-lace"], undefined);
+  assert.equal(isJournalSnapshot({ ...fixture(), books: { "2026": { ...poetry, templateVersion:2 } } }), false);
+});

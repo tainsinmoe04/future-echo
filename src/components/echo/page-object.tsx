@@ -10,9 +10,9 @@ export interface PageEditing {
   onRemove?: (id: string) => void;
 }
 
-export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing, children, className = "", style, layer }: {
+export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation = 0, page, editing, children, className = "", style, layer }: {
   id: string; label: string; value?: PageTransform; page: RefObject<HTMLElement | null>;
-  editing?: PageEditing; children: ReactNode; className?: string; style?: CSSProperties; layer?: number;
+  editing?: PageEditing; children: ReactNode; className?: string; style?: CSSProperties; layer?: number; baseRotation?: number;
 }) {
   const node = useRef<HTMLDivElement>(null);
   const points = useRef(new Map<number, Point>());
@@ -27,14 +27,14 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing
     session.current = null;
     for (const pointer of points.current.keys()) if (node.current?.hasPointerCapture(pointer)) node.current.releasePointerCapture(pointer);
     points.current.clear();
-    if (!cancel) editing?.onChange(id, active.next);
+    if (!cancel && Object.keys(active.next).some(key => active.next[key as keyof PageTransform] !== active.original[key as keyof PageTransform])) editing?.onChange(id, active.next);
     setPreview(null);
   };
   return <div className={`echo-page-object ${className} ${editing ? "editable" : ""} ${selected ? "selected" : ""}`} style={{ ...style, zIndex: selected && editing ? 99 : layer }}>
     <div ref={node} data-object={id} className="echo-object-content" role={editing ? "group" : undefined}
       tabIndex={editing ? 0 : undefined} aria-label={editing ? label : undefined}
       aria-description={editing ? "Drag to move. Pinch and turn with two fingers, or drag the resize and rotate handles. Arrow keys move, plus and minus resize, square brackets rotate. Escape cancels." : undefined}
-      style={{ transform: `translate(calc(var(--page-width, 0px) * ${current.x / 100}), calc(var(--page-height, 0px) * ${current.y / 100})) rotate(${current.rotation}deg) scale(${current.scale})`, "--handle-scale": 1 / current.scale } as CSSProperties}
+      style={{ transform: `translate(calc(var(--page-width, 0px) * ${current.x / 100}), calc(var(--page-height, 0px) * ${current.y / 100})) rotate(${current.rotation + baseRotation}deg) scale(${current.scale})`, "--handle-scale": 1 / current.scale, "--handle-rotation": `${-current.rotation - baseRotation}deg` } as CSSProperties}
       onFocus={() => editing?.onSelect(id)}
       onClick={(event) => { if (editing) { event.stopPropagation(); editing.onSelect(id); } }}
       onPointerDown={(event) => {
@@ -65,7 +65,8 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing
             scale: active.mode === "resize" ? active.base.scale * distance(active.center, after[0]) / Math.max(5, distance(active.center, active.before[0])) : active.base.scale,
             rotation: active.mode === "rotate" ? active.base.rotation + turn(angle(active.center, after[0]) - angle(active.center, active.before[0])) : active.base.rotation });
         }
-        next = boundTransform(next, active.baseCenter, active.objectWidth, active.objectHeight, active.width, active.height);
+        const bounded = boundTransform({ ...next, rotation: next.rotation + baseRotation }, active.baseCenter, active.objectWidth, active.objectHeight, active.width, active.height);
+        next = { ...bounded, rotation: turn(bounded.rotation - baseRotation) };
         active.next = next; setPreview(next);
       }}
       onPointerUp={(event) => {
@@ -86,9 +87,9 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, page, editing
       }}>
       {children}
       {editing && selected && <>
-        {editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:")) && <button type="button" className="echo-object-delete" aria-label={`Delete ${label}`} onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={event => { event.stopPropagation(); finish(true); editing.onRemove?.(id); }}>×</button>}
-        <button type="button" className="echo-transform-handle rotate" data-handle="rotate" aria-label={`Rotate ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, rotation: value.rotation + 15 })); }}>↻</button>
-        <button type="button" className="echo-transform-handle resize" data-handle="resize" aria-label={`Resize ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, scale: value.scale + 0.1 })); }}>↗</button>
+        {editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:")) && <button type="button" className="echo-object-delete" aria-label={`Delete ${label}`} onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={event => { event.stopPropagation(); finish(true); editing.onRemove?.(id); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg></button>}
+        <button type="button" className="echo-transform-handle rotate" data-handle="rotate" aria-label={`Rotate ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, rotation: value.rotation + 15 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9a7 7 0 1 0 0 7M19 4v5h-5" /></svg></button>
+        <button type="button" className="echo-transform-handle resize" data-handle="resize" aria-label={`Resize ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) editing.onChange(id, normalizeTransform({ ...value, scale: value.scale + 0.1 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14v4h4M14 6h4v4M6 18 18 6" /></svg></button>
       </>}
     </div>
   </div>;

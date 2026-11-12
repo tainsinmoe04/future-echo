@@ -36,7 +36,7 @@ const sticker = (v: unknown) => [...DECORATIONS, "custom", "custom-tape"].includ
 const range = (v: unknown, min: number, max: number) => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
 const uniqueIds = (items: readonly { id: unknown }[]) => new Set(items.map((item) => item.id)).size === items.length;
 const crop = (v: unknown) => object(v) && keys(v, ["x", "y", "zoom", "aspect"]) && range(v.x, 0, 100) && range(v.y, 0, 100) && range(v.zoom, 1, 3) && ["square", "portrait", "landscape", "original"].includes(v.aspect as string);
-const layers = (v: unknown) => Array.isArray(v) && v.length <= 32 && new Set(v).size === v.length && v.every((s) => typeof s === "string" && /^(words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(s));
+const layers = (v: unknown) => Array.isArray(v) && v.length <= 32 && new Set(v).size === v.length && v.every((s) => typeof s === "string" && /^(title|date|year|subtitle|words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(s));
 
 /** No external URLs, SVG, blobs or arbitrary local paths can enter a restored journal. */
 export function isJournalImageSource(value: unknown): value is string {
@@ -74,7 +74,7 @@ function moment(v: unknown): v is JourneyMoment {
   if (!optional(v.music, (m) => object(m) && keys(m, ["title", "url"]) && text(m.title, 120, 1) && safeMusicUrl(m.url))
     || !optional(v.paper, (p) => ["plain", "ruled", "grid", "blush", "lace", "nocturne", "poetry"].includes(p as string))) return false;
   if (!optional(v.pageTransforms, (layout) => object(layout) && Object.keys(layout).length <= 32 && Object.entries(layout).every(([key, t]) =>
-    /^(words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(key) && object(t) && keys(t, ["x", "y", "scale", "rotation"])
+    /^(title|date|year|subtitle|words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(key) && object(t) && keys(t, ["x", "y", "scale", "rotation"])
     && range(t.x, -100, 100) && range(t.y, -100, 100) && range(t.scale, 0.5, 2) && range(t.rotation, -180, 180)))) return false;
   if (!(id(v.id) && id(v.identityVersionId) && date(v.occurredAt) && date(v.revisitAt)
     && optional(v.deletedAt, date) && text(v.originalExcerpt, v.kind === "personal" ? MAX_JOURNAL_LENGTH : 2000, 1)
@@ -146,7 +146,8 @@ export function isJournalSnapshot(value: unknown): value is JournalSnapshot {
     && text(entry.value.originalExcerpt, entry.value.kind === "personal" ? MAX_JOURNAL_LENGTH : 2000) && moment({ ...entry.value, originalExcerpt: entry.value.originalExcerpt || " " })
     && owners.has(entry.value.identityVersionId as string) && object(entry.value.consent) && entry.value.consent.useInAiContext === false && entry.value.consent.includeMyNoteInAiContext === false) && uniqueIds(d))) return false;
   const validBooks = (b: unknown, draft = false) => object(b) && Object.keys(b).length <= 200 && Object.entries(b).every(([year, book]) => /^\d{4}$/.test(year) && object(book)
-    && keys(book, ["title", "subtitle", "theme", "noteFont", "photo", "photoMode", "photoCrop", "layers", "placements", "transforms", "order"])
+    && keys(book, ["title", "subtitle", "theme", "noteFont", "photo", "photoMode", "photoCrop", "layers", "placements", "transforms", "order", "templateVersion"])
+    && optional(book.templateVersion, version => version === 1)
     && optional(book.photoCrop, crop) && optional(book.layers, layers)
     && optional(book.photoMode, (mode) => mode === "full" || mode === "inset")
     && text(book.title, 80, draft ? 0 : 1) && text(book.subtitle, 120) && COVER_THEMES.includes(book.theme as typeof COVER_THEMES[number]) && font(book.noteFont)

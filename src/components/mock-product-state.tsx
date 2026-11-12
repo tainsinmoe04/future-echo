@@ -91,6 +91,7 @@ export function MockProductStateProvider(props: ProviderProps) {
 function PrivateJournalGate(props: ProviderProps) {
   const router = useRouter();
   const [scope, setScope] = useState<string | null | undefined>(undefined);
+  const [verifying, setVerifying] = useState(false);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
@@ -98,16 +99,19 @@ function PrivateJournalGate(props: ProviderProps) {
     function verify(lock: boolean) {
       const generation = ++sequence;
       if (lock) setScope(undefined);
+      setVerifying(true);
       setFailed(false);
       void backendRequest<unknown>("/api/auth/session").then(readAccountScope).then((account) => {
-        if (active && sequence === generation) setScope(account);
+        if (active && sequence === generation) { setScope(account); setVerifying(false); }
       }).catch(() => {
         if (active && sequence === generation) { setScope(undefined); setFailed(true); }
       });
     }
     const changed = () => verify(true);
     const storage = (event: StorageEvent) => { if (event.key === ACCOUNT_SCOPE_STORAGE_EVENT) changed(); };
-    const focus = () => { if (document.visibilityState === "visible") verify(true); };
+    // Returning from a native file picker must not destroy the editor/upload.
+    // Lock its presentation while verifying, and remount only for a new owner.
+    const focus = () => { if (document.visibilityState === "visible") verify(false); };
     verify(true);
     window.addEventListener(ACCOUNT_SCOPE_EVENT, changed);
     window.addEventListener("storage", storage);
@@ -124,7 +128,9 @@ function PrivateJournalGate(props: ProviderProps) {
     };
   }, [retry]);
   if (scope === undefined) return <main style={{ minHeight: "100dvh", padding: "12vh 24px" }}><h1>Future Echo</h1>{failed ? <><p role="alert">Your session could not be verified. Local journals remain locked and unchanged.</p><button onClick={() => setRetry(value => value + 1)}>Try again</button><p><button onClick={() => { void backendRequest("/api/auth/logout", {}).then(() => { notifyAccountSessionChanged(); router.push("/login"); }).catch(() => setFailed(true)); }}>Sign out to sign in again</button></p></> : <p role="status">Checking your session…</p>}</main>;
-  return <ScopedProductStateProvider key={accountStorageSuffix(scope)} account={scope} {...props} />;
+  return <><div className={verifying ? "account-scope-checking" : "account-scope-ready"} inert={verifying} aria-hidden={verifying || undefined}>
+    <ScopedProductStateProvider key={accountStorageSuffix(scope)} account={scope} {...props} />
+  </div>{verifying && <p className="account-scope-status" role="status">Checking your session…</p>}</>;
 }
 
 function ScopedProductStateProvider({ children, account, trialAI = false, trialProvider = "OpenRouter", liveAIAvailable = false, connectedProvider = "Gemini" }: ProviderProps & { account: string | null }) {
