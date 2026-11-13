@@ -1,5 +1,4 @@
 "use client";
-import "@/app/journal-romantic.css";
 import { useRouter } from "next/navigation";
 import { PersonalSpace } from "@/components/echo/personal-space";
 export default function Memory() {

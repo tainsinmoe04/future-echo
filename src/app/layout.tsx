@@ -6,6 +6,8 @@ import { seaLionTrialEnabled } from "@/server/sealion-provider";
 import { backendConfig } from "@/server/backend-config";
 import "./globals.css";
 import "./echo.css";
+import "./auth.css";
+import "./journal-romantic.css";
 import "./interface.css";
 
 const body = Manrope({ variable:"--font-body", subsets:["latin"] });

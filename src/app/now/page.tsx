@@ -1,6 +1,5 @@
 "use client";
 
-import "@/app/journal-romantic.css";
 import Link from "next/link";
 import { memo, Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";

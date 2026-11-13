@@ -137,16 +137,7 @@ function PrivateJournalGate(props: ProviderProps) {
     // An ordinary return is a background refresh: retain focus, selection and
     // uploads. Initial/explicit account checks still lock; changed results
     // remount by owner key, and failed verification still fails closed.
-    // Throttled: focus/visibility/pageshow often fire together, and repeated
-    // tab switches should not each cost a session round-trip.
-    let lastFocusCheck = 0;
-    const focus = () => {
-      if (document.visibilityState !== "visible") return;
-      const now = Date.now();
-      if (now - lastFocusCheck < 30_000) return;
-      lastFocusCheck = now;
-      verify(false);
-    };
+    const focus = () => { if (document.visibilityState === "visible") verify(false); };
     verify(true);
     window.addEventListener(ACCOUNT_SCOPE_EVENT, changed);
     window.addEventListener("storage", storage);
