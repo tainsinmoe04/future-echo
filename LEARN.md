@@ -44,7 +44,7 @@
 - New reference direction: ivory lace, dark keepsake covers, antique metallic details and cream ring-bound collage. Treat these as optional journal treatments, not permission to overwrite users' existing books or immutable conversation evidence. A clean control layer should remain distinct from tactile page decoration.
 - First local increment: three new cover/page themes plus three generated movable decorations. Existing themes are preserved. Choosing a template changes paper/font or cover theme only; it never populates fictional memories or changes AI consent. Cover template selection switches an existing photograph to inset mode so the chosen cover can be seen; full-cover mode remains an explicit available option.
 - Emil guidance informed immediate, keyboard-accessible selection with reduced-motion support; UI UX Pro Max informed restrained spacing and legibility. GPT Taste's anti-generic visual principles were used, but its mandatory marketing hero/grid/GSAP patterns were not applied to this frequent-use editor because SPEC and the owner's journal direction take precedence.
-- Generated assets in `public/journal/` are original AI-generated artwork, not copies of the reference images. The concept mockup shown earlier is not a screenshot of the implementation. Actual local screenshots and automated checks are recorded in JOURNAL_PROGRESS.md. No deployment or whole-app redesign completion is claimed.
+- Generated assets in `public/journal/` are original AI-generated artwork, not copies of the reference images. The concept mockup shown earlier is not a screenshot of the implementation. Actual local screenshots and automated checks are recorded in docs/history/JOURNAL_PROGRESS.md. No deployment or whole-app redesign completion is claimed.
 
 
 ## 46. Tab closure, return check-in and sticker controls — 2026-11-05
@@ -163,14 +163,14 @@
 - Owner explicitly requested keeping Dots while finding/testing Burmese alternatives. Verified fixed model and ignored development override still select Dots. No env/provider/UI changes.
 - Added three fictional Burmese cases to the standalone evaluation tool. Live first-case probes: Gemma31B429/620ms, Gemma26B429/544ms; Dots200 but finish_reason=length/14.168s, correctly rejected. No retries or fabricated reply; no new Burmese quality claim.
 - Official SEA-LION model card documents Burmese adaptation and official prototype page advertises free API10RPM. Models GET without a key returned401. It requires a distinct owner-created trial key; no SEA-LION generation, new account, terms acceptance, OpenRouter-key reuse or paid call occurred. Candidate remains research-only, Dots baseline remains selected.
-- Script syntax check and lint pass. No app runtime code changed, no build/full-suite rerun claimed. Results and next access requirement recorded in DEMO_MODEL_EVALUATION.md.
+- Script syntax check and lint pass. No app runtime code changed, no build/full-suite rerun claimed. Results and next access requirement recorded in docs/history/DEMO_MODEL_EVALUATION.md.
 
 ## 36. Free-model demo comparison — 2026-10-27
 
 - Owner explicitly authorized agent-assisted sequential model comparison and demo selection, deferring Burmese. Two read-only agents checked public inventory and rubric; parent screened14 free IDs with fictional input. Do not send personal journal records or disclose keys during evaluations.
 - Dots was the only candidate with repeated valid conversational output:12/12 HTTP200/stop/schema across narrow language/honesty/repeat probes, median2.216s, range1.258–10.915s. Japanese corrupt, German grammar and generic tone remain issues. English/French/Chinese/Spanish/Portuguese samples are not native-speaker or safety certification. Selected fixed Dots again only as an English-first private demo; no paid/privacy fallback or production activation.
 - Actual app checks passed real English desktop and Spanish mobile replies, inline save with consent off and preserved evidence, no account/context-sync requests or page errors. The first keyboard attempt occurred during the app-written welcome typing and was blocked; a separate recheck waited for the welcome then passed Ctrl+Enter with a real reply/save/reopen. Existing owner's browser storage was not used.
-- Added bounded reproducible fictional evaluation script and DEMO_MODEL_EVALUATION.md. Alternate transport/reasoning profiles were evaluated only in the script and not adopted.114 unit tests, lint/build and security scanner pass. No keys, journal, remote migration, deployment or push changed; Supabase DNS/account blocker remains separate.
+- Added bounded reproducible fictional evaluation script and docs/history/DEMO_MODEL_EVALUATION.md. Alternate transport/reasoning profiles were evaluated only in the script and not adopted.114 unit tests, lint/build and security scanner pass. No keys, journal, remote migration, deployment or push changed; Supabase DNS/account blocker remains separate.
 
 ## 35. Requested Qwen trial and local account repair — 2026-10-27
 
@@ -257,7 +257,7 @@
 - Added repeatable isolated-browser coverage for malformed/larger valid imports, cancel/confirm/recovery/delete boundaries, synthetic storage quota failure, unsaved export and retry, stale-tab conflicts, unsupported-document preservation and keyboard settings/search. Synthetic QuotaExceededError is not real device eviction or full-disk certification. Existing beforeunload protection is explicitly exercised; no new durability guarantee is made.
 - Settings entry focuses its Back control, and returning restores the initiating Settings button. React guidance informed commit-time DOM focus via refs/effects, without redesign or imperative focus during render.
 - Added 16 paired English/Myanmar fictional safety cases plus corpus/static-instruction regression checks. These run offline and are not evidence that any model is safe. Real bilingual multi-turn evaluation, localized crisis resources and human review remain release gates.
-- PRE_CONNECTION_CHECKLIST.md records physical-device/assistive-technology steps and a proposed account export/deletion flow. Remote backup/provider deletion timing, account deletion semantics and local-device deletion behavior remain owner decisions. Do not implement a fake account deletion button or claim local backups erase account data.
+- docs/history/PRE_CONNECTION_CHECKLIST.md records physical-device/assistive-technology steps and a proposed account export/deletion flow. Remote backup/provider deletion timing, account deletion semantics and local-device deletion behavior remain owner decisions. Do not implement a fake account deletion button or claim local backups erase account data.
 - Use a verified free local port for QA. Windows localhost:3001 was owned by another Node process and served a 404 while the WSL app on that port returned 200; leave unrelated processes alone. This increment uses localhost:3187. Browser tests still use fabricated isolated storage, never the owner's open journal.
 
 ## 24. Non-API journey and journal completion — 2026-10-15
@@ -490,7 +490,7 @@ The following is inherited command-result provenance from the pre-existing LEARN
 
 ## 15. Journal storage foundation — 2026-10-14
 
-- The expanded journal roadmap is now authorized in SPEC Section 12. JOURNAL_PROGRESS.md records staged completion and remaining work; it was absent at the start of this continuation and was created from the repository's actual state.
+- The expanded journal roadmap is now authorized in SPEC Section 12. docs/history/JOURNAL_PROGRESS.md records staged completion and remaining work; it was absent at the start of this continuation and was created from the repository's actual state.
 - `journal-storage.ts` provides a versioned IndexedDB document with an atomic revision check. An old tab must fail with a conflict rather than overwrite newer work. Resolve writes only on transaction completion, not request success. Abort preserves the previous record.
 - Require a caller-provided snapshot validator for reads and writes. Unsupported existing envelopes or payloads are not treated as an empty database. Never recover by automatically seeding mock fixtures or clearing storage.
 - The adapter is deliberately not wired to the app yet: hydration, full schema validation, autosave status/recovery, and export/import must be implemented together before claiming persistence. Existing reset-on-refresh disclosures remain correct.

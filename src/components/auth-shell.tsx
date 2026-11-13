@@ -30,7 +30,7 @@ export function AuthShell({ mode }: { mode: "login" | "signup" }) {
   const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => { if (notice) feedback.current?.focus(); }, [notice]);
   useEffect(() => { const timer=setTimeout(()=>{ if(new URLSearchParams(window.location.search).get("google")==="failed") {
-    try { sessionStorage.removeItem("future-echo-account-start"); } catch {}
+    try { sessionStorage.removeItem("future-echo-account-start"); } catch { if (process.env.NODE_ENV !== "production") console.warn("future-echo: account-start flag could not be cleared."); }
     setNotice({text:"Google sign-in was not completed or expired. Please try again.",error:true});
   } },0); return ()=>clearTimeout(timer); },[]);
   async function google() {

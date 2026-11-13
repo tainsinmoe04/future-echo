@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useMockProductState } from "@/components/mock-product-state";
+import { useJournalState } from "@/components/mock-product-state";
 import { BackIcon, SettingsSectionIcon } from "./icons";
 import { FontPicker } from "./font-picker";
 import { JournalStorageStatus } from "./journal-storage-status";
@@ -16,7 +16,7 @@ export function SpaceSettings({ onClose }: { onClose: () => void }) {
     else backButton.current?.focus({ preventScroll: true });
     document.querySelector(".echo-settings-scroll")?.scrollTo(0, 0);
   }, [section]);
-  const { preferences, updatePreferences, identityVersions, activeIdentity } = useMockProductState();
+  const { preferences, updatePreferences, identityVersions, activeIdentity } = useJournalState();
   return <section className="echo-settings" data-settings-view={section}>
     <header className="echo-space-header"><button ref={backButton} className="echo-icon-button" aria-label={section === "overview" ? "Back to Your Space" : "Back to Settings"} onClick={() => section === "overview" ? onClose() : setSection("overview")}><BackIcon /></button><h1>Settings</h1><span className="settings-spacer" /></header>
     <div className="settings-workspace">

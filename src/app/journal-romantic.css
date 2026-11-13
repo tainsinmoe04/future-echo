@@ -17,22 +17,22 @@
 .theme-lace { background: #20201f !important; color: #f6f0e4 !important; }
 .theme-nocturne { background: #1a2120 !important; color: #e5d6b7 !important; }
 .theme-poetry { background: #eee6d5 !important; color: #27231f !important; }
-.journal-template-thumb.theme-lace::before,.journal-cover.theme-lace::before { content: ""; position: absolute; inset: 0 0 auto; height: 34%; background: url('/journal/ivory-lace.png') center / 120% auto no-repeat; pointer-events: none; opacity: .95; }
-.journal-template-ornament { position: absolute; top: 12%; left: 15%; width: 70%; height: 59%; background: url('/journal/ribbon-key.png') center / contain no-repeat; pointer-events: none; }
-.theme-nocturne .journal-template-ornament { background-image: url('/journal/antique-frame.png'); }
-.theme-poetry .journal-template-ornament { background-image: url('/journal/antique-frame.png'); opacity: .85; }
+.journal-template-thumb.theme-lace::before,.journal-cover.theme-lace::before { content: ""; position: absolute; inset: 0 0 auto; height: 34%; background: url('/journal/ivory-lace.webp') center / 120% auto no-repeat; pointer-events: none; opacity: .95; }
+.journal-template-ornament { position: absolute; top: 12%; left: 15%; width: 70%; height: 59%; background: url('/journal/ribbon-key.webp') center / contain no-repeat; pointer-events: none; }
+.theme-nocturne .journal-template-ornament { background-image: url('/journal/antique-frame.webp'); }
+.theme-poetry .journal-template-ornament { background-image: url('/journal/antique-frame.webp'); opacity: .85; }
 .journal-cover:is(.theme-lace,.theme-nocturne,.theme-poetry) { border: 1px solid #ffffff25; box-shadow: inset 8px 0 8px #0004, 0 12px 25px #0004; }
 .journal-cover.theme-nocturne { outline: 1px solid #a7976c80; outline-offset: -13px; }
-.journal-cover.without-cover-photo:is(.theme-lace,.theme-nocturne,.theme-poetry)::after { content: ""; position: absolute; bottom: 18px; right: 24px; width: 116px; height: 130px; background: url('/journal/ribbon-key.png') center / contain no-repeat; pointer-events: none; }
-.journal-cover.without-cover-photo.theme-nocturne::after { background-image: url('/journal/antique-frame.png'); }
-.journal-cover.without-cover-photo.theme-poetry::after { background-image: url('/journal/antique-frame.png'); opacity: .8; }
+.journal-cover.without-cover-photo:is(.theme-lace,.theme-nocturne,.theme-poetry)::after { content: ""; position: absolute; bottom: 18px; right: 24px; width: 116px; height: 130px; background: url('/journal/ribbon-key.webp') center / contain no-repeat; pointer-events: none; }
+.journal-cover.without-cover-photo.theme-nocturne::after { background-image: url('/journal/antique-frame.webp'); }
+.journal-cover.without-cover-photo.theme-poetry::after { background-image: url('/journal/antique-frame.webp'); opacity: .8; }
 .journal-cover:is(.theme-lace,.theme-nocturne,.theme-poetry) .journal-cover-title { font-family: Georgia,'Times New Roman',serif; font-weight: 400; line-height: 1.15; letter-spacing: -.035em; }
 .journal-cover.theme-lace .journal-cover-title { margin-top: 48px; }
 .journal-cover.theme-nocturne .journal-cover-photo { border-radius: 50%; border: 7px ridge #b1a58a; }
 .echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne) { background-image: none; border-radius: 2px 7px 7px 2px; padding-top: 70px; padding-bottom: 64px; box-shadow: inset 5px 0 9px #0002,0 16px 40px #0003; }
 .echo-paper:is(.paper-lace,.paper-poetry) { background-color: #f0e9da; color: #29251f; }
 .echo-paper.paper-nocturne { color-scheme: dark; background-color: #202421; color: #eee7d8; }
-.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::before,.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::after { content: ""; position: absolute; z-index: -1; left: 0; right: 0; height: 62px; background: url('/journal/ivory-lace.png') center / 100% auto no-repeat; pointer-events: none; }
+.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::before,.echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::after { content: ""; position: absolute; z-index: -1; left: 0; right: 0; height: 62px; background: url('/journal/ivory-lace.webp') center / 100% auto no-repeat; pointer-events: none; }
 .echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::before { top: 0; }
 .echo-paper:is(.paper-lace,.paper-poetry,.paper-nocturne)::after { bottom: 0; transform: rotate(180deg); }
 .echo-paper:is(.paper-lace,.paper-poetry)::before,.echo-paper:is(.paper-lace,.paper-poetry)::after { filter: sepia(.22) brightness(.85); opacity: .7; }

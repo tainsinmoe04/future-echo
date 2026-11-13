@@ -212,7 +212,7 @@
 .cover-photo { position: absolute; width: 49%; aspect-ratio: .85; bottom: 9%; right: 10%; padding: 7px 7px 20px; background: #f4f0e6; box-shadow: 1px 4px 7px #402f3940; transform: rotate(6deg); }
 .cover-photo::before, .paper-polaroid::before { content: ""; position: absolute; z-index: 1; top: -9px; left: 30%; width: 45%; height: 25px; background: #dcd4b8a8; transform: rotate(-7deg); box-shadow: 0 0 2px #b3a58c30; }
 .cover-photo img { width: 100%; height: 100%; object-fit: cover; }
-.echo-sticker { display: inline-block; width: 80px; height: 80px; background-image: url('/scrapbook/stickers.png'); background-repeat: no-repeat; background-size: 200% 200%; pointer-events: none; filter: drop-shadow(1px 2px 1px #0002); }
+.echo-sticker { display: inline-block; width: 80px; height: 80px; background-image: url('/scrapbook/stickers.webp'); background-repeat: no-repeat; background-size: 200% 200%; pointer-events: none; filter: drop-shadow(1px 2px 1px #0002); }
 .echo-ui .journal-decoration { background-image: none; }
 .echo-ui .sticker-tape-rose { background-image: repeating-linear-gradient(45deg,#dfa7ae,#dfa7ae 5px,#edc0c4 5px,#edc0c4 10px); background-size: auto; }
 .echo-ui .sticker-tape-grid { background-image: repeating-linear-gradient(0deg,transparent,transparent 8px,#8899ad 8px,#8899ad 9px), repeating-linear-gradient(90deg,#cbd7df,#cbd7df 8px,#8899ad 8px,#8899ad 9px); background-size: auto; }

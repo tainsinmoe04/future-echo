@@ -1,21 +1,49 @@
 "use client";
 
+import "@/app/journal-romantic.css";
 import Link from "next/link";
-import { Fragment, Suspense, useEffect, useRef, useState } from "react";
+import { memo, Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import type { ConversationMessage } from "@/lib/domain";
 import { useMockProductState } from "@/components/mock-product-state";
 import { EchoDialog } from "@/components/echo/dialog";
 import { PersonalSpace } from "@/components/echo/personal-space";
 import { SaveReview } from "@/components/echo/save-review";
 import { BackIcon, OrbitIcon, PlusIcon, SendIcon } from "@/components/echo/icons";
 import { MessageActions } from "@/components/echo/message-actions";
-import { MAX_MESSAGE_LENGTH } from "@/lib/redaction";
+import { MAX_MESSAGE_LENGTH, myanmarLang } from "@/lib/redaction";
 import { horizonDistance } from "@/lib/personal-space";
 import { localDate } from "@/lib/local-date";
 import type { MessengerThread } from "@/lib/mock-messenger";
 import { PlaylistCard } from "@/components/echo/playlist-card";
 
 const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
+
+const MessageRow = memo(function MessageRow({ message, previousUser, identityId, readOnly, saving, settledValue, onStartSave, onLeave, onSave, onCancelSave, onOpenMoment }: {
+  message: ConversationMessage;
+  previousUser?: ConversationMessage;
+  identityId: string;
+  readOnly: boolean;
+  saving: boolean;
+  settledValue?: string | true;
+  onStartSave: (messageId: string, trigger: HTMLElement | null) => void;
+  onLeave: (messageId: string) => void;
+  onSave: (messageId: string, savedId: string) => void;
+  onCancelSave: () => void;
+  onOpenMoment: (id: string) => void;
+}) {
+  const options = Boolean(previousUser && !message.id.startsWith("welcome-") && !readOnly && !settledValue);
+  return <Fragment>
+    <article className={`echo-message ${message.role === "user" ? "from-present" : "from-future"}${options ? " has-options" : ""}`}>
+      <span className="sr-only">{message.role === "user" ? "You" : message.safety === "support" ? "Support outside the future-self perspective" : "Your possible future self"}: </span>
+      {message.id.startsWith("welcome-") && <small>{message.id.startsWith("welcome-back-") ? "Check-in · written by Future Echo" : "Welcome · written by Future Echo"}</small>}{message.safety === "support" && <small>Stepping out of the future-self perspective</small>}
+      <p lang={myanmarLang(message.content)}>{message.content}</p>{message.playlist && <PlaylistCard playlist={message.playlist} messageId={message.id} />}
+      {options && <MessageActions disabled={saving} onSave={(trigger) => onStartSave(message.id, trigger)} onLeave={() => onLeave(message.id)} />}
+    </article>
+    {previousUser && saving && <SaveReview user={previousUser} reply={message} identityId={identityId} onCancel={onCancelSave} onSave={(id) => onSave(message.id, id)} />}
+    {typeof settledValue === "string" && <div className="echo-saved-line" role="status">Kept in your memory book. <button onClick={() => onOpenMoment(settledValue)}>Open moment</button></div>}
+  </Fragment>;
+});
 
 function Conversation() {
   const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, connectedProvider, liveAIAvailable, trialAI, trialProvider, connectionError, loadPastConversation, connectAI } = useMockProductState();
@@ -34,6 +62,21 @@ function Conversation() {
   const following = useRef(true);
   const reviewTrigger = useRef<HTMLElement | null>(null);
   const year = identity?.horizon.targetMonth.slice(0, 4);
+  // One forward pass instead of a per-message slice+findLast (O(n²) → O(n)).
+  const previousUsers = useMemo(() => {
+    const map = new Map<string, ConversationMessage>();
+    let lastUser: ConversationMessage | undefined;
+    for (const message of thread.messages) {
+      if (message.role === "user") lastUser = message;
+      else if (lastUser) map.set(message.id, lastUser);
+    }
+    return map;
+  }, [thread.messages]);
+  const startSave = useCallback((messageId: string, trigger: HTMLElement | null) => { reviewTrigger.current = trigger; setSaving(messageId); }, []);
+  const leaveMessage = useCallback((messageId: string) => { setSettled((current) => ({ ...current, [messageId]: true })); composer.current?.focus(); }, []);
+  const finishSave = useCallback((messageId: string, savedId: string) => { setSettled((current) => ({ ...current, [messageId]: savedId })); setSaving(null); requestAnimationFrame(() => composer.current?.focus()); }, []);
+  const cancelSave = useCallback(() => { setSaving(null); requestAnimationFrame(() => reviewTrigger.current?.focus()); }, []);
+  const openMoment = useCallback((momentId: string) => setSpace({ momentId }), []);
 
   useEffect(() => {
     if (identity && !readOnly) ensureGreeting(identity.id);
@@ -69,20 +112,11 @@ function Conversation() {
           <span className="echo-presence-rest">{readOnly ? "From an earlier direction" : "A little farther along"}</span>
         </div>
         <div role="log" aria-label="Conversation messages" aria-live="polite" aria-relevant="additions text" className="echo-messages">
-          {thread.messages.map((message, index) => {
-            const previousUser=message.role==="assistant"?thread.messages.slice(0,index).findLast(item=>item.role==="user"):undefined;
-            const options=Boolean(previousUser&&!message.id.startsWith("welcome-")&&!readOnly&&!settled[message.id]);
-            return <Fragment key={message.id}>
-              <article className={`echo-message ${message.role==="user"?"from-present":"from-future"}${options?" has-options":""}`}>
-                <span className="sr-only">{message.role==="user"?"You":message.safety==="support"?"Support outside the future-self perspective":"Your possible future self"}: </span>
-                {message.id.startsWith("welcome-")&&<small>{message.id.startsWith("welcome-back-") ? "Check-in · written by Future Echo" : "Welcome · written by Future Echo"}</small>}{message.safety==="support"&&<small>Stepping out of the future-self perspective</small>}
-                <p>{message.content}</p>{message.playlist&&<PlaylistCard playlist={message.playlist} messageId={message.id}/>}
-                {options&&<MessageActions disabled={saving===message.id} onSave={trigger=>{reviewTrigger.current=trigger;setSaving(message.id);}} onLeave={()=>{setSettled(current=>({...current,[message.id]:true}));composer.current?.focus();}}/>}
-              </article>
-              {previousUser&&saving===message.id&&<SaveReview key={message.id} user={previousUser} reply={message} identityId={identity.id} onCancel={()=>{setSaving(null);requestAnimationFrame(()=>reviewTrigger.current?.focus());}} onSave={id=>{setSettled(current=>({...current,[message.id]:id}));setSaving(null);requestAnimationFrame(()=>composer.current?.focus());}}/>}
-              {typeof settled[message.id]==="string"&&<div className="echo-saved-line" role="status">Kept in your memory book. <button onClick={()=>setSpace({momentId:String(settled[message.id])})}>Open moment</button></div>}
-            </Fragment>;
-          })}
+          {thread.messages.map((message) => (
+            <MessageRow key={message.id} message={message} previousUser={previousUsers.get(message.id)}
+              identityId={identity.id} readOnly={readOnly} saving={saving === message.id} settledValue={settled[message.id]}
+              onStartSave={startSave} onLeave={leaveMessage} onSave={finishSave} onCancelSave={cancelSave} onOpenMoment={openMoment} />
+          ))}
         </div>
         {thread.typing && !readOnly && <div className="echo-presence echo-typing is-typing" role="status"><span><i aria-hidden="true"><b /><b /><b /></i>{year} · Your Future Self is typing…</span></div>}
         {readOnly && !thread.messages.length && <p className="echo-muted">No conversation was kept for this version.</p>}

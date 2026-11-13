@@ -5,6 +5,9 @@ export const MAX_NOTE_LENGTH = 2000;
 export const MAX_JOURNAL_LENGTH = 20000;
 export const MAX_JOURNAL_NOTE_LENGTH = MAX_NOTE_LENGTH;
 
+/** Marks text containing Myanmar script so screen readers use the right voice. */
+export const myanmarLang = (value: string): "my" | undefined => /\p{Script=Myanmar}/u.test(value) ? "my" : undefined;
+
 function redactionUnits(value: string): string[] {
   // Keep Latin words intact, while Myanmar can be redacted at complete grapheme
   // boundaries even without spaces. Never normalize, insert or reorder text.

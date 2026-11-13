@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useMockProductState } from "@/components/mock-product-state";
+import { useJournalState } from "@/components/mock-product-state";
 import { readJournalBackup, serializeJournalBackup } from "@/lib/journal-backup";
 import { validateJournalMedia } from "@/lib/journal-media";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
@@ -12,7 +12,7 @@ function download(source: string, suffix = "") {
   document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export function JournalStorageStatus({ backup = false }: { backup?: boolean }) {
-  const { storageStatus, storageError, retryStorage, exportJournal, restoreJournal, readRecovery, deleteRecovery } = useMockProductState();
+  const { storageStatus, storageError, retryStorage, exportJournal, restoreJournal, readRecovery, deleteRecovery } = useJournalState();
   const [error, setError] = useState(""); const [notice, setNotice] = useState("");
   const [candidate, setCandidate] = useState<JournalSnapshot | null>(null);
   const [recovery, setRecovery] = useState<JournalSnapshot | null>(null);

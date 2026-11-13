@@ -2,12 +2,16 @@
   "name": "future-echo",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
     "dev:local": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test \".test-dist/tests/*.test.js\"",
     "test:db": "node scripts/verify-backend-sql.mjs",
     "test:security": "node scripts/verify-repository-security.mjs --self-test && node scripts/verify-repository-security.mjs",
@@ -22,11 +26,16 @@
     "@electric-sql/pglite": "0.5.10",
     "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "fake-indexeddb": "^6.2.8",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

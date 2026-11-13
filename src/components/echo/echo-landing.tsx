@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { backendRequest } from "@/lib/backend-client";
+import { myanmarVariables } from "@/app/myanmar-fonts";
 
 const copy = {
   en: {
@@ -56,7 +57,7 @@ export function EchoLanding() {
       .then(({ user }) => { if (active) setSignedIn(Boolean(user?.id)); }).catch(() => {});
     return () => { active = false; };
   }, []);
-  return <main className="across-home" lang={locale}>
+  return <main className={`across-home ${myanmarVariables}`} lang={locale}>
     <header className="across-header">
       <Link href="/" className="across-wordmark"><Image src="/brand/across-mark.svg" alt="" width={23} height={23} />Future Echo</Link>
       <div className="across-header-actions">

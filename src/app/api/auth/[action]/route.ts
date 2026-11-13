@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: Params) {
       const db = new SupabaseBackend(config), value = await db.auth("token?grant_type=pkce",{auth_code:flow.code,code_verifier:flow.verifier});
       const session = parseAuthSession(value); if (!session) throw new ApiError(502,"auth_response","Sign-in could not be verified.");
       const verified = await db.user(new Request(config.origin,{headers:{cookie:`fe-access=${session.accessToken}`}}));
-      if (config.serviceKey) await db.rpc("fe_attest_adult",{p_user:verified.id});
+      if (config.serviceKey) await db.rpc("fe_attest_adult",{p_user:verified.id},{ userId: verified.id });
       const destination = new URL(flow.destination, config.origin);
       destination.searchParams.set("google", "success");
       const result = NextResponse.redirect(destination,303), cookies = sessionResponse(value,new URL(config.origin).protocol==="https:");
@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: Params) {
     if (action === "attest-adult") {
       const input = await readJson(request,512);
       if (!object(input) || !exact(input,["adultConfirmed"]) || input.adultConfirmed!==true) throw new ApiError(400,"adult_required","Confirm you are 18 or older before connecting live AI.");
-      const user=await db.user(request); await db.rpc("fe_attest_adult",{p_user:user.id}); return apiJson({confirmed:true});
+      const user=await db.user(request); await db.rpc("fe_attest_adult",{p_user:user.id},{ userId: user.id }); return apiJson({confirmed:true});
     }
     if (action === "google") {
       if (process.env.FUTURE_ECHO_GOOGLE_AUTH !== "true") throw new ApiError(503,"google_setup","Google sign-in needs provider setup. Email login or the device-only journal remain available.");
@@ -78,7 +78,7 @@ export async function POST(request: Request, { params }: Params) {
     const session = parseAuthSession(value, action === "signup");
     if (!session) return sessionResponse(value, new URL(config.origin).protocol === "https:", true);
     stage = "adult-attestation";
-    if (object(value.user) && typeof value.user.id === "string" && config.serviceKey) await db.rpc("fe_attest_adult", { p_user: value.user.id });
+    if (object(value.user) && typeof value.user.id === "string" && config.serviceKey) await db.rpc("fe_attest_adult", { p_user: value.user.id }, { userId: value.user.id });
     stage = "session-cookie";
     return sessionResponse(value, new URL(config.origin).protocol === "https:", action === "signup");
   } catch (error) {

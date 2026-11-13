@@ -6,6 +6,7 @@ import { StickerLayer, type StickerEditing } from "./sticker-layer";
 import { PageObject, type PageEditing } from "./page-object";
 import { FramedPhoto } from "./photo-framing";
 import { momentDay } from "@/lib/local-date";
+import { myanmarLang } from "@/lib/redaction";
 import { pageObjectIds } from "@/lib/journal-tools";
 import { Sticker } from "./sticker";
 
@@ -46,9 +47,9 @@ export function MomentPaper({ moment, placements = stickersForMoment(moment), ed
       <FramedPhoto src={photo.src} alt={photo.caption || "A photo chosen for this moment"} crop={photo.crop} />
       {photo.caption && <figcaption className="note-styled">{photo.caption}</figcaption>}
     </figure></PageObject>)}</div>
-    <PageObject page={page} {...objectProps("words", "My words")}><section className="paper-text"><h2>My words</h2><p className="paper-original">{moment.originalExcerpt}</p></section></PageObject>
-    {moment.relatedAiReply && <PageObject page={page} {...objectProps("reply", "Conversation reply")}><section className="paper-reply"><h2>From our conversation</h2><p>{moment.relatedAiReply}</p></section></PageObject>}
-    {moment.myNote && <PageObject page={page} {...objectProps("note", "My Note")}><section className="paper-note"><h2>My Note</h2><p className="note-styled">{moment.myNote}</p></section></PageObject>}
+    <PageObject page={page} {...objectProps("words", "My words")}><section className="paper-text"><h2>My words</h2><p className="paper-original" lang={myanmarLang(moment.originalExcerpt)}>{moment.originalExcerpt}</p></section></PageObject>
+    {moment.relatedAiReply && <PageObject page={page} {...objectProps("reply", "Conversation reply")}><section className="paper-reply"><h2>From our conversation</h2><p lang={myanmarLang(moment.relatedAiReply)}>{moment.relatedAiReply}</p></section></PageObject>}
+    {moment.myNote && <PageObject page={page} {...objectProps("note", "My Note")}><section className="paper-note"><h2>My Note</h2><p className="note-styled" lang={myanmarLang(moment.myNote)}>{moment.myNote}</p></section></PageObject>}
     <p className="paper-footnote">Kept by you · {moment.consent.useInAiContext ? "Saved words allowed in AI context" : "Not shared as AI context"}</p>
     {moment.music && <a className="journal-music-link" href={moment.music.url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer"><span aria-hidden="true">♫</span><span><small>A song for this page · opens music site</small><strong>{moment.music.title}</strong></span><span aria-hidden="true">↗</span></a>}
     {pageEditing || moment.pageTransforms ? <div className="echo-sticker-layer direct-stickers">{placements.map((item) => <PageObject page={page} key={item.id} {...objectProps(`sticker:${item.id}`, `${item.name} sticker`)} baseRotation={item.rotation} className="direct-sticker" style={{ position: "absolute", left: `${item.x}%`, top: `${item.y}%`, width: `${item.size}%` }}><span style={{ display: "block", width: "100%", height: "100%" }}><Sticker name={item.name} src={item.src} /></span></PageObject>)}</div>

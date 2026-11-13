@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useMockProductState } from "@/components/mock-product-state";
+import { useJournalState } from "@/components/mock-product-state";
 import { EchoDialog } from "@/components/echo/dialog";
 import { BackIcon, CloseIcon } from "@/components/echo/icons";
 import { JournalStorageStatus } from "@/components/echo/journal-storage-status";
@@ -16,7 +16,7 @@ const formatDate = (date: string) => new Date(date).toLocaleDateString("en-US", 
 const horizonChoices = HORIZON_CHOICES;
 
 export default function FutureSelf() {
-  const { identityVersions, activeIdentity, moments, archiveActiveIdentity, createIdentityVersion, storageStatus, journalSnapshot, updateJournal } = useMockProductState();
+  const { identityVersions, activeIdentity, moments, archiveActiveIdentity, createIdentityVersion, storageStatus, journalSnapshot, updateJournal } = useJournalState();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftMonth, setDraftMonth] = useState("");

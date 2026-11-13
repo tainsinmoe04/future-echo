@@ -35,9 +35,27 @@ export class SupabaseBackend {
     if (expectedAccount !== null && expectedAccount !== user.id.toLowerCase()) throw new ApiError(409, "account_changed", "The active account changed. Reopen Future Echo before continuing.");
     return { id: user.id, email: typeof user.email === "string" ? user.email : "" };
   }
-  async rest(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): Promise<unknown> {
+  async rest(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string>; scope?: { userId: string } } = {}): Promise<unknown> {
     if (!this.config.serviceKey) throw new ApiError(503, "database_setup", "The server database is not configured yet.");
     if (!/^[A-Za-z0-9_.-]+$/.test(this.config.serviceKey)) throw new ApiError(503,"database_key_format","The server database key has invalid characters. Re-copy the actual Supabase secret/service-role key into SUPABASE_SERVICE_ROLE_KEY, not the masked display or a quoted env line.");
+    // The service key bypasses RLS, so every table operation must carry one
+    // verified account scope; tenant isolation never relies on caller-built filters.
+    const scope = options.scope;
+    if (!scope || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scope.userId))
+      throw new ApiError(500, "account_scope", "This request must be limited to one signed-in account.");
+    const sameAccount = (value: unknown): boolean => typeof value === "string" && value.toLowerCase() === scope.userId.toLowerCase();
+    let target = path;
+    if (path.startsWith("rpc/")) {
+      if (object(options.body) && options.body.p_user !== undefined && !sameAccount(options.body.p_user))
+        throw new ApiError(403, "account_scope", "This request must target the signed-in account.");
+    } else if ((options.method ?? "GET") === "POST") {
+      // Upserts name the owner in the body (on_conflict=user_id,...); require it to match.
+      if (!object(options.body) || !sameAccount(options.body.user_id))
+        throw new ApiError(403, "account_scope", "This request must target the signed-in account.");
+    } else {
+      // GET/DELETE/PATCH table operations get the tenant filter appended centrally.
+      target += `${target.includes("?") ? "&" : "?"}user_id=eq.${encodeURIComponent(scope.userId)}`;
+    }
     // Modern server keys are opaque API keys, not JWT bearer tokens.
     // Legacy service_role JWTs still need their existing Authorization header.
     const headers = new Headers({ "Content-Type": "application/json", ...options.headers });
@@ -45,10 +63,10 @@ export class SupabaseBackend {
     if (this.config.serviceKey.startsWith("sb_secret_")) headers.delete("Authorization");
     else headers.set("Authorization", `Bearer ${this.config.serviceKey}`);
     let response: Response;
-    try { response = await this.fetcher(`${this.config.supabaseUrl}/rest/v1/${path}`, { method: options.method ?? "GET", headers, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }), cache: "no-store", signal: AbortSignal.timeout(12000) }); }
+    try { response = await this.fetcher(`${this.config.supabaseUrl}/rest/v1/${target}`, { method: options.method ?? "GET", headers, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }), cache: "no-store", signal: AbortSignal.timeout(12000) }); }
     catch { throw new ApiError(503, "database_unavailable", "Your account data could not be reached. Local pages have not been replaced."); }
     if (!response.ok) {
-      let details = ""; try { const body = await response.json(); details = typeof body.message === "string" ? body.message : ""; } catch {}
+      let details = ""; try { const body = await response.json(); details = typeof body.message === "string" ? body.message : ""; } catch { if (process.env.NODE_ENV !== "production") console.warn("future-echo: upstream error body was not parseable."); }
       if (/quota|rate_limit/.test(details)) throw new ApiError(429, "usage_limit", "Your reply allowance or short-term request limit has been reached.");
       if (/direction_changed|not_active/.test(details)) throw new ApiError(409, "direction_changed", "Connect your current direction before sending another message.");
       if (/adult_required/.test(details)) throw new ApiError(403, "adult_required", "Confirm that you are 18 or older in account settings.");
@@ -57,5 +75,5 @@ export class SupabaseBackend {
     if (response.status === 204) return null;
     return response.json();
   }
-  rpc(name: string, body: unknown) { return this.rest(`rpc/${name}`, { method: "POST", body }); }
+  rpc(name: string, body: unknown, scope: { userId: string }) { return this.rest(`rpc/${name}`, { method: "POST", body, scope }); }
 }

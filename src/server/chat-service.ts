@@ -16,17 +16,17 @@ export function messageFromRow(value: unknown): ConversationMessage {
   return { id: value.id, role: value.role as "user" | "assistant", content: value.content, createdAt: value.created_at, ...(isPlaylist(value.playlist) ? { playlist: value.playlist } : {}), safety: value.safety === "support" ? "support" : "normal" };
 }
 export async function createReply(db: SupabaseBackend, userId: string, input: ReturnType<typeof parseChatInput>, provider?: typeof requestFutureReply) {
-  const user = encodeURIComponent(userId), identity = encodeURIComponent(input.identityId);
-  const directions = await db.rest(`fe_directions?user_id=eq.${user}&id=eq.${identity}&active=eq.true&select=definition&limit=1`);
+  const identity = encodeURIComponent(input.identityId), scope = { userId };
+  const directions = await db.rest(`fe_directions?id=eq.${identity}&active=eq.true&select=definition&limit=1`, { scope });
   if (!Array.isArray(directions) || !directions[0]?.definition) throw new ApiError(409, "direction", "Connect your current direction in Settings first.");
-  const reservation = await db.rpc("fe_reserve_reply", { p_user: userId, p_request: input.requestId, p_identity: input.identityId, p_hash: createHash("sha256").update(input.message).digest("hex") });
+  const reservation = await db.rpc("fe_reserve_reply", { p_user: userId, p_request: input.requestId, p_identity: input.identityId, p_hash: createHash("sha256").update(input.message).digest("hex") }, scope);
   if (!object(reservation)) throw new ApiError(503, "reservation", "The reply could not be reserved.");
-  if (reservation.status === "completed") { const rows = await db.rest(`fe_messages?user_id=eq.${user}&id=eq.${input.requestId}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=*&limit=1`); if (Array.isArray(rows) && rows[0]) return messageFromRow(rows[0]); throw new ApiError(410, "expired", "This reply has left conversation history."); }
+  if (reservation.status === "completed") { const rows = await db.rest(`fe_messages?id=eq.${input.requestId}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=*&limit=1`, { scope }); if (Array.isArray(rows) && rows[0]) return messageFromRow(rows[0]); throw new ApiError(410, "expired", "This reply has left conversation history."); }
   if (reservation.status !== "reserved") throw new ApiError(409, reservation.status === "pending" ? "pending_request" : "failed_request", reservation.status === "pending" ? "This reply is already being prepared. Wait before trying again." : "That attempt did not finish. Send a new attempt when you are ready.");
   try {
     const [rows, memories] = await Promise.all([
-      db.rest(`fe_messages?user_id=eq.${user}&identity_id=eq.${identity}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&order=created_at.desc&limit=10&select=*`),
-      db.rest(`fe_moments?user_id=eq.${user}&identity_id=eq.${identity}&select=record&limit=1000`),
+      db.rest(`fe_messages?identity_id=eq.${identity}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&order=created_at.desc&limit=10&select=*`, { scope }),
+      db.rest(`fe_moments?identity_id=eq.${identity}&select=record&limit=1000`, { scope }),
     ]);
     if (!Array.isArray(rows) || !Array.isArray(memories)) throw new ApiError(503, "context", "Conversation context could not be loaded.");
     const terms = new Set(input.message.toLowerCase().split(/\s+/).filter((s) => s.length > 2));
@@ -37,9 +37,9 @@ export async function createReply(db: SupabaseBackend, userId: string, input: Re
     const context = buildAIContext({ currentMessage: input.message, recentMessages: rows.map(messageFromRow).reverse(), activeIdentityVersion: directions[0].definition as FutureSelfIdentityVersion, relevantSavedMoments: saved });
     const reply = provider ? await provider(context, { key: db.config.geminiKey, model: db.config.model }) : db.config.provider === "sealion" ? await requestSeaLionReply(context, db.config.seaLionKey ?? "") : await requestFutureReply(context, { key: db.config.geminiKey, model: db.config.model });
     if (!requestsMusic(input.message)) reply.playlist = null;
-    const result = await db.rpc("fe_finish_reply", { p_user: userId, p_request: input.requestId, p_message: input.message, p_reply: reply });
+    const result = await db.rpc("fe_finish_reply", { p_user: userId, p_request: input.requestId, p_message: input.message, p_reply: reply }, scope);
     if (!object(result)) throw new ApiError(503, "save_reply", "The reply could not be saved."); return result;
   } catch (error) {
-    await db.rest(`fe_ai_requests?user_id=eq.${user}&request_id=eq.${input.requestId}&status=eq.pending`, { method: "PATCH", body: { status: "failed" } }).catch(() => {}); throw error;
+    await db.rest(`fe_ai_requests?request_id=eq.${input.requestId}&status=eq.pending`, { method: "PATCH", body: { status: "failed" }, scope }).catch(() => {}); throw error;
   }
 }

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { backendRequest } from "@/lib/backend-client";
 import { notifyAccountSessionChanged } from "@/lib/account-scope";
-import { useMockProductState } from "../mock-product-state";
+import { useConnectionState } from "../mock-product-state";
 export function BackendSettings() {
-  const { account, trialAI, trialProvider, connectedProvider, connectedAI, connectAI, disconnectAI } = useMockProductState();
+  const { account, trialAI, trialProvider, connectedProvider, connectedAI, connectAI, disconnectAI } = useConnectionState();
   const [ready, setReady] = useState(false), [email, setEmail] = useState<string>(), [busy, setBusy] = useState(false), [notice, setNotice] = useState("");
   const [adultConfirmed,setAdultConfirmed]=useState(false);
   useEffect(() => { if (trialAI) return; let current = true; Promise.all([backendRequest<{ aiConfigured: boolean }>("/api/backend/status"), backendRequest<{ user: { id: string; email: string } | null }>("/api/auth/session")]).then(([status, session]) => { if (current) { setReady(status.aiConfigured); setEmail(session.user?.id === account ? session.user?.email : undefined); } }).catch((error) => { if (current) setNotice(error.message); }); return () => { current = false; }; }, [account, trialAI]);

@@ -1,11 +1,22 @@
 export class ApiError extends Error { constructor(public status: number, public code: string, message: string) { super(message); } }
 export function apiJson(value: unknown, status = 200): Response { return Response.json(value, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
 export function apiFailure(cause: unknown): Response { return cause instanceof ApiError ? apiJson({ error: cause.message, code: cause.code }, cause.status) : apiJson({ error: "This request could not be completed. Please try again.", code: "server_error" }, 500); }
-export function requireOrigin(request: Request, origin: string) {
+function configuredOrigin(origin: string): URL {
   let configured: URL;
   try { configured = new URL(origin); } catch { throw new ApiError(503, "origin_setup", "The application origin is not configured safely."); }
   if (!["http:", "https:"].includes(configured.protocol) || configured.username || configured.password) throw new ApiError(503, "origin_setup", "The application origin is not configured safely.");
+  return configured;
+}
+export function requireOrigin(request: Request, origin: string) {
+  const configured = configuredOrigin(origin);
   if (request.headers.get("origin") !== configured.origin || request.headers.get("sec-fetch-site") === "cross-site") throw new ApiError(403, "origin", "This request must come from Future Echo.");
+}
+/** Safe methods may omit Origin in some browsers; cross-site reads are still rejected. */
+export function requireReadOrigin(request: Request, origin: string) {
+  const configured = configuredOrigin(origin);
+  if (request.headers.get("sec-fetch-site") === "cross-site") throw new ApiError(403, "origin", "This request must come from Future Echo.");
+  const header = request.headers.get("origin");
+  if (header !== null && header !== configured.origin) throw new ApiError(403, "origin", "This request must come from Future Echo.");
 }
 export async function readJson(request: Request, maximum = 16384): Promise<unknown> {
   if (!Number.isSafeInteger(maximum) || maximum < 1) throw new RangeError("JSON byte limit must be a positive safe integer.");

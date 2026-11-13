@@ -39,20 +39,40 @@ const uniqueIds = (items: readonly { id: unknown }[]) => new Set(items.map((item
 const crop = (v: unknown) => object(v) && keys(v, ["x", "y", "zoom", "aspect"]) && range(v.x, 0, 100) && range(v.y, 0, 100) && range(v.zoom, 1, 3) && ["square", "portrait", "landscape", "original"].includes(v.aspect as string);
 const layers = (v: unknown) => Array.isArray(v) && v.length <= 32 && new Set(v).size === v.length && v.every((s) => typeof s === "string" && /^(title|date|year|subtitle|words|reply|note|(?:photo|sticker):[a-zA-Z0-9_-]{1,160})$/.test(s));
 
+/** The check is pure, so identical sources (including re-parsed draft photos) skip the decode. */
+const verifiedSources = new Set<string>();
+const VERIFIED_SOURCE_LIMIT = 256;
+/** Unchanged moment objects keep their verdict across per-keystroke snapshot writes. */
+const validatedMoments = new WeakSet<object>();
+
 /** No external URLs, SVG, blobs or arbitrary local paths can enter a restored journal. */
 export function isJournalImageSource(value: unknown): value is string {
   if (typeof value !== "string") return false;
-  if (["/scrapbook/study.png", "/scrapbook/coffee.png", "/scrapbook/sunset.png"].includes(value)) return true;
+  if (verifiedSources.has(value)) return true;
+  if (["/scrapbook/study.png", "/scrapbook/coffee.png", "/scrapbook/sunset.png",
+    "/scrapbook/study.webp", "/scrapbook/coffee.webp", "/scrapbook/sunset.webp"].includes(value)) return true;
   if (value.length > 7_000_000) return false;
   const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
   if (!match || match[2].length % 4 !== 0) return false;
   try {
     const bytes = atob(match[2]);
     if (bytes.length > 5 * 1024 * 1024 || btoa(bytes) !== match[2]) return false;
-    if (match[1] === "png") return bytes.startsWith("\x89PNG\r\n\x1a\n") && bytes.length >= 24;
-    if (match[1] === "jpeg") return bytes.startsWith("\xff\xd8\xff") && bytes.endsWith("\xff\xd9") && bytes.length >= 12;
-    return bytes.startsWith("RIFF") && bytes.slice(8, 12) === "WEBP" && bytes.length >= 20;
+    const valid = match[1] === "png" ? bytes.startsWith("\x89PNG\r\n\x1a\n") && bytes.length >= 24
+      : match[1] === "jpeg" ? bytes.startsWith("\xff\xd8\xff") && bytes.endsWith("\xff\xd9") && bytes.length >= 12
+      : bytes.startsWith("RIFF") && bytes.slice(8, 12) === "WEBP" && bytes.length >= 20;
+    if (!valid) return false;
+    if (verifiedSources.size >= VERIFIED_SOURCE_LIMIT) verifiedSources.clear();
+    verifiedSources.add(value);
+    return true;
   } catch { return false; }
+}
+
+/** Structure validation is pure; cached only for objects that are never mutated in place. */
+function validatedMoment(v: unknown): v is JourneyMoment {
+  if (object(v) && validatedMoments.has(v)) return true;
+  if (!moment(v)) return false;
+  if (object(v)) validatedMoments.add(v);
+  return true;
 }
 
 function identity(v: unknown): v is FutureSelfIdentityVersion {
@@ -141,10 +161,11 @@ export function isJournalSnapshot(value: unknown): value is JournalSnapshot {
   const owners = new Set(identities.map((i) => i.id));
   if (!optional(value.horizonReflections, (v) => object(v) && Object.keys(v).length <= 1000 && Object.entries(v).every(([key, reflection]) => owners.has(key) && object(reflection) && keys(reflection, ["choice", "recordedAt"]) && HORIZON_CHOICES.includes(reflection.choice as typeof HORIZON_CHOICES[number]) && date(reflection.recordedAt)))) return false;
   if (!optional(value.playlists, (p) => Array.isArray(p) && p.length <= 1000 && p.every(isSavedPlaylist) && uniqueIds(p) && p.every((playlist) => owners.has(playlist.identityVersionId)))) return false;
-  if (!moments.every(moment)) return false;
+  if (!moments.every(validatedMoment)) return false;
   if (!optional(value.drafts, (d) => Array.isArray(d) && d.length <= 100 && d.every((entry) => object(entry)
     && keys(entry, ["id", "value", "updatedAt", "musicTitle", "musicUrl"]) && optional(entry.musicTitle, (s) => text(s, 120)) && optional(entry.musicUrl, (s) => text(s, 2048)) && id(entry.id) && date(entry.updatedAt) && object(entry.value)
-    && text(entry.value.originalExcerpt, entry.value.kind === "personal" ? MAX_JOURNAL_LENGTH : 2000) && moment({ ...entry.value, originalExcerpt: entry.value.originalExcerpt || " " })
+    && text(entry.value.originalExcerpt, entry.value.kind === "personal" ? MAX_JOURNAL_LENGTH : 2000)
+    && validatedMoment(entry.value.originalExcerpt ? entry.value : { ...entry.value, originalExcerpt: " " })
     && owners.has(entry.value.identityVersionId as string) && object(entry.value.consent) && entry.value.consent.useInAiContext === false && entry.value.consent.includeMyNoteInAiContext === false) && uniqueIds(d))) return false;
   const validBooks = (b: unknown, draft = false) => object(b) && Object.keys(b).length <= 200 && Object.entries(b).every(([year, book]) => /^\d{4}$/.test(year) && object(book)
     && keys(book, ["title", "subtitle", "theme", "noteFont", "photo", "photoMode", "photoCrop", "layers", "placements", "transforms", "order", "templateVersion"])
@@ -158,7 +179,9 @@ export function isJournalSnapshot(value: unknown): value is JournalSnapshot {
   if (!optional(value.books, validBooks) || !optional(value.bookDrafts, (b) => validBooks(b, true))) return false;
   // Shared media can appear in a saved page and its draft; charge it once to the
   // unique asset budget, while the separate total cap still bounds duplicate data.
-  return Array.isArray(moments) && moments.length <= 10000 && moments.every(moment) && uniqueIds(moments)
+  // Moment structure was already validated above (validatedMoment), so only the
+  // remaining aggregate and preference checks run here.
+  return Array.isArray(moments) && moments.length <= 10000 && uniqueIds(moments)
     && moments.every((m) => owners.has(m.identityVersionId)) && object(p)
     && keys(p, ["defaultNoteFont", "readingSize", "motion"]) && font(p.defaultNoteFont)
     && ["regular", "large"].includes(p.readingSize as string) && ["system", "reduced"].includes(p.motion as string);

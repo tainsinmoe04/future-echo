@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { backendConfig, aiConfigured } from "../src/server/backend-config";
-import { ApiError, readJson, requireOrigin } from "../src/server/backend-http";
+import { ApiError, readJson, requireOrigin, requireReadOrigin } from "../src/server/backend-http";
 import { isFutureReply, isPlaylist, isSavedPlaylist, requestsMusic, songSearchUrl } from "../src/lib/playlist";
 import { contextSyncPayload, isContextSync } from "../src/server/context-sync";
 import { activeIdentityVersion } from "../src/lib/mock-data";
@@ -19,6 +19,20 @@ test("invalid server key characters fail safely before header construction or ne
   let calls=0;const db=new SupabaseBackend(backendConfig({SUPABASE_SERVICE_ROLE_KEY:key}),async()=>{calls++;return Response.json([]);});
   await assert.rejects(db.rest("fe_profiles"),(error:unknown)=>error instanceof ApiError&&error.code==="database_key_format"&&!error.message.includes(key));assert.equal(calls,0);
  }
+});
+test("table queries require one account scope and enforce it centrally", async () => {
+  const userId = "11111111-1111-4111-8111-111111111111", other = "22222222-2222-4222-8222-222222222222";
+  const seen: string[] = [];
+  const db = new SupabaseBackend(backendConfig({ SUPABASE_URL: "https://example.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "server-secret" }), async (url) => { seen.push(String(url)); return Response.json([]); });
+  await assert.rejects(db.rest("fe_profiles"), (error: unknown) => error instanceof ApiError && error.code === "account_scope");
+  await assert.rejects(db.rpc("fe_attest_adult", { p_user: other }, { userId }), (error: unknown) => error instanceof ApiError && error.code === "account_scope");
+  await assert.rejects(db.rest("fe_playlists", { method: "POST", scope: { userId }, body: { user_id: other } }), (error: unknown) => error instanceof ApiError && error.code === "account_scope");
+  assert.equal(seen.length, 0);
+  await db.rest("fe_profiles?select=plan", { scope: { userId } });
+  assert.ok(seen[0]?.includes(`fe_profiles?select=plan&user_id=eq.${userId}`));
+  await db.rest("fe_playlists", { method: "POST", scope: { userId }, body: { user_id: userId } });
+  assert.ok(seen[1]?.includes("fe_playlists"));
+  assert.equal(seen[1]?.includes("user_id=eq."), false);
 });
 test("saved playlists survive validated backup without becoming memory", () => {
   const saved = { ...playlist, id: "playlist-1", identityVersionId: activeIdentityVersion.id, sourceMessageId: "message-1", savedAt: "2026-10-15T00:00:00.000Z" };
@@ -64,6 +78,10 @@ test("context upload only projects consented text and rejects extra private fiel
 });
 test("API rejects cross-origin, oversized JSON and caller-supplied history", async () => {
   assert.throws(() => requireOrigin(new Request("http://localhost:3000/api/ai", { headers: { origin: "https://evil.test" } }), "http://localhost:3000"), ApiError);
+  // Safe methods may omit Origin; cross-site reads and wrong Origins are still rejected.
+  assert.doesNotThrow(() => requireReadOrigin(new Request("http://localhost:3000/api/playlists"), "http://localhost:3000"));
+  assert.throws(() => requireReadOrigin(new Request("http://localhost:3000/api/playlists", { headers: { "sec-fetch-site": "cross-site" } }), "http://localhost:3000"), ApiError);
+  assert.throws(() => requireReadOrigin(new Request("http://localhost:3000/api/playlists", { headers: { origin: "https://evil.test" } }), "http://localhost:3000"), ApiError);
   await assert.rejects(readJson(new Request("http://localhost/api", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ long: "x".repeat(100) }) }), 20), ApiError);
   const input = { identityId: "identity-v2", message: "Hello", requestId: "12345678-1234-4234-8234-123456789abc" }; assert.equal(parseChatInput(input).message, "Hello");
   assert.throws(() => parseChatInput({ ...input, recentMessages: [] }), ApiError);
@@ -105,6 +123,6 @@ test("modern server keys use apikey only; legacy service JWTs retain bearer auth
       assert.equal(options?.cache, "no-store");
       return Response.json([]);
     });
-    await db.rest("fe_profiles?select=user_id&limit=0", { headers: { Prefer: "return=representation", authorization: "Bearer wrong-token", apikey: "wrong-key" } });
+    await db.rest("fe_profiles?select=user_id&limit=0", { headers: { Prefer: "return=representation", authorization: "Bearer wrong-token", apikey: "wrong-key" }, scope: { userId: "11111111-1111-4111-8111-111111111111" } });
   }
 });

@@ -35,7 +35,9 @@ Use WSL-native Node 24 for this repository; Windows npm cannot build its UNC pat
 
 ## Historical implementation checkpoints
 
-Future Echo is a dark, quiet reflective product for speaking with one imagined possible future perspective. It is not prediction, therapy, or a productivity tracker. Its journal is browser-local. Account/backend integration is gated separately; AI work and public release are currently paused. A hosted schema was explicitly applied on October 17, but that does not establish live account or public-release readiness. See [BACKEND_SETUP.md](./BACKEND_SETUP.md), [SECURITY.md](./SECURITY.md) and [JOURNAL_PROGRESS.md](./JOURNAL_PROGRESS.md) for dated evidence and remaining gates. Never copy private environment files into an issue or commit.
+Future Echo is a dark, quiet reflective product for speaking with one imagined possible future perspective. It is not prediction, therapy, or a productivity tracker. Its journal is browser-local. Account/backend integration is gated separately; AI work and public release are currently paused. A hosted schema was explicitly applied on October 17, but that does not establish live account or public-release readiness. See [BACKEND_SETUP.md](./BACKEND_SETUP.md), [SECURITY.md](./SECURITY.md) and [JOURNAL_PROGRESS.md](./docs/history/JOURNAL_PROGRESS.md) for dated evidence and remaining gates. Never copy private environment files into an issue or commit.
+
+Dated historical records (implementation handoffs, progress logs, model evaluations and pre-connection checklists) are archived in [docs/history/](./docs/history/). Current requirements live in [SPEC.md](./SPEC.md); durable decisions live in [LEARN.md](./LEARN.md).
 
 ### Non-AI production preparation
 
@@ -60,9 +62,9 @@ Read [SPEC.md](./SPEC.md) and [LEARN.md](./LEARN.md) before changing product beh
 
 ### Latest local UX completion
 
-Pre-connection resilience and hardware/safety review steps are in [PRE_CONNECTION_CHECKLIST.md](./PRE_CONNECTION_CHECKLIST.md). The repository now includes isolated-browser failure-path tests and a 16-case bilingual offline safety corpus. Corpus checks are not live model evaluation; actual-device, screen-reader and provider/account-deletion policy gates remain explicit.
+Pre-connection resilience and hardware/safety review steps are in [PRE_CONNECTION_CHECKLIST.md](./docs/history/PRE_CONNECTION_CHECKLIST.md). The repository now includes isolated-browser failure-path tests and a 16-case bilingual offline safety corpus. Corpus checks are not live model evaluation; actual-device, screen-reader and provider/account-deletion policy gates remain explicit.
 
-Validated on 2026-10-16: 88 unit tests, SQL checks, lint, full TypeScript check, production build and 15 browser tests pass. Final browser tests used the production server with reduced motion asserted. For a separate local test server, set `ECHO_BASE_URL=http://localhost:3001`; CI builds first and then starts the production server. Physical-device/Safari and hosted CI checks remain outstanding. See JOURNAL_PROGRESS.md for the development-server retry and exact coverage.
+Validated on 2026-10-16: 88 unit tests, SQL checks, lint, full TypeScript check, production build and 15 browser tests pass. Final browser tests used the production server with reduced motion asserted. For a separate local test server, set `ECHO_BASE_URL=http://localhost:3001`; CI builds first and then starts the production server. Physical-device/Safari and hosted CI checks remain outstanding. See docs/history/JOURNAL_PROGRESS.md for the development-server retry and exact coverage.
 
 New installs start empty; the public demo never becomes personal memory. Memory controls now allow permission changes, Myanmar redaction, earlier-exchange saving, local dates, resumable setup, versioned horizon/principles and meaningful Horizon Day actions. Journal adds local search/year/month filters, original-preserving photo framing, layer order, 20,000-character personal pages and 2,000-character notes. Model context remains bounded to 2,000-character excerpts and 500-character permitted notes. Existing records are never reset.
 
@@ -74,14 +76,14 @@ New installs start empty; the public demo never becomes personal memory. Memory 
 
 `/now` opens the single messenger conversation. **Your Space → Settings** offers reading size, reduced motion, a default note font and validated backup download/import with recovery controls. In a memory book, **Photo, sticker & note → Arrange** supports direct mouse/touch movement, resize handles, pinch/twist and keyboard alternatives. The editor has 30-step content/layout Undo/Redo, custom raster stickers, 19 built-in stickers/tapes/clips, four note fonts, paper styles and optional user-chosen music links. **Customize [year] book** offers six cover themes, title/font/photo/decoration editing and page reading order. Choose **Done**, then wait for **Saved on this device**. Reading can hide decorations or layout without deleting them.
 
-Confirmed moments, photos, layouts, identity versions, covers and preferences persist in IndexedDB. Unfinished page and cover drafts also save locally, separately from confirmed moments; resume them from Your Space/Customize. Drafts never add stars or grant AI memory consent. Storage failures and stale-tab conflicts are shown. Settings imports a validated unencrypted JSON backup only after preview/confirmation, atomically preserving the current journal as one recovery copy. Recovery can be downloaded, previewed/restored or explicitly deleted. Normal page deletion does not erase an older recovery copy. Exported backups exclude drafts and conversations. Browser cleanup, private mode and eviction can lose local data; there is no cloud backup. **Conversations still reset on refresh.** Replies are deterministic examples. Retention windows below are requirements, not functioning expiry jobs. Music opens an external destination only when clicked; it is not embedded, autoplayed or recommended by a connected service.
+Confirmed moments, photos, layouts, identity versions, covers and preferences persist in IndexedDB. Unfinished page and cover drafts also save locally, separately from confirmed moments; resume them from Your Space/Customize. Drafts never add stars or grant AI memory consent. Storage failures and stale-tab conflicts are shown. Settings imports a validated unencrypted JSON backup only after preview/confirmation, atomically preserving the current journal as one recovery copy. Recovery can be downloaded, previewed/restored or explicitly deleted. Normal page deletion does not erase an older recovery copy. Exported backups exclude drafts and conversations. Browser cleanup, private mode and eviction can lose local data; there is no cloud backup. **Device conversations survive tab closure and reload through the bounded local recovery cache.** Retention windows below are requirements, not functioning expiry jobs. Music opens an external destination only when clicked; it is not embedded, autoplayed or recommended by a connected service.
 
 ## Locked privacy boundaries
 
 - Free conversation history is retained for up to 30 days; Plus history for up to 90 days. Device chat survives tab closure. Saved Moments remain until the user deletes them.
 - AI context is limited to the current message, up to 10 recent non-deleted messages, the active Future Self version, and up to 3 relevant consented Saved Moments.
 - My Note requires separate explicit opt-in. AI interpretations, archived or deleted memories, full history, and payment or support data are always excluded.
-- The context boundary is implemented and tested server-side, but no model receives it while `/api/ai` remains inactive.
+- The context boundary is implemented and tested server-side; a model receives it only through the explicitly consented, configuration-gated hosted path.
 
 ## Run locally
 
@@ -97,13 +99,13 @@ npm run dev:local
 | Route | Purpose |
 | --- | --- |
 | `/` | Responsive product landing page and core-loop demonstration |
-| `/login` | Configuration-gated email login; Google sign-in unavailable |
-| `/signup` | Configuration-gated email registration with adult confirmation |
+| `/login` | Google-first sign-in with email behind “Use email instead” |
+| `/signup` | Google-first account creation with adult confirmation |
 | `/onboarding` | Three-stage possible-future setup with horizon presets |
 | `/now` | Mock conversation, session review, and Save Moment flow |
 | `/memory` | Sparse chronological saved moments and editable notes |
 | `/future-self` | Active identity editing and archive lifecycle |
-| `/api/ai` | Inactive server-only AI boundary; returns `501` |
+| `/api/ai` | Server-only AI boundary; configuration-gated, 501 when not enabled |
 
 Account, privacy, and sign-out controls live in the signed-in account menu. Saved moments are part of Memory, not a separate primary destination.
 
@@ -131,9 +133,9 @@ Tailwind v4 design tokens live in `src/app/globals.css`. Journal state is local 
 ## Intentionally deferred
 
 - Final mascot and hero artwork
-- Hosted account/session verification, password recovery and approved account-deletion behavior
-- Real AI provider and safety evaluation
-- Conversation persistence, expiry jobs, and backup-erasure policy
+- Password recovery and approved account-deletion behavior
+- Completed bilingual safety evaluation for the connected provider
+- Conversation-history expiry jobs and backup-erasure policy
 - Notifications, export/print, multiple identities, rich search, and thematic views
 
 ## Verification

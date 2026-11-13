@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMockProductState } from "@/components/mock-product-state";
+import { useJournalState } from "@/components/mock-product-state";
 import { constellationPosition, memoryBooks } from "@/lib/personal-space";
 import { BackIcon, BookIcon, PlusIcon, SettingsIcon } from "./icons";
 import { MemoryBook } from "./memory-book";
@@ -18,7 +18,7 @@ import { PlaylistCard } from "./playlist-card";
 export function PersonalSpace({ onClose, initialMomentId, initialCreate = false }: {
   onClose: () => void; initialMomentId?: string; initialCreate?: boolean;
 }) {
-  const { moments, activeIdentity, journalSnapshot, updateJournal } = useMockProductState();
+  const { moments, activeIdentity, journalSnapshot, updateJournal } = useJournalState();
   const [query, setQuery] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");

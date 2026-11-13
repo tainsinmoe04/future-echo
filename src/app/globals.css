@@ -107,4 +107,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes message-arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@keyframes typing-presence{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-2px)}}
 @media (min-width:768px){.messenger-page{min-height:calc(100dvh - 80px);padding-inline:2rem}.messenger-frame{height:calc(100dvh - 80px)}.messenger-header{padding:1.15rem 2rem}.messenger-thread{padding:2rem 2.25rem 2.5rem}.message-surface{max-width:78%;padding:1.05rem 1.2rem 1.2rem}.message-future{max-width:84%}.time-signal{display:flex}.messenger-composer{padding:1rem 1.5rem .75rem}}
 
+/* Provider boot screens (session check / journal open) — see mock-product-state.tsx */
+.echo-boot-screen { min-height:100dvh; padding:12vh 24px; }
+.echo-boot-screen.dark { background:#0b0b10; color:#eeeaf5; }
+
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }

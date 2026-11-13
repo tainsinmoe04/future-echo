@@ -19,6 +19,7 @@ import { createJournalStorage } from "@/lib/journal-storage";
 import { ACCOUNT_SCOPE_EVENT, ACCOUNT_SCOPE_STORAGE_EVENT, accountStorageSuffix, notifyAccountSessionChanged, readAccountScope } from "@/lib/account-scope";
 import { serializeJournalBackup } from "@/lib/journal-backup";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
+import { myanmarVariables } from "@/app/myanmar-fonts";
 
 export interface CreateIdentityInput {
   connectLiveAI?: boolean;
@@ -69,6 +70,28 @@ interface MockProductStateValue {
 }
 
 const MockProductState = createContext<MockProductStateValue | null>(null);
+/** Focused slices: consumers subscribe only to the state they actually read. */
+type JournalSlice = Pick<MockProductStateValue,
+  "journalSnapshot" | "updateJournal" | "restoreJournal" | "readRecovery" | "deleteRecovery" |
+  "storageStatus" | "storageError" | "retryStorage" | "exportJournal" |
+  "preferences" | "updatePreferences" | "identityVersions" | "activeIdentity" | "moments" |
+  "createIdentityVersion" | "editActiveIdentityDefinition" | "archiveActiveIdentity" | "activateMockIdentity" |
+  "saveJourneyMoment" | "setMomentConsent" | "deleteMoment">;
+type ChatSlice = Pick<MockProductStateValue, "threads" | "setThreadDraft" | "sendMessage" | "ensureGreeting">;
+type ConnectionSlice = Pick<MockProductStateValue,
+  "account" | "trialAI" | "trialProvider" | "liveAIAvailable" | "connectedProvider" |
+  "connectedAI" | "connectionError" | "connectAI" | "disconnectAI" | "loadPastConversation">;
+const JournalState = createContext<JournalSlice | null>(null);
+const ChatState = createContext<ChatSlice | null>(null);
+const ConnectionState = createContext<ConnectionSlice | null>(null);
+function useSlice<T>(context: React.Context<T | null>, name: string): T {
+  const value = useContext(context);
+  if (!value) throw new Error(`${name} must be used inside MockProductStateProvider`);
+  return value;
+}
+export function useJournalState() { return useSlice(JournalState, "useJournalState"); }
+export function useChatState() { return useSlice(ChatState, "useChatState"); }
+export function useConnectionState() { return useSlice(ConnectionState, "useConnectionState"); }
 const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 const initialJournal: JournalSnapshot = { version: 1, preferences: DEFAULT_PREFERENCES,
   identityVersions: [], moments: [] };
@@ -114,7 +137,16 @@ function PrivateJournalGate(props: ProviderProps) {
     // An ordinary return is a background refresh: retain focus, selection and
     // uploads. Initial/explicit account checks still lock; changed results
     // remount by owner key, and failed verification still fails closed.
-    const focus = () => { if (document.visibilityState === "visible") verify(false); };
+    // Throttled: focus/visibility/pageshow often fire together, and repeated
+    // tab switches should not each cost a session round-trip.
+    let lastFocusCheck = 0;
+    const focus = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastFocusCheck < 30_000) return;
+      lastFocusCheck = now;
+      verify(false);
+    };
     verify(true);
     window.addEventListener(ACCOUNT_SCOPE_EVENT, changed);
     window.addEventListener("storage", storage);
@@ -130,7 +162,7 @@ function PrivateJournalGate(props: ProviderProps) {
       document.removeEventListener("visibilitychange", focus);
     };
   }, [retry]);
-  if (scope === undefined) return <main style={{ minHeight: "100dvh", padding: "12vh 24px" }}><h1>Future Echo</h1>{failed ? <><p role="alert">Your session could not be verified. Local journals remain locked and unchanged.</p><button onClick={() => setRetry(value => value + 1)}>Try again</button><p><button onClick={() => { void backendRequest("/api/auth/logout", {}).then(() => { notifyAccountSessionChanged(); router.push("/login"); }).catch(() => setFailed(true)); }}>Sign out to sign in again</button></p></> : <p role="status">Checking your session…</p>}</main>;
+  if (scope === undefined) return <main className="echo-boot-screen"><h1>Future Echo</h1>{failed ? <><p role="alert">Your session could not be verified. Local journals remain locked and unchanged.</p><button onClick={() => setRetry(value => value + 1)}>Try again</button><p><button onClick={() => { void backendRequest("/api/auth/logout", {}).then(() => { notifyAccountSessionChanged(); router.push("/login"); }).catch(() => setFailed(true)); }}>Sign out to sign in again</button></p></> : <p role="status">Checking your session…</p>}</main>;
   return <div className="account-scope-ready">
     <ScopedProductStateProvider key={accountStorageSuffix(scope)} account={scope} {...props} />
   </div>;
@@ -171,12 +203,14 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
   const connectionFlight = useRef<{ id: string; promise: Promise<void> } | null>(null);
   const requests = useRef(new Set<string>());
   const attempts = useRef(new Map<string, { content: string; requestId: string }>());
-  const setThreads = useCallback((change: Record<string, MessengerThread> | ((current: Record<string, MessengerThread>) => Record<string, MessengerThread>)) => {
-    const next = typeof change === "function" ? change(threadsRef.current) : change;
-    threadsRef.current = next;
+  const chatPersistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingChatPersist = useRef<(() => void) | null>(null);
+  const persistThreads = useCallback(() => {
+    pendingChatPersist.current = null;
     try {
       if (!recoveryWritable.current) throw new Error("recovery locked");
       if (localStorage.getItem(recoveryKey) !== recoveryRevision.current) throw new Error("Another tab changed this chat; reload before continuing.");
+      const next = threadsRef.current;
       const bounded = Object.fromEntries(Object.entries(next).slice(-20).map(([key, thread]) => [key, { ...thread, messages: thread.messages.filter(message => Date.parse(message.createdAt) > Date.now() - retentionDays.current * 86400000).slice(-500) }]));
       const value = JSON.stringify({ version: 1, owner: recoveryOwner.current, savedAt: Date.now(), retentionDays: retentionDays.current, threads: bounded, attempts: Object.fromEntries([...attempts.current].filter(([key]) => Object.hasOwn(bounded, key))) });
       if (value.length > 2_000_000) throw new Error("chat capacity");
@@ -184,8 +218,25 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
       recoveryRevision.current = value;
       setChatStorageError("");
     } catch { setChatStorageError("Chat could not be saved, or another tab changed it. Keep this tab open and copy unsaved words before reloading."); }
-    publishThreads(next);
   }, [recoveryKey]);
+  // Keystrokes update memory immediately; the synchronous localStorage write is
+  // coalesced to one trailing save so typing never blocks on stringify + storage.
+  const setThreads = useCallback((change: Record<string, MessengerThread> | ((current: Record<string, MessengerThread>) => Record<string, MessengerThread>)) => {
+    threadsRef.current = typeof change === "function" ? change(threadsRef.current) : change;
+    publishThreads(threadsRef.current);
+    pendingChatPersist.current = persistThreads;
+    if (chatPersistTimer.current) clearTimeout(chatPersistTimer.current);
+    chatPersistTimer.current = setTimeout(() => { chatPersistTimer.current = null; pendingChatPersist.current?.(); }, 400);
+  }, [persistThreads]);
+  useEffect(() => {
+    const flush = () => {
+      if (chatPersistTimer.current) { clearTimeout(chatPersistTimer.current); chatPersistTimer.current = null; }
+      pendingChatPersist.current?.();
+    };
+    // Tab closure/reload must never lose the trailing write (chat recovery relies on it).
+    window.addEventListener("pagehide", flush);
+    return () => { window.removeEventListener("pagehide", flush); flush(); };
+  }, []);
   useEffect(() => {
     let current = true;
     void (async () => {
@@ -297,8 +348,8 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
     if(!chatReady||!liveAIAvailable||trialAI||!activeIdentity||connectedAI)return;
     const key=`${connectedProvider}:${activeIdentity.id}`;
     if(automaticAttempt.current===key)return;
-    let consent=null;try{consent=parseLiveConnectionConsent(localStorage.getItem(consentKey) ?? sessionStorage.getItem(consentKey));}catch{}
-    let accountStart=false;try{accountStart=sessionStorage.getItem("future-echo-account-start")==="yes";}catch{}
+    let consent=null;try{consent=parseLiveConnectionConsent(localStorage.getItem(consentKey) ?? sessionStorage.getItem(consentKey));}catch{if(process.env.NODE_ENV!=="production")console.warn("future-echo: live-connection consent could not be read.");}
+    let accountStart=false;try{accountStart=sessionStorage.getItem("future-echo-account-start")==="yes";}catch{if(process.env.NODE_ENV!=="production")console.warn("future-echo: account-start flag could not be read.");}
     const requested=pendingLiveIdentity===activeIdentity.id||accountStart;
     if(!requested&&(!consent||consent.identityId!==activeIdentity.id||consent.provider!==connectedProvider))return;
     let current=true;
@@ -307,19 +358,22 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
       if(!requested){const session=await backendRequest<{user:{id:string}|null}>("/api/auth/session");if(!current||session.user?.id!==consent?.userId)return;}
       if(!current)return;
       await connectAI();
-      try{sessionStorage.removeItem("future-echo-account-start");}catch{}
+      try{sessionStorage.removeItem("future-echo-account-start");}catch{if(process.env.NODE_ENV!=="production")console.warn("future-echo: account-start flag could not be cleared.");}
     }).catch(error=>{if(current)setConnectionError(error instanceof Error?error.message:"Live connection could not be restored.");});
     return()=>{current=false;};
   },[chatReady,liveAIAvailable,trialAI,activeIdentity,connectedAI,pendingLiveIdentity,connectedProvider,connectAI,consentKey]);
   const disconnectAI = useCallback(async () => {
-    try{sessionStorage.removeItem(consentKey);localStorage.removeItem(consentKey);}catch{}
+    try{sessionStorage.removeItem(consentKey);localStorage.removeItem(consentKey);}catch{if(process.env.NODE_ENV!=="production")console.warn("future-echo: connection consent could not be cleared.");}
     setPendingLiveIdentity(null);
     cancelReplies(); setConnectedAI(false);
     attempts.current.clear();
     recoveryOwner.current = account;
     setConnectionError("");
     setThreads({});
-    try { sessionStorage.removeItem(recoveryKey); localStorage.removeItem(recoveryKey); recoveryRevision.current = null; } catch {}
+    // Drop the trailing debounced write so it cannot resurrect the cleared keys.
+    if (chatPersistTimer.current) { clearTimeout(chatPersistTimer.current); chatPersistTimer.current = null; }
+    pendingChatPersist.current = null;
+    try { sessionStorage.removeItem(recoveryKey); localStorage.removeItem(recoveryKey); recoveryRevision.current = null; } catch { if (process.env.NODE_ENV !== "production") console.warn("future-echo: chat recovery could not be cleared."); }
     await updateAccountContext({}, "DELETE");
   }, [account, consentKey, recoveryKey, cancelReplies, updateAccountContext, setThreads]);
   const loadPastConversation = useCallback(async (id: string) => {
@@ -466,16 +520,28 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
     })();
   }, [account, activeIdentity, queueReply, connectedAI, moments, updateAccountContext, trialAI, threads, liveAIAvailable, setThreads]);
 
-  const value = useMemo(() => ({ account, trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError: chatStorageError || connectionError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences,
-    journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal, readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
+  const journalValue = useMemo<JournalSlice>(() => ({
+    journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal,
+    readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
     storageStatus: local.status, storageError: local.error, retryStorage: journal.retry, exportJournal,
+    preferences, updatePreferences, identityVersions, activeIdentity, moments,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
-    saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting,
-  }), [account, trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI, connectionError, chatStorageError, connectAI, disconnectAI, loadPastConversation, identityVersions, activeIdentity, moments, threads, preferences, updatePreferences, createIdentityVersion, editActiveIdentityDefinition,
-    archiveActiveIdentity, activateMockIdentity, saveJourneyMoment, setMomentConsent, deleteMoment, setThreadDraft, sendMessage, ensureGreeting, local.snapshot, local.status, local.error, journal, exportJournal, restoreConnectedJournal]);
+    saveJourneyMoment, setMomentConsent, deleteMoment,
+  }), [local.snapshot, local.status, local.error, journal, restoreConnectedJournal, exportJournal,
+    preferences, updatePreferences, identityVersions, activeIdentity, moments,
+    createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
+    saveJourneyMoment, setMomentConsent, deleteMoment]);
+  const chatValue = useMemo<ChatSlice>(() => ({ threads, setThreadDraft, sendMessage, ensureGreeting }),
+    [threads, setThreadDraft, sendMessage, ensureGreeting]);
+  const connectionValue = useMemo<ConnectionSlice>(() => ({
+    account, trialAI, trialProvider, liveAIAvailable, connectedProvider,
+    connectedAI, connectionError: chatStorageError || connectionError, connectAI, disconnectAI, loadPastConversation,
+  }), [account, trialAI, trialProvider, liveAIAvailable, connectedProvider, connectedAI,
+    chatStorageError, connectionError, connectAI, disconnectAI, loadPastConversation]);
+  const value = useMemo(() => ({ ...journalValue, ...chatValue, ...connectionValue }), [journalValue, chatValue, connectionValue]);
 
-  if (!local.ready || !chatReady) return <main style={{ minHeight: "100dvh", background: "#0b0b10", color: "#eeeaf5", padding: "12vh 24px" }}><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;
-  return <MockProductState.Provider value={value}><div data-echo-reading={preferences.readingSize} data-echo-motion={preferences.motion}>{children}</div></MockProductState.Provider>;
+  if (!local.ready || !chatReady) return <main className="echo-boot-screen dark"><h1>Future Echo</h1>{local.status === "error" ? <><p role="alert">{local.error}</p><p>Your existing local journal has not been replaced.</p><button onClick={journal.retry}>Retry opening journal</button></> : <p role="status">Opening your local journal…</p>}</main>;
+  return <ConnectionState.Provider value={connectionValue}><JournalState.Provider value={journalValue}><ChatState.Provider value={chatValue}><MockProductState.Provider value={value}><div className={myanmarVariables} data-echo-reading={preferences.readingSize} data-echo-motion={preferences.motion}>{children}</div></MockProductState.Provider></ChatState.Provider></JournalState.Provider></ConnectionState.Provider>;
 }
 
 export function useMockProductState() {

@@ -44,7 +44,7 @@ Fixed Dots3-Note Preview now supersedes the unavailable Qwen trial below as an
 English-first private demo. Fourteen distinct models were screened; Dots alone
 repeatedly returned valid conversational JSON under required privacy/free rules.
 Japanese failed and German needs review; Burmese remains deferred. See
-DEMO_MODEL_EVALUATION.md for actual results and limitations. No provider policy,
+docs/history/DEMO_MODEL_EVALUATION.md for actual results and limitations. No provider policy,
 key, production activation or account DNS status changed.
 
 ## Latest private setup — 2026-10-27

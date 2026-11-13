@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { BookStyle } from "@/lib/journal-features";
 import { COVER_THEMES, defaultBook, orderedPages } from "@/lib/journal-features";
 import { readRasterFile } from "@/lib/journal-media";
-import { useMockProductState } from "@/components/mock-product-state";
+import { useJournalState } from "@/components/mock-product-state";
 import { PhotoFraming } from "./photo-framing";
 import { moveLayer } from "@/lib/journal-tools";
 import { momentDay } from "@/lib/local-date";
@@ -33,7 +33,7 @@ export function BookCover({ year, style, editing }: { year: string; style: BookS
 }
 
 export function BookDesigner({ year, onClose }: { year: string; onClose: () => void }) {
-  const { journalSnapshot, updateJournal } = useMockProductState();
+  const { journalSnapshot, updateJournal } = useJournalState();
   const [value, setValue] = useState<BookStyle>(() => journalSnapshot.bookDrafts?.[year] ?? journalSnapshot.books?.[year] ?? defaultBook(year));
   const [baseline] = useState(() => JSON.stringify(value));
   const [hadDraft] = useState(() => Boolean(journalSnapshot.bookDrafts?.[year]));

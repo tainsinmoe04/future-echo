@@ -27,7 +27,7 @@ test("conversation is text-only and journal photos remain available in Your Spac
   await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Add a personal moment", exact: true }).click();
   const editor = page.getByRole("dialog", { name: "Your Space", exact: true });
-  await editor.getByLabel("Choose photos", { exact: true }).setInputFiles(path.resolve("public/scrapbook/study.png"));
+  await editor.getByLabel("Choose photos", { exact: true }).setInputFiles(path.resolve("public/scrapbook/study.webp"));
   await expect(editor.getByRole("img", { name: "Photo in this moment" })).toBeVisible();
   await editor.getByRole("textbox", { name: "My words", exact: true }).fill("A new photo, not a sample.");
   await editor.getByRole("button", { name: "Done", exact: true }).click();
@@ -109,7 +109,7 @@ test("long journal, local day, photo framing, layers, search and cover persist",
   await page.getByRole("textbox", { name: "Moment title", exact: true }).fill("A long quiet morning");
   const words = "A little room for the rest of my life. ".repeat(100);
   await page.getByRole("textbox", { name: "My words", exact: true }).fill(words);
-  await page.getByLabel("Choose photos", { exact: true }).setInputFiles(path.resolve("public/scrapbook/study.png"));
+  await page.getByLabel("Choose photos", { exact: true }).setInputFiles(path.resolve("public/scrapbook/study.webp"));
   await page.getByRole("button", { name: "Frame photo", exact: true }).click();
   await page.getByRole("button", { name: "square", exact: true }).click();
   await page.getByRole("button", { name: "Zoom photo in", exact: true }).click();
@@ -128,7 +128,7 @@ test("long journal, local day, photo framing, layers, search and cover persist",
   await page.getByLabel("Jump to month", { exact: true }).fill("2026-09"); await expect(page.getByText("0 matching moments", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Clear search and dates", exact: true }).click();
   await page.getByRole("button", { name: "Customize 2026 book", exact: true }).click();
-  await page.getByLabel("Choose cover photo", { exact: true }).setInputFiles(path.resolve("public/scrapbook/coffee.png"));
+  await page.getByLabel("Choose cover photo", { exact: true }).setInputFiles(path.resolve("public/scrapbook/coffee.webp"));
   await page.getByRole("button", { name: "Zoom photo in", exact: true }).click();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible(); await page.reload();

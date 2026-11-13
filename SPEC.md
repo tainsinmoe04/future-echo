@@ -133,7 +133,7 @@ private-trial model after fourteen-model screening. It is an availability-based
 provisional English-first choice, not approved multilingual or production AI.
 Keep the existing privacy, zero-price, no-fallback, output-schema and consent
 boundaries. Japanese failed and German needs review; no broad language guarantee.
-See DEMO_MODEL_EVALUATION.md for actual calls, latency, quality limits and rendered
+See docs/history/DEMO_MODEL_EVALUATION.md for actual calls, latency, quality limits and rendered
 live send/save verification. Supabase DNS remains a separate account blocker.
 
 ## Private Qwen trial and account configuration repair — 2026-10-27
@@ -586,7 +586,7 @@ Implementation truth (2026-10-15, latest owner request): the provider hydrates a
 
 Local journal editing now includes editable personal-authored words (conversation excerpts/replies remain immutable), 30-step content/layout Undo/Redo, uploaded JPG/PNG/WebP stickers, 19 built-in sticker/tape/clip designs, paper choices, six customizable cover themes with photographs/fonts/positioned decorations, and per-year page reading order without changing original dates. Optional named HTTPS links to supported music sites open only on user click; no external player, recommendation provider or account is connected. Page and cover drafts autosave locally and can be resumed or explicitly discarded. Saved books remain chronological by year; custom order changes reading sequence within a year.
 
-Raster inputs/imports receive header dimension checks before browser decode, then actual browser load/dimension validation. Limits are 5 MiB per raster, 8192 pixels per side, 32 megapixels, 32 MiB unique encoded media and 96 MiB total encoded media including repeated draft copies; exported files remain capped at 40 MiB. Animated PNG/WebP and unsupported image types are rejected. These are local resource limits, not subscription allowances. Consult JOURNAL_PROGRESS.md for verification and remaining cross-browser/device limits.
+Raster inputs/imports receive header dimension checks before browser decode, then actual browser load/dimension validation. Limits are 5 MiB per raster, 8192 pixels per side, 32 megapixels, 32 MiB unique encoded media and 96 MiB total encoded media including repeated draft copies; exported files remain capped at 40 MiB. Animated PNG/WebP and unsupported image types are rejected. These are local resource limits, not subscription allowances. Consult docs/history/JOURNAL_PROGRESS.md for verification and remaining cross-browser/device limits.
 
 Owner clarification (2026-10-15): a chosen photo can fill the whole book cover, not just appear as an inset. New uploads default to full-cover mode; a visible full/inset choice preserves both uses, and existing records retain inset presentation until explicitly changed. Tapes may also use user-uploaded validated raster designs, with the same direct manipulation and presentation-only context exclusions as other decorations. Tape selection must show actual visible swatches and keep the upload control separated from the grid.
 

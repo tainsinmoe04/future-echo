@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useMockProductState } from "@/components/mock-product-state";
+import { useJournalState } from "@/components/mock-product-state";
 import type { JourneyMoment } from "@/lib/domain";
 import { isPreviewExample } from "@/lib/mock-messenger";
 import { momentDay } from "@/lib/local-date";
@@ -14,7 +14,7 @@ export function MemoryBook({ moment, entries, onSelect, onClose }: {
   moment: JourneyMoment; entries: readonly JourneyMoment[];
   onSelect: (id: string) => void; onClose: () => void;
 }) {
-  const { identityVersions, saveJourneyMoment, deleteMoment, setMomentConsent } = useMockProductState();
+  const { identityVersions, saveJourneyMoment, deleteMoment, setMomentConsent } = useJournalState();
   const [editing, setEditing] = useState(false);
   const [controls, setControls] = useState(false);
   const [deleting, setDeleting] = useState(false);

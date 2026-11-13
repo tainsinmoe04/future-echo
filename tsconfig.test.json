@@ -25,6 +25,7 @@
     "src/lib/page-transform.ts",
     "src/lib/mock-messenger.ts",
     "src/server/ai-context-builder.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
   ]
 }
