@@ -116,6 +116,10 @@ function moment(v: unknown): v is JourneyMoment {
     && range(p.x, 0, 100) && range(p.y, 0, 100) && range(p.size, 12, 28) && range(p.rotation, -30, 30)) && uniqueIds(s));
 }
 
+/** Individual remote records are checked before a merged snapshot is validated as a whole. */
+export function isIdentityVersion(value: unknown): value is FutureSelfIdentityVersion { return identity(value); }
+export function isJourneyMoment(value: unknown): value is JourneyMoment { return validatedMoment(value); }
+
 /** Validate, never repair: particularly never infer or upgrade memory consent. */
 export function isJournalSnapshot(value: unknown): value is JournalSnapshot {
   if (!object(value) || !keys(value, ["version", "identityVersions", "moments", "preferences", "books", "drafts", "bookDrafts", "playlists", "onboardingDraft", "horizonReflections"]) || value.version !== 1) return false;

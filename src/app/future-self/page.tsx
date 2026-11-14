@@ -6,6 +6,7 @@ import { useJournalState } from "@/components/mock-product-state";
 import { EchoDialog } from "@/components/echo/dialog";
 import { BackIcon, CloseIcon } from "@/components/echo/icons";
 import { JournalStorageStatus } from "@/components/echo/journal-storage-status";
+import { AccountPill } from "@/components/echo/account-pill";
 import type { FutureSelfIdentityVersion } from "@/lib/domain";
 import { localDate, localMonth } from "@/lib/local-date";
 import { HORIZON_CHOICES } from "@/lib/journal-tools";
@@ -16,7 +17,7 @@ const formatDate = (date: string) => new Date(date).toLocaleDateString("en-US", 
 const horizonChoices = HORIZON_CHOICES;
 
 export default function FutureSelf() {
-  const { identityVersions, activeIdentity, moments, archiveActiveIdentity, createIdentityVersion, storageStatus, journalSnapshot, updateJournal } = useJournalState();
+  const { identityVersions, activeIdentity, moments, archiveActiveIdentity, createIdentityVersion, storageStatus, journalSnapshot, updateJournal, accountHydrated } = useJournalState();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftMonth, setDraftMonth] = useState("");
@@ -38,14 +39,13 @@ export default function FutureSelf() {
   const frameHeader = <header className="echo-space-header echo-direction-header">
     {horizon ? <button className="echo-icon-button" aria-label="Return to your direction" onClick={() => { setHorizon(null); setChoice(undefined); }}><BackIcon /></button> : <Link className="echo-icon-button" href="/memory" aria-label="Back to Your Space"><BackIcon /></Link>}
     <h1>{horizon ? "Horizon Day" : "Your direction"}</h1>
-    <Link className="echo-icon-button" href="/now" aria-label="Return to conversation"><CloseIcon /></Link>
+    <div className="echo-header-end"><AccountPill /><Link className="echo-icon-button" href="/now" aria-label="Return to conversation"><CloseIcon /></Link></div>
   </header>;
 
   return <main className="echo-ui echo-stage"><div className="echo-memory-shell"><section className="echo-direction-page">
     {frameHeader}
     <div className="echo-direction-scroll">
-      {horizon ? <section className="echo-horizon-view">
-        <span className="journal-eyebrow">{horizon.horizon.targetMonth > openedMonth ? "HORIZON DAY PREVIEW" : "HORIZON DAY"} · VERSION {horizon.version}</span>
+      {horizon ? <section className="echo-horizon-view">        <span className="journal-eyebrow">{horizon.horizon.targetMonth > openedMonth ? "HORIZON DAY PREVIEW" : "HORIZON DAY"} · VERSION {horizon.version}</span>
         <h2>The future is now.</h2>
         <p className="echo-direction-lead">A place to pause, wherever you find yourself.</p>
         <div className="echo-horizon-context"><span>The horizon you chose</span><strong>{horizon.horizon.label}</strong><p>{horizon.definition}</p></div>
@@ -53,7 +53,7 @@ export default function FutureSelf() {
         <div className="echo-horizon-choices" role="group" aria-label="Horizon Day reflection">{horizonChoices.map((item) => <button key={item} aria-pressed={choice === item} onClick={() => setChoice(item)}>{item}<span aria-hidden="true">{choice === item ? "✓" : "↗"}</span></button>)}</div>
         {choice && <div className="echo-horizon-response" role="status"><p>{choice}</p><span>You can take your time with this. Your previous path stays readable, and no memories move automatically.</span><span>Choosing is not a verdict. Keep the reflection or choose your next direction below.</span><button className="echo-button outline" onClick={() => { updateJournal((current) => ({ ...current, horizonReflections: { ...current.horizonReflections, [horizon.id]: { choice, recordedAt: new Date().toISOString() } } })); setNotice("Reflection kept on this device. No moment, star or memory permission was added."); }}>Keep Horizon Day reflection</button>{choice === horizonChoices[2] && activeIdentity?.id === horizon.id && <button className="echo-button lilac" onClick={() => beginEdit(true)}>Choose a new horizon</button>}{choice === horizonChoices[3] && <Link href="/onboarding" className="echo-button lilac" onClick={() => prepareDirection()}>Choose a different direction</Link>}{horizon.status === "past" && <Link href="/onboarding" className="echo-button lilac" onClick={() => prepareDirection(horizon)}>Begin again from these words</Link>}{notice && <p role="status">{notice}</p>}</div>}
         <button className="echo-text-button" onClick={() => { setHorizon(null); setChoice(undefined); }}>Back to your direction</button>
-      </section> : <>
+      </section> : !accountHydrated ? <section className="echo-direction-empty" aria-busy="true"><p role="status">Opening your Future Self…</p></section> : <>
         <div className="echo-direction-intro"><span className="journal-eyebrow">THE ROAD YOU CHOSE</span><h2>A little closer<br />to who you want to be.</h2><p>An imagined possible future. A direction that remains yours.</p></div>
         {activeIdentity ? <>
           <section className="echo-current-direction" aria-label="Current direction">

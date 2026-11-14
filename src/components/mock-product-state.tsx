@@ -17,6 +17,7 @@ import { MAX_IDENTITY_LENGTH, MAX_MESSAGE_LENGTH } from "@/lib/redaction";
 import { createJournalSession } from "@/lib/journal-session";
 import { createJournalStorage } from "@/lib/journal-storage";
 import { ACCOUNT_SCOPE_EVENT, ACCOUNT_SCOPE_STORAGE_EVENT, accountStorageSuffix, notifyAccountSessionChanged, readAccountScope } from "@/lib/account-scope";
+import { hydrateAccountJournal, type AccountHydration } from "@/lib/account-hydration";
 import { serializeJournalBackup } from "@/lib/journal-backup";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
 import { myanmarVariables } from "@/app/myanmar-fonts";
@@ -50,6 +51,7 @@ interface MockProductStateValue {
   deleteRecovery: () => Promise<void>;
   storageStatus: "loading" | "saving" | "saved" | "error";
   storageError: string;
+  accountHydrated: boolean;
   retryStorage: () => void;
   exportJournal: () => string;
   preferences: SpacePreferences;
@@ -73,7 +75,7 @@ const MockProductState = createContext<MockProductStateValue | null>(null);
 /** Focused slices: consumers subscribe only to the state they actually read. */
 type JournalSlice = Pick<MockProductStateValue,
   "journalSnapshot" | "updateJournal" | "restoreJournal" | "readRecovery" | "deleteRecovery" |
-  "storageStatus" | "storageError" | "retryStorage" | "exportJournal" |
+  "storageStatus" | "storageError" | "accountHydrated" | "retryStorage" | "exportJournal" |
   "preferences" | "updatePreferences" | "identityVersions" | "activeIdentity" | "moments" |
   "createIdentityVersion" | "editActiveIdentityDefinition" | "archiveActiveIdentity" | "activateMockIdentity" |
   "saveJourneyMoment" | "setMomentConsent" | "deleteMoment">;
@@ -171,6 +173,25 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
   const updatePreferences = useCallback((patch: Partial<SpacePreferences>) => journal.update((current) => ({ ...current, preferences: { ...current.preferences, ...patch } })), [journal]);
   const exportJournal = useCallback(() => serializeJournalBackup(journal.getSnapshot().snapshot), [journal]);
   useEffect(() => { void journal.load(); }, [journal]);
+  const [accountSyncDone, setAccountSyncDone] = useState(false);
+  const hydrationAttempted = useRef(false);
+  // A guest scope has no account record to read; a signed-in scope settles once
+  // the read below completes (or fails, leaving local records as they are).
+  const accountHydrated = accountSyncDone || !account;
+  // A second device has an empty local journal but an existing account record.
+  // Read the account's Future Self back before any screen decides to show
+  // onboarding; failure (offline, unconfigured backend) leaves local records as
+  // they are rather than blocking the app.
+  useEffect(() => {
+    if (!local.ready || !account || hydrationAttempted.current) return;
+    hydrationAttempted.current = true;
+    // The settled flag is set unconditionally: a re-run of this effect (dev
+    // double-invoke) must not leave screens waiting on a check already sent.
+    void backendRequest<AccountHydration>("/api/context", undefined, "GET", true, 8000, account)
+      .then((remote) => journal.update((snapshot) => hydrateAccountJournal(snapshot, remote) ?? snapshot))
+      .catch(() => { /* Offline or unconfigured: this device's records stand. */ })
+      .finally(() => setAccountSyncDone(true));
+  }, [local.ready, account, journal]);
   useEffect(() => {
     if (local.status !== "saving" && !(local.ready && local.status === "error")) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
@@ -514,11 +535,11 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
   const journalValue = useMemo<JournalSlice>(() => ({
     journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal,
     readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
-    storageStatus: local.status, storageError: local.error, retryStorage: journal.retry, exportJournal,
+    storageStatus: local.status, storageError: local.error, accountHydrated, retryStorage: journal.retry, exportJournal,
     preferences, updatePreferences, identityVersions, activeIdentity, moments,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment,
-  }), [local.snapshot, local.status, local.error, journal, restoreConnectedJournal, exportJournal,
+  }), [local.snapshot, local.status, local.error, accountHydrated, journal, restoreConnectedJournal, exportJournal,
     preferences, updatePreferences, identityVersions, activeIdentity, moments,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment]);

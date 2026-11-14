@@ -14,6 +14,7 @@ import { findMoments } from "@/lib/journal-tools";
 import { momentDay } from "@/lib/local-date";
 import { defaultBook, orderedPages } from "@/lib/journal-features";
 import { PlaylistCard } from "./playlist-card";
+import { AccountPill } from "./account-pill";
 
 export function PersonalSpace({ onClose, initialMomentId, initialCreate = false }: {
   onClose: () => void; initialMomentId?: string; initialCreate?: boolean;
@@ -50,7 +51,7 @@ export function PersonalSpace({ onClose, initialMomentId, initialCreate = false 
   if (settings) return <SpaceSettings onClose={() => { returnSettingsFocus.current = true; setSettings(false); }} />;
 
   return <section className="echo-personal-space">
-    <header className="echo-space-header"><button className="echo-icon-button" aria-label="Return to conversation" onClick={onClose}><BackIcon /></button><h1>Your Space</h1><button ref={settingsButton} className="echo-icon-button" aria-label="Space settings" aria-expanded={settings} onClick={() => setSettings(!settings)}><SettingsIcon /></button></header>
+    <header className="echo-space-header"><button className="echo-icon-button" aria-label="Return to conversation" onClick={onClose}><BackIcon /></button><h1>Your Space</h1><div className="echo-header-end"><AccountPill /><button ref={settingsButton} className="echo-icon-button" aria-label="Space settings" aria-expanded={settings} onClick={() => setSettings(!settings)}><SettingsIcon /></button></div></header>
     <div className="echo-space-scroll">
       <section className="memory-search" aria-label="Find your moments"><label>Search saved moments<input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="A word, a feeling, a little title…" /></label><div className="memory-search-filters"><label>Year<select value={yearFilter} onChange={(e) => { setYearFilter(e.target.value); setMonthFilter(""); }}><option value="">All years</option>{books.map((book) => <option key={book.year} value={book.year}>{book.year}</option>)}</select></label><label>Jump to month<input type="month" value={monthFilter} onChange={(e) => { setMonthFilter(e.target.value); setYearFilter(""); }} /></label></div>{filtering && <div className="memory-results"><p role="status">{matches.length} matching moments</p><button className="echo-text-button" onClick={() => { setQuery(""); setYearFilter(""); setMonthFilter(""); }}>Clear search and dates</button>{matches.map((item) => <button key={item.id} onClick={() => setSelected(item.id)}><time>{momentDay(item)}</time><span>{item.title || "A moment worth keeping"}</span></button>)}{!matches.length && <p className="echo-muted">Nothing here matches yet. Your other pages are still below.</p>}</div>}</section>
       <section className="echo-constellation" aria-label="Your saved moments constellation">

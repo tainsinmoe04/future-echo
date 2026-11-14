@@ -8,6 +8,7 @@ import { MAX_IDENTITY_LENGTH } from "@/lib/redaction";
 import { addMonths, formatHorizonLabel, horizonFromMonths, horizonMonthsAhead } from "@/lib/moment-lifecycle";
 import { localDate } from "@/lib/local-date";
 import { JournalStorageStatus } from "@/components/echo/journal-storage-status";
+import { AccountPill } from "@/components/echo/account-pill";
 
 const presets = [6, 12, 36, 60];
 export default function Onboarding() {
@@ -38,7 +39,7 @@ export default function Onboarding() {
   }
 
   return <main className="echo-ui echo-stage"><section className="echo-onboarding">
-    <header className="echo-space-header"><Link href="/now" className="echo-icon-button" aria-label="Back to conversation"><BackIcon /></Link><span>Future Echo</span><OrbitIcon /></header>
+    <header className="echo-space-header"><Link href="/now" className="echo-icon-button" aria-label="Back to conversation"><BackIcon /></Link><span>Future Echo</span><div className="echo-header-end"><AccountPill /><OrbitIcon /></div></header>
     <ol className="echo-onboarding-steps" aria-label="Setup progress">{["Direction", "Distance", "Meet yourself"].map((name, index) => <li key={name} aria-current={step === index ? "step" : undefined}>{name}</li>)}</ol>
     <form onSubmit={(event) => {
       event.preventDefault();

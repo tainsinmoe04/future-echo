@@ -15,6 +15,7 @@ import { horizonDistance } from "@/lib/personal-space";
 import { localDate } from "@/lib/local-date";
 import type { MessengerThread } from "@/lib/mock-messenger";
 import { PlaylistCard } from "@/components/echo/playlist-card";
+import { AccountPill } from "@/components/echo/account-pill";
 
 const emptyThread: MessengerThread = { messages: [], draft: "", typing: false };
 
@@ -45,7 +46,7 @@ const MessageRow = memo(function MessageRow({ message, previousUser, identityId,
 });
 
 function Conversation() {
-  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, connectedProvider, liveAIAvailable, trialAI, trialProvider, connectionError, loadPastConversation, connectAI } = useMockProductState();
+  const { activeIdentity, identityVersions, threads, setThreadDraft, sendMessage, ensureGreeting, connectedAI, connectedProvider, liveAIAvailable, trialAI, trialProvider, connectionError, loadPastConversation, connectAI, accountHydrated } = useMockProductState();
   const query = useSearchParams();
   const pastIdentity = identityVersions.find((identity) => identity.id === query.get("past") && identity.status === "past");
   const identity = pastIdentity ?? activeIdentity;
@@ -96,7 +97,10 @@ function Conversation() {
   };
   const connect=async()=>{if(!connectAdult||connectBusy)return;setConnectBusy(true);setConnectNotice("");try{await connectAI();setAbout(false);}catch(error){setConnectNotice(error instanceof Error?error.message:"Live connection could not be made.");}finally{setConnectBusy(false);}};
 
-  if (!identity) return <div className="echo-ui echo-stage"><main className="echo-empty-chat"><OrbitIcon /><h1>A new direction can begin here.</h1><p>Your earlier conversations and moments are still yours.</p><Link className="echo-button lilac" href="/onboarding">Create your Future Self</Link><Link className="echo-text-button" href="/memory">Open Your Space</Link></main></div>;
+  if (!identity) return <div className="echo-ui echo-stage">
+    <div className="echo-empty-account"><AccountPill /></div>
+    <main className="echo-empty-chat">{!accountHydrated ? <p role="status">Opening your Future Self…</p> : <><OrbitIcon /><h1>A new direction can begin here.</h1><p>Your earlier conversations and moments are still yours.</p><Link className="echo-button lilac" href="/onboarding">Create your Future Self</Link><Link className="echo-text-button" href="/memory">Open Your Space</Link></>}</main>
+  </div>;
 
   return <div className="echo-ui echo-stage">
     <main className="echo-chat" aria-label="Future Echo conversation">
@@ -104,7 +108,7 @@ function Conversation() {
       <header className="echo-chat-header">
         {readOnly && <Link href="/now" className="echo-icon-button" aria-label="Return to current conversation"><BackIcon /></Link>}
         <div className="echo-chat-heading">{!readOnly && identity.horizon.targetMonth <= localDate().slice(0, 7) && <Link href="/future-self" className="echo-context-link">Your horizon is here · take a moment</Link>}<h1>{year} <span>·</span> Your Future Self</h1><p>{horizonDistance(identity.horizon.targetMonth, localDate())}{readOnly ? " · Read only" : ""}</p><button className="echo-context-link" onClick={() => setAbout(true)}>An imagined possible future</button></div>
-        <button className="echo-orbit-button" onClick={() => setSpace({})} aria-label="Open Your Space"><OrbitIcon /><span>Your Space</span></button>
+        <div className="echo-header-end"><AccountPill /><button className="echo-orbit-button" onClick={() => setSpace({})} aria-label="Open Your Space"><OrbitIcon /><span>Your Space</span></button></div>
       </header>
       <div className="echo-chat-scroll" ref={scroller} onScroll={(event) => { const el = event.currentTarget; following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
         <div className="echo-presence">
