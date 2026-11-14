@@ -1,152 +1,121 @@
 # Future Echo
 
-## Current release — 2026-11-12
+**Talk with one imagined possible future version of yourself — never a prediction.**
 
-Live application: https://future-echo-sandy.vercel.app/
+Future Echo is a quiet, reflective app for practicing a chosen future perspective. Bring an ordinary day into conversation, hear a warm and honest reply from that imagined self, and deliberately keep only the moments you choose.
 
-The current application includes configuration-gated Supabase account access,
-Google sign-in and explicitly consented hosted SEA-LION conversations. The older
-implementation checkpoints below are historical; their statements that AI is
-paused, Google is unavailable or all conversations reset are superseded.
+**Live demo:** [https://future-echo-sandy.vercel.app/](https://future-echo-sandy.vercel.app/)
 
-- Home has English/Myanmar switching, monochrome branding, a brief logo entrance
-  and a non-repeating layered starfield. Slow rotation and independent brightness
-  changes replace the rejected tiled-dot wallpaper. Reduced motion disables movement.
-- Desktop lower sections use a split composition; the mobile hero reserves the
-  first viewport. The starfield is CSS, not video, and uses no external media request.
-- Local journals are scoped to the verified account. Legacy unowned data is
-  preserved separately, never silently assigned to a different signed-in user.
-- Google is the primary login/signup action; email access is available under
-  “Use email instead.” Adult confirmation remains required.
-  Actual email delivery and password sign-in still require hosted verification.
-- The conversation composer is text-only. Photos and templates remain available
-  in the journal editor through Your Space.
-- Journal templates preview their actual cover artwork; cover text and decorations
-  move independently. Stickers can grow beyond twice their original size up to
-  the book boundary. Compact controls stay upright, and native sticker selection
-  preserves the editor. Routine session refresh runs in the background so
-  returning to paste or choose an image does not interrupt editing. Large JPG,
-  PNG and WebP uploads resize automatically on the device before local storage.
-- Original conversation evidence and separate memory/note consent are preserved.
-  Browser journals and backups are not encrypted or automatically cloud-synced.
+![Future Echo landing page](docs/screenshots/landing.webp)
 
-Release notes and known verification limits: [RELEASE_NOTES.md](./RELEASE_NOTES.md).
-Use WSL-native Node 24 for this repository; Windows npm cannot build its UNC path.
+![Future Echo conversation interface](docs/screenshots/app-preview.webp)
 
-## Historical implementation checkpoints
+## Why Future Echo
 
-Future Echo is a dark, quiet reflective product for speaking with one imagined possible future perspective. It is not prediction, therapy, or a productivity tracker. Its journal is browser-local. Account/backend integration is gated separately; AI work and public release are currently paused. A hosted schema was explicitly applied on October 17, but that does not establish live account or public-release readiness. See [BACKEND_SETUP.md](./BACKEND_SETUP.md), [SECURITY.md](./SECURITY.md) and [JOURNAL_PROGRESS.md](./docs/history/JOURNAL_PROGRESS.md) for dated evidence and remaining gates. Never copy private environment files into an issue or commit.
+It is not a general chatbot, and it is not a journal:
 
-Dated historical records (implementation handoffs, progress logs, model evaluations and pre-connection checklists) are archived in [docs/history/](./docs/history/). Current requirements live in [SPEC.md](./SPEC.md); durable decisions live in [LEARN.md](./LEARN.md).
+- **A stable, user-defined perspective.** One active Future Self at a time, chosen by you, with a horizon of at least six months.
+- **Deliberate memory.** Full conversation history is never used as long-term AI memory. Only moments you explicitly save become structured memory.
+- **Clear authorship.** Your original words stay primary; AI interpretation is labelled, secondary, and removable; your note stays yours.
 
-### Non-AI production preparation
+It is not prediction, therapy, or productivity tracking — no streaks, scores, or engagement loops.
 
-The current baseline is Next.js 16.4.3 with browser security headers, isolated
-local journal persistence/backup tests and read-only CI. CI does not deploy.
-Production account configuration must provide an explicit HTTPS APP_ORIGIN and
-HTTPS SUPABASE_URL with no credentials, query, fragment or path. Invalid
-configuration leaves account services unavailable rather than sending secrets to
-an insecure destination. Development permits explicit loopback HTTP.
+## Key features
 
-Run `npm run test:security` for synthetic scanner checks and a sanitized scan of
-Git-tracked working files. This does not inspect ignored keys or Git history.
-Auth responses now validate cookie token/expiry shapes; sign-out distinguishes
-local cookie removal from unconfirmed upstream session revocation.
+### Conversation
 
-AI provider flags, keys and models are not part of this preparation. Do not enable
-them to run journal/security checks. Public release still needs reviewed hosting,
-real two-account tests, deletion/retention decisions, abuse controls and physical
-device/accessibility checks; passing local tests is not release certification.
+- Intimate messenger with distinct present-day and imagined-future message surfaces
+- Warm, honest, lightly mentoring default voice — never omniscient or authoritative
+- English and Myanmar interface, with replies that follow your language
+- Works on-device without an account; live AI requires an explicit connection
 
-Read [SPEC.md](./SPEC.md) and [LEARN.md](./LEARN.md) before changing product behavior or visual direction. They record locked requirements, durable decisions, and rejected approaches.
+### Save this moment
 
-### Latest local UX completion
+- Saving is manual, reviewable, and explicitly confirmed
+- Three visible layers: original excerpt, AI interpretation, and My Note
+- Redaction before confirmation; original evidence stays immutable afterwards
+- Memory-use consent is separate from saving, and My Note needs its own opt-in
 
-Pre-connection resilience and hardware/safety review steps are in [PRE_CONNECTION_CHECKLIST.md](./docs/history/PRE_CONNECTION_CHECKLIST.md). The repository now includes isolated-browser failure-path tests and a 16-case bilingual offline safety corpus. Corpus checks are not live model evaluation; actual-device, screen-reader and provider/account-deletion policy gates remain explicit.
+### Memory & journal
 
-Validated on 2026-10-16: 88 unit tests, SQL checks, lint, full TypeScript check, production build and 15 browser tests pass. Final browser tests used the production server with reduced motion asserted. For a separate local test server, set `ECHO_BASE_URL=http://localhost:3001`; CI builds first and then starts the production server. Physical-device/Safari and hosted CI checks remain outstanding. See docs/history/JOURNAL_PROGRESS.md for the development-server retry and exact coverage.
+- Chronological Memory grouped by year and populated month; empty months stay quiet
+- Tactile memory-book editor with photos, movable text, stickers, covers, paper, and note fonts
+- Direct mouse, touch, and keyboard arrangement with Undo/Redo
+- Local-first storage in IndexedDB, with validated JSON backup, preview, and recovery
 
-New installs start empty; the public demo never becomes personal memory. Memory controls now allow permission changes, Myanmar redaction, earlier-exchange saving, local dates, resumable setup, versioned horizon/principles and meaningful Horizon Day actions. Journal adds local search/year/month filters, original-preserving photo framing, layer order, 20,000-character personal pages and 2,000-character notes. Model context remains bounded to 2,000-character excerpts and 500-character permitted notes. Existing records are never reset.
+### Accounts & direction
 
-`npm run test:e2e` runs the committed browser suite against localhost:3000 (start the app first). `PW_CHANNEL=chrome` uses installed Chrome; otherwise install Chromium with `npx playwright install chromium`. Desktop 1440×1000, mobile 390×844 and small mobile 320×740 are configured. GitHub checks run unit/SQL/lint/build/browser on future pushes and pull requests, with no provider credentials or deployment.
+- Google-first sign-in and sign-up with required adult confirmation; email remains available as a fallback
+- Versioned Future Self lifecycle: edit, archive, and begin again without losing the past
+- A non-AI Horizon Day reflection when your chosen distance arrives — no pass/fail framing
+- Your Space for direction, settings, reading size, motion preferences, and backups
 
-### Current preview
+### Privacy by design
 
-`/future-self` now shares Your Space's dark/lilac/butter layout rather than the public-site shell. It supports inline versioned direction editing, past-version reading links, a non-AI Horizon Day preview and archive confirmation; existing moments retain their provenance.
+- A server-side context builder sends only the current message, up to 10 recent messages, your active Future Self, and up to 3 consented moments
+- Photos, drafts, layouts, interpretations, and payment data never enter model context
+- Journals and backups stay on your device; signing in does not upload them
+- Optional hosted replies (SEA-LION) are opt-in, consent-gated, and disclosed before connection; this is not end-to-end encryption
 
-`/now` opens the single messenger conversation. **Your Space → Settings** offers reading size, reduced motion, a default note font and validated backup download/import with recovery controls. In a memory book, **Photo, sticker & note → Arrange** supports direct mouse/touch movement, resize handles, pinch/twist and keyboard alternatives. The editor has 30-step content/layout Undo/Redo, custom raster stickers, 19 built-in stickers/tapes/clips, four note fonts, paper styles and optional user-chosen music links. **Customize [year] book** offers six cover themes, title/font/photo/decoration editing and page reading order. Choose **Done**, then wait for **Saved on this device**. Reading can hide decorations or layout without deleting them.
+## Tech stack
 
-Confirmed moments, photos, layouts, identity versions, covers and preferences persist in IndexedDB. Unfinished page and cover drafts also save locally, separately from confirmed moments; resume them from Your Space/Customize. Drafts never add stars or grant AI memory consent. Storage failures and stale-tab conflicts are shown. Settings imports a validated unencrypted JSON backup only after preview/confirmation, atomically preserving the current journal as one recovery copy. Recovery can be downloaded, previewed/restored or explicitly deleted. Normal page deletion does not erase an older recovery copy. Exported backups exclude drafts and conversations. Browser cleanup, private mode and eviction can lose local data; there is no cloud backup. **Device conversations survive tab closure and reload through the bounded local recovery cache.** Retention windows below are requirements, not functioning expiry jobs. Music opens an external destination only when clicked; it is not embedded, autoplayed or recommended by a connected service.
-
-## Locked privacy boundaries
-
-- Free conversation history is retained for up to 30 days; Plus history for up to 90 days. Device chat survives tab closure. Saved Moments remain until the user deletes them.
-- AI context is limited to the current message, up to 10 recent non-deleted messages, the active Future Self version, and up to 3 relevant consented Saved Moments.
-- My Note requires separate explicit opt-in. AI interpretations, archived or deleted memories, full history, and payment or support data are always excluded.
-- The context boundary is implemented and tested server-side; a model receives it only through the explicitly consented, configuration-gated hosted path.
+| Layer | Choice |
+| --- | --- |
+| Framework | Next.js 16 (App Router), React 19, TypeScript (strict) |
+| Styling | Tailwind CSS v4 with reusable CSS custom-property tokens |
+| Accounts & data | Supabase (Auth + Postgres + row-level security), HttpOnly session cookies |
+| AI | Provider-neutral server boundary; configuration-gated hosted replies |
+| Persistence | Revision-checked IndexedDB journal; validated JSON backups |
+| Hosting | Vercel |
+| Tests | Node test runner (unit), Playwright (browser), isolated SQL/RLS suite |
+| CI | GitHub Actions (read-only checks; no deployment) |
 
 ## Run locally
 
-Use Node.js 24 (matching CI) and npm. In a WSL checkout, use WSL-native Node.
+Requires **Node.js 24**. In a WSL checkout, use WSL-native Node — Windows npm cannot build the WSL path.
 
 ```bash
+git clone https://github.com/tainsinmoe04/future-echo.git
+cd future-echo
 npm ci
 npm run dev:local
 ```
+
+Open [http://localhost:3000](http://localhost:3000). The product runs fully on-device with no backend configuration; account and hosted-AI features activate only when you supply your own server environment variables (see [.env.example](./.env.example)). Never commit real secrets.
+
+### Checks
+
+```bash
+npm test          # unit tests
+npm run lint      # ESLint
+npm run typecheck # TypeScript
+npm run build     # production build
+npm run test:e2e  # browser tests (start the app first)
+```
+
+Browser tests use Playwright: install Chromium with `npx playwright install chromium`, or set `PW_CHANNEL=chrome` to use an installed Chrome. Desktop, mobile, and small-mobile viewports are configured.
 
 ## Routes
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Responsive product landing page and core-loop demonstration |
-| `/login` | Google-first sign-in with email behind “Use email instead” |
-| `/signup` | Google-first account creation with adult confirmation |
+| `/` | Landing page and core-loop demonstration |
+| `/login`, `/signup` | Google-first account entry with adult confirmation |
 | `/onboarding` | Three-stage possible-future setup with horizon presets |
-| `/now` | Mock conversation, session review, and Save Moment flow |
-| `/memory` | Sparse chronological saved moments and editable notes |
-| `/future-self` | Active identity editing and archive lifecycle |
-| `/api/ai` | Server-only AI boundary; configuration-gated, 501 when not enabled |
+| `/now` | Conversation, session review, and Save Moment flow |
+| `/memory` | Chronological saved moments and notes (Your Space) |
+| `/future-self` | Active direction editing and archive lifecycle |
+| `/api/ai` | Server-only AI boundary; inactive unless explicitly configured |
 
-Account, privacy, and sign-out controls live in the signed-in account menu. Saved moments are part of Memory, not a separate primary destination.
+## Documentation
 
-## Architecture
+- [SPEC.md](./SPEC.md) — product requirements and acceptance criteria
+- [LEARN.md](./LEARN.md) — durable decisions and rejected directions
+- [SECURITY.md](./SECURITY.md) — security boundaries and vulnerability reporting
+- [RELEASE_NOTES.md](./RELEASE_NOTES.md) — recent release details
 
-```text
-src/
-├── app/                    # Next.js App Router pages and server route
-│   ├── api/ai/             # Intentionally inactive AI boundary
-│   ├── onboarding/         # Client-side three-stage setup
-│   ├── now/                # Conversation and save review
-│   ├── memory/             # Client-side mock memory state
-│   └── future-self/        # Identity lifecycle
-├── components/             # Brand, shells, icons, auth, and modal UI
-└── lib/
-    ├── ai-provider.ts      # Provider-neutral inactive contract
-    ├── domain.ts           # Versioned identity and consent-based memory models
-    └── mock-data.ts        # Sparse saved moments and identity fixtures
-src/server/
-└── ai-context-builder.ts   # Enforced provider-facing context boundary
-```
+## Status & limits
 
-Tailwind v4 design tokens live in `src/app/globals.css`. Journal state is local and revision-protected in IndexedDB. Account/context APIs are separately gated; no module reads API keys in client code.
+Future Echo is in active beta for adults (18+). Deliberately not yet included: password recovery, approved account-deletion flows, notifications, export/print, and a completed bilingual safety evaluation for the connected provider. Local journals and backups are unencrypted and are not cloud-synced; browser cleanup can remove them.
 
-## Intentionally deferred
-
-- Final mascot and hero artwork
-- Password recovery and approved account-deletion behavior
-- Completed bilingual safety evaluation for the connected provider
-- Conversation-history expiry jobs and backup-erasure policy
-- Notifications, export/print, multiple identities, rich search, and thematic views
-
-## Verification
-
-```bash
-npm test
-npm run lint
-npm run build
-```
-## Private local Gemma trial (2026-10-18)
-
-Ollama model: `gemma3:12b`. For the owner-authorized private development trial, use ignored `.env.development.local` with `FUTURE_ECHO_LOCAL_AI=true`; enable `FUTURE_ECHO_OLLAMA_WINDOWS_BRIDGE=true` only for WSL Next + Windows Ollama. Run `npm run dev:local` inside WSL, then open `http://localhost:3000/now`. The bridge keeps Ollama on Windows localhost, without exposing its port. See BACKEND_SETUP.md for full instructions.
-
-This trial needs no cloud key or sign-in, uses no automatic cloud fallback, and cannot enable local inference in a production build. Existing Gemini/Supabase production gating remains unchanged. Local records/backups are not encrypted; this is not E2EE or public-launch readiness.
+Read [SPEC.md](./SPEC.md) and [LEARN.md](./LEARN.md) before changing product behavior or visual direction.
