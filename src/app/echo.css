@@ -606,24 +606,26 @@
 .journal-cutout-images figure>.echo-sticker { display:block;width:120px;height:120px;object-fit:contain; }
 .journal-cutout-images figcaption { padding:6px;background:#17151e;color:#f4f0f9;font-size:12px;text-align:center; }
 
-/* Account badge in every app header: one click to see who is signed in, one
-   more to sign out. Self-contained so it also works in the public AppShell. */
-.echo-account { position: relative; flex: none; }
-.echo-account-trigger { display: inline-flex; align-items: center; gap: 8px; max-width: 210px; min-height: 40px; padding: 5px 12px 5px 5px; border: 1px solid #ffffff2e; border-radius: 999px; background: #ffffff14; color: #ffedb5; font-size: 11px; font-weight: 650; }
-.echo-ui button.echo-account-trigger { border: 1px solid #ffffff2e; font-size: 11px; }
-.echo-account-avatar { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: #ffedb5; color: #16151e; font-size: 11px; font-weight: 750; }
-.echo-account-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Account badge in every app header: a bare avatar in the bar, the address
+   and Sign out one click away. Self-contained so it also works in the public
+   AppShell. */
+.echo-account { position: relative; flex: none; --ease-out: cubic-bezier(.23, 1, .32, 1); }
+.echo-account-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid #ffffff2e; border-radius: 50%; background: #ffffff14; color: #ffedb5; font-size: 14px; font-weight: 750; line-height: 1; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out); }
+/* Invisible padding keeps the 40px circle at a 44px touch target. */
+.echo-account-trigger::before { content: ""; position: absolute; inset: -2px; }
+.echo-account-trigger:active { transform: scale(.97); }
 .echo-account-pending { display: inline-block; width: 40px; height: 40px; border-radius: 999px; background: #ffffff10; }
-.echo-account-menu { position: absolute; z-index: 70; top: calc(100% + 8px); right: 0; width: min(250px, calc(100vw - 32px)); padding: 14px; border: 1px solid #35323f; border-radius: 18px; background: #14131a; box-shadow: 0 16px 40px #0009; }
+.echo-account-menu { position: absolute; z-index: 80; top: calc(100% + 8px); right: 0; width: min(250px, calc(100vw - 32px)); padding: 14px; border: 1px solid #ffffff1f; border-radius: 16px; background: #14131af2; backdrop-filter: blur(18px) saturate(1.15); -webkit-backdrop-filter: blur(18px) saturate(1.15); box-shadow: 0 18px 44px #000a; transform-origin: top right; opacity: 0; visibility: hidden; pointer-events: none; transform: scale(.97) translateY(-4px); transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out), visibility 0s linear 120ms; }
+.echo-account-menu[data-open] { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out), visibility 0s; }
 .echo-account-email { margin-bottom: 12px; color: #c9c6d6; font-size: 12px; overflow-wrap: anywhere; }
-.echo-account-signout { width: 100%; }
+.echo-account-signout { width: 100%; transition: transform 160ms var(--ease-out); }
+.echo-account-signout:active { transform: scale(.98); }
 .echo-ui a.echo-account-signin, a.echo-account-signin { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px; border: 1px solid #ffffff2e; border-radius: 999px; background: #ffffff14; color: #ffedb5; font-size: 12px; font-weight: 650; text-decoration: none; }
-.echo-header-end { display: flex; flex: none; align-items: center; gap: 2px; }
+.echo-header-end { display: flex; flex: none; align-items: center; gap: 6px; }
 .echo-empty-account { position: absolute; z-index: 5; top: max(14px, env(safe-area-inset-top)); right: 16px; }
-@media (max-width: 420px) {
-  .echo-account-label { display: none; }
-  .echo-account-trigger { padding: 5px; }
-}
 @media (hover: hover) and (pointer: fine) {
   .echo-account-trigger:hover { background: #ffffff24; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .echo-account-menu, .echo-account-menu[data-open], .echo-account-trigger, .echo-account-signout { transition: none; transform: none; }
 }

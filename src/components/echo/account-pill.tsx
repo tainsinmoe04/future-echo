@@ -9,17 +9,18 @@ import { LIVE_CONNECTION_KEY } from "@/lib/live-connection";
 
 type SessionUser = { id: string; email?: string };
 
-function initials(email: string | undefined): string {
+/** One letter for the avatar — the header never spells out the address inline. */
+function initial(email: string | undefined): string {
   const local = (email ?? "").split("@")[0] ?? "";
-  const parts = local.split(/[._-]+/).filter(Boolean);
-  const letters = parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : local.slice(0, 2);
-  return letters.toUpperCase() || "?";
+  return (local.match(/[a-z0-9]/i)?.[0] ?? "").toUpperCase();
 }
 
 /**
  * Account badge for the app's top navigation. Self-contained: it reads the
- * verified session itself, so it works anywhere in the app shell. Sign out
- * clears this device's cached session state and returns to the landing page.
+ * verified session itself, so it works anywhere in the app shell. The header
+ * shows only a circular avatar; the address and Sign out live in the popover.
+ * Sign out clears this device's cached session state and returns to the
+ * landing page.
  */
 export function AccountPill() {
   const router = useRouter();
@@ -77,15 +78,17 @@ export function AccountPill() {
   if (!known) return <span className="echo-account echo-account-pending" aria-hidden="true" />;
   if (!user) return <Link href="/login" className="echo-account-signin">Sign in</Link>;
 
+  const letter = initial(user.email);
   return <div className="echo-account" ref={root}>
-    <button ref={trigger} type="button" className="echo-account-trigger" aria-expanded={open} aria-controls="echo-account-panel" onClick={() => setOpen((value) => !value)}>
-      <span className="echo-account-avatar" aria-hidden="true">{initials(user.email)}</span>
-      <span className="echo-account-label">{user.email ?? "Account"}</span>
+    <button ref={trigger} type="button" className="echo-account-trigger" aria-label={user.email ? `Account: ${user.email}` : "Account"} aria-expanded={open} aria-controls="echo-account-panel" onClick={() => setOpen((value) => !value)}>
+      {letter ? <span aria-hidden="true">{letter}</span> : <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" /><path d="M5 19.5c1.6-3.2 4-4.8 7-4.8s5.4 1.6 7 4.8" /></svg>}
     </button>
-    {open && <div className="echo-account-menu" id="echo-account-panel">
+    {/* Stays mounted so it can fade out; visibility hides it from view and
+        the tab order while closed. */}
+    <div className="echo-account-menu" id="echo-account-panel" data-open={open ? "" : undefined}>
       <p className="echo-account-email">{user.email ?? "Your account"}</p>
       <button type="button" className="echo-button danger echo-account-signout" disabled={busy} onClick={() => void signOut()}>{busy ? "Signing out…" : "Sign out"}</button>
       {error && <p className="echo-error" role="alert">{error}</p>}
-    </div>}
+    </div>
   </div>;
 }
