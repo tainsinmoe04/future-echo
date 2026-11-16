@@ -4,6 +4,7 @@ import { useJournalState } from "@/components/mock-product-state";
 import { readJournalBackup, serializeJournalBackup } from "@/lib/journal-backup";
 import { validateJournalMedia } from "@/lib/journal-media";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
+import { JOURNAL_SYNC_COPY } from "@/lib/journal-sync";
 
 function download(source: string, suffix = "") {
   const url = URL.createObjectURL(new Blob([source], { type: "application/json" }));
@@ -12,7 +13,7 @@ function download(source: string, suffix = "") {
   document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export function JournalStorageStatus({ backup = false }: { backup?: boolean }) {
-  const { storageStatus, storageError, retryStorage, exportJournal, restoreJournal, readRecovery, deleteRecovery } = useJournalState();
+  const { storageStatus, storageError, journalSync, retryStorage, exportJournal, restoreJournal, readRecovery, deleteRecovery } = useJournalState();
   const [error, setError] = useState(""); const [notice, setNotice] = useState("");
   const [candidate, setCandidate] = useState<JournalSnapshot | null>(null);
   const [recovery, setRecovery] = useState<JournalSnapshot | null>(null);
@@ -22,6 +23,8 @@ export function JournalStorageStatus({ backup = false }: { backup?: boolean }) {
   const run = async (action: () => Promise<void>) => { setBusy(true); setError(""); setNotice(""); try { await action(); } catch (e) { setError(e instanceof Error ? e.message : "The journal could not be updated."); } finally { setBusy(false); } };
   return <section className="echo-local-storage" aria-label="Local journal storage">
     <p role="status" className={`journal-save-line ${storageStatus === "error" ? "has-error" : ""}`}><span aria-hidden="true">{storageStatus === "saved" ? "●" : "○"}</span><span>{storageStatus === "saved" ? "Saved on this device" : storageStatus === "error" ? "Not saved — keep this tab open" : "Saving on this device…"}</span></p>
+    <p role="status" className={`journal-save-line ${journalSync.status === "error" || journalSync.status === "too-large" ? "has-error" : ""}`}><span aria-hidden="true">{journalSync.status === "synced" ? "●" : "○"}</span><span>{JOURNAL_SYNC_COPY[journalSync.status]}</span></p>
+    {journalSync.message && <p role="status">{journalSync.message}</p>}
     {storageError && <p role="alert">{storageError}</p>}{storageStatus === "error" && <button className="echo-text-button" onClick={retryStorage}>Retry saving</button>}
     {(backup || storageStatus === "error") && <>
       <div className="journal-backup-actions"><button className="echo-button butter" disabled={busy} onClick={() => { try { download(exportJournal()); setNotice("Backup downloaded. Keep it somewhere private."); } catch (e) { setError((e as Error).message); } }}>Download backup</button>{backup && <button className="echo-button outline" disabled={busy || storageStatus !== "saved"} onClick={() => file.current?.click()}>Import backup</button>}</div>

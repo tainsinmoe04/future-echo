@@ -10,6 +10,8 @@ interface JournalPersistence {
 }
 export interface JournalSessionState {
   snapshot: JournalSnapshot;
+  /** Stamp of the stored document; cloud sync compares it to decide which side wins a merge. */
+  savedAt: string;
   ready: boolean;
   status: "loading" | "saving" | "saved" | "error";
   error: string;
@@ -17,8 +19,9 @@ export interface JournalSessionState {
 
 /** One tab's serialized save queue. Never retries conflicts with a newer revision. */
 export function createJournalSession(initial: JournalSnapshot, storage: JournalPersistence = createJournalStorage()) {
-  let state: JournalSessionState = { snapshot: initial, ready: false, status: "loading", error: "" };
+  let state: JournalSessionState = { snapshot: initial, savedAt: "", ready: false, status: "loading", error: "" };
   let revision = 0;
+  let stamp = "";
   let loading: Promise<void> | undefined;
   let writing = false;
   let pending: JournalSnapshot | null = null;
@@ -35,13 +38,13 @@ export function createJournalSession(initial: JournalSnapshot, storage: JournalP
         const value = pending;
         pending = null;
         publish({ status: "saving", error: "" });
-        try { revision = (await storage.write(value, revision, isJournalSnapshot)).revision; }
+        try { const written = await storage.write(value, revision, isJournalSnapshot); revision = written.revision; stamp = written.savedAt; }
         catch (error) { pending = state.snapshot; fail(error); return; }
       }
     } finally { writing = false; }
     // Release the queue lock before notifying subscribers. A subscriber may
     // synchronously enqueue another edit in response to the saved state.
-    publish({ status: "saved" });
+    publish({ status: "saved", savedAt: stamp });
   }
 
   const load = () => {
@@ -54,7 +57,8 @@ export function createJournalSession(initial: JournalSnapshot, storage: JournalP
         // Only a confirmed empty store may receive the existing demo seed.
         const document = stored ?? await storage.write(initial, 0, isJournalSnapshot);
         revision = document.revision;
-        publish({ snapshot: document.value, ready: true, status: "saved", error: "" });
+        stamp = document.savedAt;
+        publish({ snapshot: document.value, savedAt: stamp, ready: true, status: "saved", error: "" });
       } catch (error) { fail(error); }
       finally { loading = undefined; }
     })();
@@ -71,7 +75,8 @@ export function createJournalSession(initial: JournalSnapshot, storage: JournalP
       try {
         const document = await storage.restore(snapshot, revision, isJournalSnapshot);
         revision = document.revision;
-        publish({ snapshot: document.value, status: "saved", error: "" });
+        stamp = document.savedAt;
+        publish({ snapshot: document.value, savedAt: stamp, status: "saved", error: "" });
       } catch (error) { fail(error); throw error; }
       finally { restoring = false; }
     },

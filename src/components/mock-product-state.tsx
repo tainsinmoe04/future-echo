@@ -20,6 +20,10 @@ import { ACCOUNT_SCOPE_EVENT, ACCOUNT_SCOPE_STORAGE_EVENT, accountStorageSuffix,
 import { hydrateAccountJournal, type AccountHydration } from "@/lib/account-hydration";
 import { serializeJournalBackup } from "@/lib/journal-backup";
 import type { JournalSnapshot } from "@/lib/journal-snapshot";
+import {
+  cloudJournalPayload, isBlankJournal, mergeJournalCloud,
+  type JournalCloudDocument, type JournalSyncState,
+} from "@/lib/journal-sync";
 import { myanmarVariables } from "@/app/myanmar-fonts";
 
 export interface CreateIdentityInput {
@@ -51,6 +55,7 @@ interface MockProductStateValue {
   deleteRecovery: () => Promise<void>;
   storageStatus: "loading" | "saving" | "saved" | "error";
   storageError: string;
+  journalSync: JournalSyncState;
   accountHydrated: boolean;
   retryStorage: () => void;
   exportJournal: () => string;
@@ -75,7 +80,7 @@ const MockProductState = createContext<MockProductStateValue | null>(null);
 /** Focused slices: consumers subscribe only to the state they actually read. */
 type JournalSlice = Pick<MockProductStateValue,
   "journalSnapshot" | "updateJournal" | "restoreJournal" | "readRecovery" | "deleteRecovery" |
-  "storageStatus" | "storageError" | "accountHydrated" | "retryStorage" | "exportJournal" |
+  "storageStatus" | "storageError" | "journalSync" | "accountHydrated" | "retryStorage" | "exportJournal" |
   "preferences" | "updatePreferences" | "identityVersions" | "activeIdentity" | "moments" |
   "createIdentityVersion" | "editActiveIdentityDefinition" | "archiveActiveIdentity" | "activateMockIdentity" |
   "saveJourneyMoment" | "setMomentConsent" | "deleteMoment">;
@@ -276,6 +281,89 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
   }, [account, recoveryKey, setThreads]);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; connectionEpoch.current += 1; }; }, []);
+
+  // Cross-device journal sync: signed-in accounts mirror saved pages, covers and
+  // settings. Guests keep the local-first document; a failed or oversized sync
+  // never blocks or rewrites local saving.
+  const [journalSync, setJournalSync] = useState<JournalSyncState>(() => ({ status: account ? "pulling" : "local", message: "", lastSyncedAt: "" }));
+  const syncControl = useRef({ revision: 0, pushed: "", pulled: false, conflicts: 0, flight: null as Promise<void> | null });
+  const [syncTick, setSyncTick] = useState(0);
+  const publishSync = useCallback((patch: Partial<JournalSyncState>) => {
+    if (mounted.current) setJournalSync((current) => ({ ...current, ...patch }));
+  }, []);
+  const pullJournal = useCallback((): Promise<void> => {
+    if (!account) return Promise.resolve();
+    const control = syncControl.current;
+    if (control.pulled) return Promise.resolve();
+    if (control.flight) return control.flight;
+    const flight = (async () => {
+      publishSync({ status: "pulling", message: "" });
+      try {
+        const remote = await backendRequest<{ journal: JournalCloudDocument | null }>("/api/journal", undefined, "GET", true, 20000, account);
+        control.revision = remote.journal?.revision ?? 0;
+        control.pulled = true;
+        control.conflicts = 0;
+        const document = remote.journal?.document
+          ? { snapshot: remote.journal.document, savedAt: remote.journal.savedAt ?? "" } : null;
+        let merged = false;
+        if (document) journal.update((current) => {
+          const next = mergeJournalCloud({ snapshot: current, savedAt: journal.getSnapshot().savedAt }, document);
+          if (!next) return current;
+          merged = true;
+          return next;
+        });
+        publishSync({ status: "idle", message: "" });
+        // A pull with nothing to merge still leaves local work to publish.
+        if (!merged) setSyncTick((tick) => tick + 1);
+      } catch {
+        control.pulled = false;
+        publishSync({ status: "error", message: "" });
+      } finally { control.flight = null; }
+    })();
+    control.flight = flight;
+    return flight;
+  }, [account, journal, publishSync]);
+  const pushJournal = useCallback(async () => {
+    if (!account) return;
+    const control = syncControl.current;
+    if (!control.pulled) { await pullJournal(); return; }
+    const local = journal.getSnapshot();
+    if (local.status !== "saved") return;
+    if (isBlankJournal(local.snapshot)) { publishSync({ status: "idle", message: "" }); return; }
+    const payload = cloudJournalPayload(local.snapshot);
+    if (!payload) {
+      publishSync({ status: "too-large", message: "This journal is over the 4 MB account limit, so nothing was uploaded. It stays on this device." });
+      return;
+    }
+    const encoded = JSON.stringify(payload);
+    if (encoded === control.pushed) { publishSync({ status: "synced", message: "" }); return; }
+    publishSync({ status: "syncing", message: "" });
+    try {
+      const saved = await backendRequest<{ revision: number; savedAt: string }>("/api/journal", { document: payload, baseRevision: control.revision }, "PUT", true, 30000, account);
+      control.revision = saved.revision;
+      control.pushed = encoded;
+      control.conflicts = 0;
+      publishSync({ status: "synced", message: "", lastSyncedAt: saved.savedAt });
+    } catch (error) {
+      if (error instanceof BackendRequestError && error.status === 409 && ++control.conflicts <= 3) {
+        // Another device wrote first: pull its copy, merge, then publish the union.
+        control.pulled = false;
+        void pullJournal();
+        return;
+      }
+      publishSync({ status: "error", message: "" });
+    }
+  }, [account, journal, publishSync, pullJournal]);
+  // Local writes publish after a short quiet period so typing does not hammer the network.
+  useEffect(() => {
+    if (!account || !syncControl.current.pulled || local.status !== "saved") return;
+    const timer = setTimeout(() => { void pushJournal(); }, 1500);
+    return () => clearTimeout(timer);
+  }, [account, local.status, local.savedAt, syncTick, pushJournal]);
+  useEffect(() => {
+    if (!local.ready || !account || !accountHydrated) return;
+    void pullJournal();
+  }, [local.ready, account, accountHydrated, pullJournal]);
   const contextQueue = useRef<Promise<unknown>>(Promise.resolve());
   const updateAccountContext = useCallback((body: unknown, method = "PUT") => {
     const pending = contextQueue.current.catch(() => {}).then(() => { if (!account || !mounted.current) throw new Error("Account session changed."); return backendRequest("/api/context", body, method, true, 60000, account); });
@@ -458,6 +546,8 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
   }, [setMoments]);
   const deleteMoment = useCallback((id: string) => journal.update((current) => ({ ...current,
     moments: current.moments.filter((m) => m.id !== id), drafts: current.drafts?.filter((d) => d.id !== id),
+    // The tombstone keeps another device from merging this page back in.
+    removals: { ...(current.removals ?? {}), [id]: new Date().toISOString() },
     books: current.books && Object.fromEntries(Object.entries(current.books).map(([year, book]) => [year, { ...book, order: book.order.filter((key) => key !== id) }])),
     bookDrafts: current.bookDrafts && Object.fromEntries(Object.entries(current.bookDrafts).map(([year, book]) => [year, { ...book, order: book.order.filter((key) => key !== id) }])),
   })), [journal]);
@@ -535,11 +625,11 @@ function ScopedProductStateProvider({ children, account, trialAI = false, trialP
   const journalValue = useMemo<JournalSlice>(() => ({
     journalSnapshot: local.snapshot, updateJournal: journal.update, restoreJournal: restoreConnectedJournal,
     readRecovery: journal.readRecovery, deleteRecovery: journal.deleteRecovery,
-    storageStatus: local.status, storageError: local.error, accountHydrated, retryStorage: journal.retry, exportJournal,
+    storageStatus: local.status, storageError: local.error, journalSync, accountHydrated, retryStorage: journal.retry, exportJournal,
     preferences, updatePreferences, identityVersions, activeIdentity, moments,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment,
-  }), [local.snapshot, local.status, local.error, accountHydrated, journal, restoreConnectedJournal, exportJournal,
+  }), [local.snapshot, local.status, local.error, journalSync, accountHydrated, journal, restoreConnectedJournal, exportJournal,
     preferences, updatePreferences, identityVersions, activeIdentity, moments,
     createIdentityVersion, editActiveIdentityDefinition, archiveActiveIdentity, activateMockIdentity,
     saveJourneyMoment, setMomentConsent, deleteMoment]);

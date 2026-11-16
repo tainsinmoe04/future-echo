@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { backendRequest } from "@/lib/backend-client";
 import { accountStorageSuffix, notifyAccountSessionChanged } from "@/lib/account-scope";
@@ -29,6 +29,9 @@ export function AccountPill() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  /** Upstream revocation failed: keep this popover open so the warning is readable. */
+  const [revocationWarning, setRevocationWarning] = useState(false);
+  const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
 
@@ -49,14 +52,20 @@ export function AccountPill() {
     return () => { document.removeEventListener("keydown", onKeyDown); document.removeEventListener("mousedown", onPointerDown); };
   }, [open]);
 
+  function leave() {
+    notifyAccountSessionChanged();
+    router.push("/");
+  }
+
   async function signOut() {
     if (busy) return;
     setBusy(true);
     setError("");
+    setRevocationWarning(false);
     try {
       const session = await backendRequest<{ user: SessionUser | null }>("/api/auth/session");
       const id = session.user?.id;
-      await backendRequest("/api/auth/logout", {}, "POST", false, 60000, id ?? undefined);
+      const result = await backendRequest<{ serverRevocationConfirmed?: boolean }>("/api/auth/logout", {}, "POST", false, 60000, id ?? undefined);
       if (id) {
         const suffix = accountStorageSuffix(id);
         try {
@@ -68,8 +77,10 @@ export function AccountPill() {
           sessionStorage.removeItem("future-echo-account-start");
         } catch { /* Blocked storage still leaves the session cookie cleared. */ }
       }
-      notifyAccountSessionChanged();
-      router.push("/");
+      if (result.serverRevocationConfirmed === true) { leave(); return; }
+      // Cookies are cleared but upstream revocation is unconfirmed. Stay on the
+      // warning instead of navigating it away before it can be read.
+      setRevocationWarning(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Sign out could not be completed.");
     } finally { setBusy(false); }
@@ -80,14 +91,16 @@ export function AccountPill() {
 
   const letter = initial(user.email);
   return <div className="echo-account" ref={root}>
-    <button ref={trigger} type="button" className="echo-account-trigger" aria-label={user.email ? `Account: ${user.email}` : "Account"} aria-expanded={open} aria-controls="echo-account-panel" onClick={() => setOpen((value) => !value)}>
+    <button ref={trigger} type="button" className="echo-account-trigger" aria-label={user.email ? `Account: ${user.email}` : "Account"} aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((value) => !value)}>
       {letter ? <span aria-hidden="true">{letter}</span> : <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" /><path d="M5 19.5c1.6-3.2 4-4.8 7-4.8s5.4 1.6 7 4.8" /></svg>}
     </button>
     {/* Stays mounted so it can fade out; visibility hides it from view and
         the tab order while closed. */}
-    <div className="echo-account-menu" id="echo-account-panel" data-open={open ? "" : undefined}>
+    <div className="echo-account-menu" id={panelId} data-open={open ? "" : undefined}>
       <p className="echo-account-email">{user.email ?? "Your account"}</p>
-      <button type="button" className="echo-button danger echo-account-signout" disabled={busy} onClick={() => void signOut()}>{busy ? "Signing out…" : "Sign out"}</button>
+      {revocationWarning
+        ? <><p className="echo-error" role="alert">Signed out on this browser. Server session revocation could not be confirmed. A previously copied session may remain valid until it expires.</p><button type="button" className="echo-button outline echo-account-signout" onClick={leave}>Continue</button></>
+        : <button type="button" className="echo-button danger echo-account-signout" disabled={busy} onClick={() => void signOut()}>{busy ? "Signing out…" : "Sign out"}</button>}
       {error && <p className="echo-error" role="alert">{error}</p>}
     </div>
   </div>;

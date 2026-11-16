@@ -610,7 +610,7 @@
    and Sign out one click away. Self-contained so it also works in the public
    AppShell. */
 .echo-account { position: relative; flex: none; --ease-out: cubic-bezier(.23, 1, .32, 1); }
-.echo-account-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid #ffffff2e; border-radius: 50%; background: #ffffff14; color: #ffedb5; font-size: 14px; font-weight: 750; line-height: 1; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out); }
+.echo-account-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid #ffffff2e; border-radius: 50%; background: #ffffff14; color: #f2f2f2; font-size: 14px; font-weight: 750; line-height: 1; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out); }
 /* Invisible padding keeps the 40px circle at a 44px touch target. */
 .echo-account-trigger::before { content: ""; position: absolute; inset: -2px; }
 .echo-account-trigger:active { transform: scale(.97); }
@@ -620,7 +620,7 @@
 .echo-account-email { margin-bottom: 12px; color: #c9c6d6; font-size: 12px; overflow-wrap: anywhere; }
 .echo-account-signout { width: 100%; transition: transform 160ms var(--ease-out); }
 .echo-account-signout:active { transform: scale(.98); }
-.echo-ui a.echo-account-signin, a.echo-account-signin { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px; border: 1px solid #ffffff2e; border-radius: 999px; background: #ffffff14; color: #ffedb5; font-size: 12px; font-weight: 650; text-decoration: none; }
+.echo-ui a.echo-account-signin, a.echo-account-signin { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px; border: 1px solid #ffffff2e; border-radius: 999px; background: #ffffff14; color: #f2f2f2; font-size: 12px; font-weight: 650; text-decoration: none; }
 .echo-header-end { display: flex; flex: none; align-items: center; gap: 6px; }
 .echo-empty-account { position: absolute; z-index: 5; top: max(14px, env(safe-area-inset-top)); right: 16px; }
 @media (hover: hover) and (pointer: fine) {

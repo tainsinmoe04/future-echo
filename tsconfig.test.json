@@ -19,6 +19,7 @@
     "src/lib/journal-snapshot.ts",
     "src/lib/journal-backup.ts",
     "src/lib/journal-session.ts",
+    "src/lib/journal-sync.ts",
     "src/lib/journal-features.ts",
     "src/lib/playlist.ts",
     "src/lib/journal-media.ts",

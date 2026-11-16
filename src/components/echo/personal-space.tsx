@@ -15,11 +15,12 @@ import { momentDay } from "@/lib/local-date";
 import { defaultBook, orderedPages } from "@/lib/journal-features";
 import { PlaylistCard } from "./playlist-card";
 import { AccountPill } from "./account-pill";
+import { JOURNAL_SYNC_COPY } from "@/lib/journal-sync";
 
 export function PersonalSpace({ onClose, initialMomentId, initialCreate = false }: {
   onClose: () => void; initialMomentId?: string; initialCreate?: boolean;
 }) {
-  const { moments, activeIdentity, journalSnapshot, updateJournal } = useJournalState();
+  const { moments, activeIdentity, journalSnapshot, updateJournal, journalSync } = useJournalState();
   const [query, setQuery] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
@@ -72,7 +73,7 @@ export function PersonalSpace({ onClose, initialMomentId, initialCreate = false 
       </section> : <section className="echo-empty-books"><BookIcon /><h2>Your first page can be anything.</h2><p>A photo. A conversation. An ordinary day you want to keep.</p></section>}
       <div className="echo-space-actions"><button className="echo-button white" onClick={() => setAdding(true)} disabled={!activeIdentity}><PlusIcon />Add a moment</button>{books.length > 0 && <button className="echo-button outline" onClick={() => setSelected((books.find((book) => book.year === selectedYear) ?? books[0]).moments[0].id)}><BookIcon />Open book</button>}</div>
       {!activeIdentity && <p className="echo-muted"><Link href="/onboarding">Choose a direction</Link> to add new moments. Your previous moments are still here.</p>}
-      <p className="echo-preview-note">Your chosen moments · saved on this device · no journal cloud sync{moments.some(isPreviewExample) ? " · Includes examples kept from an earlier preview" : ""}</p>
+      <p className="echo-preview-note">Your chosen moments · {JOURNAL_SYNC_COPY[journalSync.status]}{moments.some(isPreviewExample) ? " · Includes examples kept from an earlier preview" : ""}</p>
       {!!Object.keys(journalSnapshot.bookDrafts ?? {}).length && <p className="echo-muted">Unfinished covers: {Object.keys(journalSnapshot.bookDrafts ?? {}).join(", ")}. Open Customize to continue.</p>}
       <JournalStorageStatus />
       {!!journalSnapshot.playlists?.length && <section className="echo-saved-playlists"><h2>Music you kept</h2><p className="echo-muted">A separate collection. No stars, streaks or AI memory.</p>{journalSnapshot.playlists.map((playlist) => <details key={playlist.id}><summary>{playlist.title}</summary><PlaylistCard playlist={playlist} messageId={playlist.sourceMessageId} saved={playlist} /></details>)}</section>}

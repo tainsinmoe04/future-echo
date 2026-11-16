@@ -20,6 +20,7 @@ mockModule("@/components/mock-product-state", {
     updateJournal: (change: (current: JournalSnapshot) => JournalSnapshot) => { updates.push(change); },
     storageStatus: "saved",
     storageError: "",
+    journalSync: { status: "local", message: "", lastSyncedAt: "" },
     retryStorage: () => {},
     exportJournal: () => "",
     restoreJournal: async () => {},

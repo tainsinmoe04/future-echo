@@ -9,6 +9,8 @@ import { MAX_TRANSFORM_SCALE } from "./page-transform";
 
 /** Local document: confirmed records and separately unconsented drafts. Chat stays session-only. */
 export interface JournalSnapshot {
+  /** Deletion tombstones so a merge never resurrects a page removed on another device. */
+  removals?: Readonly<Record<string, string>>;
   horizonReflections?: Readonly<Record<string, { choice: string; recordedAt: string }>>;
   onboardingDraft?: { definition: string; reason: string; anchor: string; months: number; custom: string; step: number; updatedAt: string; newJourney?: boolean };
   playlists?: readonly SavedPlaylist[];
@@ -122,7 +124,9 @@ export function isJourneyMoment(value: unknown): value is JourneyMoment { return
 
 /** Validate, never repair: particularly never infer or upgrade memory consent. */
 export function isJournalSnapshot(value: unknown): value is JournalSnapshot {
-  if (!object(value) || !keys(value, ["version", "identityVersions", "moments", "preferences", "books", "drafts", "bookDrafts", "playlists", "onboardingDraft", "horizonReflections"]) || value.version !== 1) return false;
+  if (!object(value) || !keys(value, ["version", "identityVersions", "moments", "preferences", "books", "drafts", "bookDrafts", "playlists", "onboardingDraft", "horizonReflections", "removals"]) || value.version !== 1) return false;
+  if (!optional(value.removals, (v) => object(v) && Object.keys(v).length <= 10000
+    && Object.entries(v).every(([key, stamp]) => id(key) && date(stamp)))) return false;
   if (!optional(value.onboardingDraft, (d) => object(d) && keys(d, ["definition", "reason", "anchor", "months", "custom", "step", "updatedAt", "newJourney"]) && text(d.definition, 500) && text(d.reason, 500) && text(d.anchor, 500) && [6, 12, 36, 60].includes(d.months as number) && text(d.custom, 7) && (d.custom === "" || /^\d{4}-(0[1-9]|1[0-2])$/.test(d.custom as string)) && [0, 1, 2].includes(d.step as number) && date(d.updatedAt) && optional(d.newJourney, (v) => typeof v === "boolean"))) return false;
   const { identityVersions: identities, moments, preferences: p } = value;
   // Bound aggregate encoded media before decoding any individual image.

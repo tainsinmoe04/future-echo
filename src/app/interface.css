@@ -40,6 +40,9 @@ body::before { display:none; }
 .echo-settings-section .echo-check input { flex:none; width:20px; height:20px; margin-top:4px; accent-color:#eeeeee; }
 .echo-chat,.echo-memory-shell,.echo-direction-page,.echo-personal-space,.echo-settings,.echo-book-view,.echo-editor { background:#0e1012; }
 .echo-ui :focus-visible,.auth-page :focus-visible { outline-color:#eeeeee; }
+/* Light editor surfaces need a dark ring: the shared soft-white outline vanishes on paper. */
+.echo-editor-toolbar :is(button,input,select,textarea,summary,a):focus-visible,
+.echo-paper:not(.paper-nocturne) :is(button,input,select,textarea,summary,a):focus-visible { outline-color:#202123; }
 .echo-ui button:focus-visible:active { transform:none; }
 .echo-space-header { border-bottom:1px solid #303236; padding-block:18px; }
 .echo-space-header :is(h1,h2) { font-weight:650; letter-spacing:-.025em; }
