@@ -176,11 +176,12 @@ export function isJournalSnapshot(value: unknown): value is JournalSnapshot {
     && validatedMoment(entry.value.originalExcerpt ? entry.value : { ...entry.value, originalExcerpt: " " })
     && owners.has(entry.value.identityVersionId as string) && object(entry.value.consent) && entry.value.consent.useInAiContext === false && entry.value.consent.includeMyNoteInAiContext === false) && uniqueIds(d))) return false;
   const validBooks = (b: unknown, draft = false) => object(b) && Object.keys(b).length <= 200 && Object.entries(b).every(([year, book]) => /^\d{4}$/.test(year) && object(book)
-    && keys(book, ["title", "subtitle", "theme", "noteFont", "photo", "photoMode", "photoCrop", "layers", "placements", "transforms", "order", "templateVersion"])
+    && keys(book, ["title", "subtitle", "yearText", "theme", "noteFont", "photo", "photoMode", "photoCrop", "layers", "placements", "transforms", "order", "templateVersion"])
     && optional(book.templateVersion, version => version === 1)
     && optional(book.photoCrop, crop) && optional(book.layers, layers)
     && optional(book.photoMode, (mode) => mode === "full" || mode === "inset")
-    && text(book.title, 80, draft ? 0 : 1) && text(book.subtitle, 120) && COVER_THEMES.includes(book.theme as typeof COVER_THEMES[number]) && font(book.noteFont)
+    // A cleared title or year is a deliberate hidden element, not missing data.
+    && text(book.title, 80) && optional(book.yearText, (value) => text(value, 12)) && text(book.subtitle, 120) && COVER_THEMES.includes(book.theme as typeof COVER_THEMES[number]) && font(book.noteFont)
     && optional(book.photo, isJournalImageSource) && Array.isArray(book.placements) && object(book.transforms) && Array.isArray(book.order) && book.order.length <= 10000 && new Set(book.order).size === book.order.length
     && book.order.every((key) => id(key) && moments.some((m) => object(m) && m.id === key && typeof m.occurredAt === "string" && momentDay(m as unknown as JourneyMoment).startsWith(year)))
     && moment({ ...(moments[0] ?? { id: "cover", identityVersionId: "cover", occurredAt: "2026-01-01T00:00:00Z", revisitAt: "2026-07-01T00:00:00Z", originalExcerpt: "cover", consent: { useInAiContext: false, includeMyNoteInAiContext: false, recordedAt: "2026-01-01T00:00:00Z" } }), stickerPlacements: book.placements, pageTransforms: book.transforms }));

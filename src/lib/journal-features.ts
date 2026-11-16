@@ -9,6 +9,8 @@ export interface BookStyle {
   photoMode?: "full" | "inset";
   title: string;
   subtitle: string;
+  /** Cover year stamp; absent falls back to the book's year, empty hides it. */
+  yearText?: string;
   theme: typeof COVER_THEMES[number];
   noteFont: NoteFont;
   photo?: string;
@@ -17,7 +19,8 @@ export interface BookStyle {
   order: readonly string[];
 }
 export interface JournalDraft { id: string; value: JourneyMoment; updatedAt: string; musicTitle?: string; musicUrl?: string }
-export const defaultBook = (year: string): BookStyle => ({ title: "little things, big feelings", subtitle: year, theme: "butter", noteFont: "book", placements: [], transforms: {}, order: [] });
+/** The cover already stamps its own year, so the subtitle stays free text. */
+export const defaultBook = (year: string): BookStyle => ({ title: "little things, big feelings", subtitle: "", theme: "butter", noteFont: "book", placements: [], transforms: {}, order: [] });
 
 /** Navigation only; never fetch or embed a remote player automatically. */
 export function safeMusicUrl(value: unknown): value is string {

@@ -77,6 +77,9 @@ test("cover template preview matches editable artwork and every text layer persi
     expect(await cover.evaluate(el=>({ objects:Array.from(el.querySelectorAll("[data-object]")).map(n=>[n.getAttribute("data-object"),n.textContent]), images:Array.from(el.querySelectorAll("img")).map(n=>n.getAttribute("src")) }))).toEqual(expected);
   }
   await page.getByRole("button",{name:/Lace & letters/}).click();
+  // The default cover has no subtitle line any more; type one so all three text
+  // layers exist before the keyboard checks below.
+  await page.getByLabel("A little line underneath").fill("Kept close");
   for (const name of ["Cover title","Cover subtitle","Cover year","ribbon-key cover sticker","lace-trim cover sticker"]) {
     const object=cover.getByRole("group",{name,exact:true});await object.focus();await object.press("ArrowRight");await object.press("]");
   }

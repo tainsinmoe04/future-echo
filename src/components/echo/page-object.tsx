@@ -10,9 +10,11 @@ export interface PageEditing {
   onRemove?: (id: string) => void;
 }
 
-export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation = 0, page, editing, children, className = "", style, layer }: {
+export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation = 0, page, editing, children, className = "", style, layer, removable = false }: {
   id: string; label: string; value?: PageTransform; page: RefObject<HTMLElement | null>;
   editing?: PageEditing; children: ReactNode; className?: string; style?: CSSProperties; layer?: number; baseRotation?: number;
+  /** Opt in to the Delete button/key for content that this surface may remove. */
+  removable?: boolean;
 }) {
   const node = useRef<HTMLDivElement>(null);
   const points = useRef(new Map<number, Point>());
@@ -21,6 +23,7 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation 
   const [preview, setPreview] = useState<PageTransform | null>(null);
   const current = preview ?? value;
   const selected = editing?.selected === id;
+  const removableNow = Boolean(editing?.onRemove) && (removable || id.startsWith("sticker:") || id.startsWith("photo:"));
   const changeWithinPage = (next: PageTransform) => {
     const element = node.current, rect = page.current?.getBoundingClientRect();
     if (!element || !rect) return;
@@ -87,7 +90,7 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation 
       onPointerCancel={() => finish(true)} onLostPointerCapture={() => finish(true)}
       onKeyDown={(event) => {
         if (!editing) return;
-        if ((event.key === "Delete" || event.key === "Backspace") && event.target === event.currentTarget && editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:"))) { event.preventDefault(); event.stopPropagation(); finish(true); editing.onRemove(id); return; }
+        if ((event.key === "Delete" || event.key === "Backspace") && event.target === event.currentTarget && removableNow) { event.preventDefault(); event.stopPropagation(); finish(true); editing.onRemove?.(id); return; }
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finish(true); return; }
         const step = event.shiftKey ? 5 : 1;
         const delta: Record<string, Partial<PageTransform>> = { ArrowLeft: { x: value.x - step }, ArrowRight: { x: value.x + step },
@@ -97,7 +100,7 @@ export function PageObject({ id, label, value = DEFAULT_TRANSFORM, baseRotation 
       }}>
       {children}
       {editing && selected && <>
-        {editing.onRemove && (id.startsWith("sticker:") || id.startsWith("photo:")) && <button type="button" className="echo-object-delete" aria-label={`Delete ${label}`} onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={event => { event.stopPropagation(); finish(true); editing.onRemove?.(id); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg></button>}
+        {removableNow && <button type="button" className="echo-object-delete" aria-label={`Delete ${label}`} onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={event => { event.stopPropagation(); finish(true); editing.onRemove?.(id); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg></button>}
         <button type="button" className="echo-transform-handle rotate" data-handle="rotate" aria-label={`Rotate ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) changeWithinPage(normalizeTransform({ ...value, rotation: value.rotation + 15 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9a7 7 0 1 0 0 7M19 4v5h-5" /></svg></button>
         <button type="button" className="echo-transform-handle resize" data-handle="resize" aria-label={`Resize ${label}`} onClick={(e) => { e.stopPropagation(); if (!e.detail) changeWithinPage(normalizeTransform({ ...value, scale: value.scale + 0.1 })); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14v4h4M14 6h4v4M6 18 18 6" /></svg></button>
       </>}

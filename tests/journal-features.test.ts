@@ -8,7 +8,7 @@ import { activeIdentityVersion, pastIdentityVersion } from "../src/lib/mock-data
 import { DEFAULT_PREFERENCES } from "../src/lib/scrapbook";
 import { parseJournalBackup, serializeJournalBackup } from "../src/lib/journal-backup";
 import { keepMoment } from "../src/lib/personal-space";
-import { applyJournalTemplate, JOURNAL_TEMPLATES } from "../src/lib/journal-templates";
+import { applyCoverTemplate, applyJournalTemplate, JOURNAL_TEMPLATES } from "../src/lib/journal-templates";
 const fixture = (): JournalSnapshot => structuredClone({ version: 1, moments: sampleMoments, identityVersions: [pastIdentityVersion, activeIdentityVersion], preferences: DEFAULT_PREFERENCES });
 
 test("romantic templates preserve evidence and consent through validated backup", () => {
@@ -126,4 +126,21 @@ test("changing cover templates never removes personal decorations or exceeds the
   assert.ok(!poetry.placements.some(p => p.name === "lace-trim"));
   assert.equal(poetry.transforms["sticker:template-lace"], undefined);
   assert.equal(isJournalSnapshot({ ...fixture(), books: { "2026": { ...poetry, templateVersion:2 } } }), false);
+});
+
+test("cover text may be cleared and a template never re-adds the year stamp", () => {
+  const snapshot = fixture(), year = "2026";
+  // The cover stamps its own year, so a fresh book must not repeat it as a subtitle.
+  assert.equal(defaultBook(year).subtitle, "");
+  const cleared = { ...snapshot, books: { [year]: { ...defaultBook(year), title: "", subtitle: "", yearText: "", order: [] } } };
+  assert.equal(isJournalSnapshot(cleared), true);
+  // Choosing a template keeps whatever the author typed or cleared.
+  const templated = applyCoverTemplate(cleared.books[year], "lace");
+  assert.equal(templated.subtitle, "");
+  assert.equal(templated.title, "");
+  assert.equal(templated.yearText, "");
+  assert.equal(isJournalSnapshot({ ...cleared, books: { [year]: templated } }), true);
+  // The year stamp stays bounded like every other cover text.
+  assert.equal(isJournalSnapshot({ ...cleared, books: { [year]: { ...cleared.books[year], yearText: "x".repeat(13) } } }), false);
+  assert.equal(isJournalSnapshot({ ...cleared, books: { [year]: { ...cleared.books[year], yearText: "12" } } }), true);
 });
